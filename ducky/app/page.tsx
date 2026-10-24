@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Logo, User } from "@/components/ui/icons";
+import { Logo, Student, Teacher, User } from "@/components/ui/icons";
 
 export default function Landing() {
   const [role, setRole] = useState<"student" | "teacher">("student");
@@ -40,18 +40,22 @@ export default function Landing() {
             <div className="card mt-8 max-w-[420px] rounded-2xl p-5">
               <p className="mb-2.5 text-sm font-semibold">I’m a…</p>
               <div role="group" aria-label="Role" className="grid grid-cols-2 gap-1.5 rounded-xl bg-ground p-1">
-                {(["student", "teacher"] as const).map((r) => (
-                  <button
-                    key={r}
-                    aria-pressed={role === r}
-                    onClick={() => setRole(r)}
-                    className={`h-11 rounded-[9px] capitalize transition ${
-                      role === r ? "bg-white font-semibold shadow-sm" : "text-sub hover:text-ink"
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
+                {(["student", "teacher"] as const).map((r) => {
+                  const Icon = r === "student" ? Student : Teacher;
+                  return (
+                    <button
+                      key={r}
+                      aria-pressed={role === r}
+                      onClick={() => setRole(r)}
+                      className={`flex h-11 items-center justify-center gap-2 rounded-[9px] capitalize transition ${
+                        role === r ? "bg-white font-semibold shadow-sm" : "text-sub hover:text-ink"
+                      }`}
+                    >
+                      <Icon className={role === r ? "text-accent" : "text-muted"} />
+                      {r}
+                    </button>
+                  );
+                })}
               </div>
               <button
                 onClick={signIn}

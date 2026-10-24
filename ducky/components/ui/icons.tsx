@@ -70,6 +70,23 @@ export const User = ({ className, size = 18 }: P) => (
   </svg>
 );
 
+export const Student = ({ className, size = 18 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 18 18" fill="none" aria-hidden="true" className={className}>
+    <path d="M9 3.2L1.8 6.6 9 10l7.2-3.4z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+    <path d="M4.6 8.5v3c0 1.4 2 2.5 4.4 2.5s4.4-1.1 4.4-2.5v-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M16.2 6.6v3.1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
+export const Teacher = ({ className, size = 18 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 18 18" fill="none" aria-hidden="true" className={className}>
+    <rect x="2.5" y="2.5" width="13" height="8.6" rx="1.4" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M9 11.1v3.6M6.6 15.9h4.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M5.6 8.7l2.4-2.4 1.7 1.7 2.7-2.7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M10.9 5.3h1.5v1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export const Spinner = ({ className, size = 12 }: P) => (
   <svg width={size} height={size} viewBox="0 0 12 12" className={`animate-spin ${className ?? ""}`} aria-hidden="true">
     <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.6" fill="none" strokeDasharray="18 10" />
