@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root { --font-inter: "Inter"; --font-display: "Space Grotesk"; --font-mono: "JetBrains Mono"; }
+  body { @apply bg-ground text-ink antialiased; }
+  :focus-visible { outline: 2px solid #0B7A62; outline-offset: 2px; }
+}
+@layer components {
+  .card { @apply rounded-[14px] border border-line bg-white; }
+  .chip { @apply rounded-full border border-line bg-ground px-2.5 py-1 text-[13px] text-sub; }
+  .btn { @apply inline-flex h-11 items-center justify-center gap-2 rounded-[10px] border border-edge bg-white px-4 text-[15px] text-ink transition hover:bg-ground disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-accent px-4 text-[15px] font-semibold text-white transition hover:bg-accent-dark disabled:opacity-50; }
+  .btn-dark { @apply inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-ink px-4 text-[15px] text-white transition hover:bg-sub; }
+  .eyebrow { @apply text-xs font-semibold uppercase tracking-[0.08em] text-muted; }
+  .h2 { @apply font-display text-[17px] font-semibold; }
+}
