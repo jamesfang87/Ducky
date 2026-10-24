@@ -65,24 +65,19 @@ export default function Landing() {
         <Logo />
         <div className="flex-1" />
         <Link href="/login" className="text-sub no-underline hover:text-ink">Login</Link>
-        <a href="#privacy" className="text-sub no-underline hover:text-ink">Privacy</a>
       </header>
 
       <main className="mx-auto max-w-[1240px] px-6 pb-16 pt-6 md:pt-10">
         <div className="flex flex-wrap items-center gap-12">
           <div className="min-w-0 flex-[1_1_440px]">
-            <p className="mb-4 inline-block rounded-full bg-accent-tint px-3 py-1 text-sm font-medium text-accent-dark">
-              Rubber-duck debugging for every subject
-            </p>
             <h1 className="font-display text-[40px] font-bold leading-[1.04] tracking-[-0.03em] md:text-[60px]">
               Talk it through.
               <br />
               Ducky finds where it broke.
             </h1>
             <p className="mt-5 max-w-[520px] text-[19px] text-sub">
-              Ducky is a voice-first tutor for problem sets in any subject. You explain each step out loud and it asks
-              the follow-up that exposes the gap, then draws the diagram when words aren’t enough. Teachers set the
-              hint limits and watch which misconceptions are spreading across the class.
+              Ducky is a learning management system where students explain their work out loud and teachers see where
+              the class gets stuck.
             </p>
 
             <div className="card mt-8 max-w-[420px] rounded-2xl p-5">
@@ -92,10 +87,13 @@ export default function Landing() {
                 onClick={signIn}
                 className="mt-3.5 flex h-[50px] w-full items-center justify-center gap-2.5 rounded-xl bg-ink font-semibold text-white transition hover:bg-sub"
               >
-                <User /> Continue with Google
+                <User /> Log in with Google
               </button>
-              <p id="privacy" className="mt-3 text-[13px] text-muted">
-                Use your school account. Your sessions belong to you, and student data is never used to train AI models.
+              <p className="mt-3 text-center text-[13px] text-muted">
+                New to Ducky?{" "}
+                <Link href={`/login?role=${role}&mode=signup`} className="font-medium text-accent no-underline hover:text-accent-dark">
+                  Create an account
+                </Link>
               </p>
             </div>
           </div>

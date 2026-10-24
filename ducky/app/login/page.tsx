@@ -6,21 +6,40 @@ import { Suspense, useState } from "react";
 import { Logo, User } from "@/components/ui/icons";
 import { RoleToggle, type Role } from "@/components/ui/RoleToggle";
 
+const MODES = ["login", "signup"] as const;
+type Mode = (typeof MODES)[number];
+
 function LoginCard() {
   const router = useRouter();
   const params = useSearchParams();
   const [role, setRole] = useState<Role>(params.get("role") === "teacher" ? "teacher" : "student");
+  const [mode, setMode] = useState<Mode>(params.get("mode") === "signup" ? "signup" : "login");
+  const isSignup = mode === "signup";
 
   // TODO: replace with supabase.auth.signInWithOAuth({ provider: "google" }) and route by profile.role
-  const signIn = () => router.push(role === "student" ? "/session/demo" : "/teacher");
+  const submit = () => router.push(role === "student" ? "/session/demo" : "/teacher");
 
   return (
     <div className="card rounded-2xl p-6">
-      <p className="eyebrow mb-1.5">Welcome back</p>
-      <h1 className="font-display text-[28px] font-bold leading-tight tracking-[-0.02em]">Log in to Ducky</h1>
-      <p className="mt-2 text-[15px] text-sub">
-        Pick the side you’re on. Students land in their session; teachers land in the class dashboard.
-      </p>
+      <div role="group" aria-label="Log in or create an account" className="mb-5 flex gap-5 border-b border-line">
+        {MODES.map((m) => (
+          <button
+            key={m}
+            type="button"
+            aria-pressed={mode === m}
+            onClick={() => setMode(m)}
+            className={`-mb-px border-b-2 pb-2 text-[15px] transition ${
+              mode === m ? "border-accent font-semibold text-ink" : "border-transparent text-muted hover:text-ink"
+            }`}
+          >
+            {m === "login" ? "Log in" : "Create account"}
+          </button>
+        ))}
+      </div>
+
+      <h1 className="font-display text-[28px] font-bold leading-tight tracking-[-0.02em]">
+        {isSignup ? "Create your account" : "Log in to Ducky"}
+      </h1>
 
       <div className="mt-5">
         <p className="mb-2.5 text-sm font-semibold">I’m a…</p>
@@ -28,14 +47,11 @@ function LoginCard() {
       </div>
 
       <button
-        onClick={signIn}
+        onClick={submit}
         className="mt-3.5 flex h-[50px] w-full items-center justify-center gap-2.5 rounded-xl bg-ink font-semibold text-white transition hover:bg-sub"
       >
-        <User /> Continue with Google
+        <User /> {isSignup ? "Sign up with Google" : "Log in with Google"}
       </button>
-      <p className="mt-3 text-[13px] text-muted">
-        Use your school account. Your sessions belong to you, and student data is never used to train AI models.
-      </p>
     </div>
   );
 }
@@ -50,7 +66,7 @@ export default function Login() {
         </Link>
       </header>
       <main className="mx-auto w-full max-w-[440px] flex-1 px-6 pb-16 pt-4">
-        <Suspense fallback={<div className="card h-[320px] rounded-2xl" />}>
+        <Suspense fallback={<div className="card h-[360px] rounded-2xl" />}>
           <LoginCard />
         </Suspense>
       </main>
