@@ -8,7 +8,8 @@ import { getTutorReply, runVizPipeline } from "@/lib/tutor";
 import type { ChatMessage, MisconceptionId, PipelineEvent, ReasoningStep } from "@/lib/types";
 import { AccountChip } from "@/components/ui/AccountChip";
 import { Can } from "@/components/ui/Can";
-import { Logo } from "@/components/ui/icons";
+import { Logo, Spinner } from "@/components/ui/icons";
+import { can } from "@/lib/permissions";
 import { useSession } from "@/lib/session";
 import FreeFallViz from "./FreeFallViz";
 import Interview from "./Interview";
@@ -106,6 +107,8 @@ export default function SessionView() {
   };
 
   const passes = pipeline.filter((p) => p.stage === "vision" && p.status !== "running").length;
+  // Students only ever see the approved visual, never drafts or the review pipeline.
+  const canSeeReview = can(session?.role, "review:view");
   const rubric = useMemo(() => scoreRubric(messages, steps, hintsUsed), [messages, steps, hintsUsed]);
 
   return (
@@ -164,8 +167,19 @@ export default function SessionView() {
         />
 
         <section aria-label="Visualization" className="flex min-w-0 flex-[2_1_420px] flex-col gap-4">
-          {vizOn ? (
-            <FreeFallViz buggy={buggy} reviewing={reviewing} reviewed={!reviewing && passes > 0} passes={passes} />
+          {vizOn && reviewing && !canSeeReview ? (
+            <div className="card flex min-h-[300px] flex-col items-center justify-center gap-2 p-8 text-center" role="status">
+              <Spinner size={18} className="text-accent" />
+              <p className="font-semibold">Preparing your visual…</p>
+              <p className="text-sm text-muted">Every visual is checked before you see it.</p>
+            </div>
+          ) : vizOn ? (
+            <FreeFallViz
+              buggy={buggy}
+              reviewing={canSeeReview && reviewing}
+              reviewed={canSeeReview && !reviewing && passes > 0}
+              passes={passes}
+            />
           ) : (
             <div className="card flex min-h-[300px] flex-col items-center justify-center gap-2 p-8 text-center">
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
@@ -183,7 +197,9 @@ export default function SessionView() {
               )}
             </div>
           )}
-          <ReviewerLoop events={pipeline} />
+          <Can allow="review:view">
+            <ReviewerLoop events={pipeline} />
+          </Can>
           {corrected && policy.tools.webExamples && <ExampleCard />}
           <p className="sr-only">{MISCONCEPTIONS.length} misconceptions tracked</p>
         </section>

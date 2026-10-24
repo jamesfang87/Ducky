@@ -20,6 +20,7 @@ export const ROLE_PERMISSIONS = {
     "transcript:view",
     "transcript:override",
     "audit:view",
+    "review:view",
   ],
 } as const satisfies Record<Role, readonly string[]>;
 
