@@ -186,19 +186,6 @@ export default function Landing() {
             </div>
           </div>
         </div>
-
-        <div className="mt-12 grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
-          {[
-            ["Say it to learn it", "Voice-first sessions build active recall. You’ll often catch your own mistake mid-sentence."],
-            ["Visuals, double-checked", "Diagrams and simulations are generated, rendered, then reviewed by a second model before you see them."],
-            ["Teachers set the rules", "Hint limits, answer reveal, voice and tone per assignment, plus a live misconception map for the class."],
-          ].map(([h, p]) => (
-            <div key={h} className="card rounded-2xl p-5">
-              <h2 className="mb-1.5 font-display text-[19px] font-semibold">{h}</h2>
-              <p className="text-[15px] text-sub">{p}</p>
-            </div>
-          ))}
-        </div>
       </main>
     </div>
   );
