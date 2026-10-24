@@ -14,7 +14,7 @@ export const DEFAULT_POLICY: Policy = {
   model: "Muse Spark",
   hintLimit: 2,
   revealAnswers: false,
-  voiceRequired: true,
+  voiceRequired: false,
   tone: "Socratic",
   tools: { visualizations: true, webExamples: true, calculator: false },
   guardrails: { jailbreakShield: true, stayOnAssignment: true },

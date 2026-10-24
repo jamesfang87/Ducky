@@ -10,7 +10,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { DEFAULT_POLICY } from "./mock";
 import type { MisconceptionEvent, Policy } from "./types";
 
-const KEY = "ducky-demo-v1";
+// Bump when DEFAULT_POLICY changes so saved demo state doesn't pin the old defaults (v2: voice no longer required).
+const KEY = "ducky-demo-v2";
 
 interface State {
   policy: Policy;

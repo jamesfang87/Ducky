@@ -161,7 +161,7 @@ export function RubricCard({ rows, messages }: { rows: RubricRow[]; messages: Ch
                         ? `You · ${m.via === "voice" ? `voice, ${m.durationSec ?? 0}s` : "typed"}`
                         : "Ducky"}
                     </p>
-                    <p className="mt-0.5 text-[15px] leading-relaxed">{m.text}</p>
+                    <p className="mt-0.5 whitespace-pre-wrap text-[15px] leading-relaxed">{m.text}</p>
                   </>
                 )}
               </li>

@@ -30,12 +30,21 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
   const typingLocked = voiceRequired && speech.supported;
   const hintsLeft = Math.max(0, hintLimit - hintsUsed);
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!draft.trim() || thinking) return;
     onSend(draft.trim(), "text");
     setDraft("");
   };
+
+  // Grow the text box with its content, up to about five lines.
+  const typed = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = typed.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+  }, [draft]);
 
   return (
     <section aria-label="Interview" className="card flex min-w-0 flex-[2_1_460px] flex-col">
@@ -93,7 +102,9 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
                 ? "Voice isn’t supported in this browser. Type below (Chrome or Edge for voice)."
                 : speech.listening
                   ? "Listening… tap to send"
-                  : "Tap to talk through your reasoning"}
+                  : typingLocked
+                    ? "Tap to talk through your reasoning"
+                    : "Tap to talk, or type below"}
             </p>
             {speech.listening && (
               <div aria-hidden="true" className="mt-0.5 flex h-7 items-center gap-[3px]">
@@ -107,17 +118,27 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
           </div>
         </div>
 
-        <form onSubmit={submit} className="flex flex-wrap gap-2">
+        <form onSubmit={submit} className="flex flex-wrap items-end gap-2">
           <label htmlFor="typed" className="sr-only">
             Type your reasoning
           </label>
-          <input
+          <textarea
+            ref={typed}
             id="typed"
+            rows={1}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter sends; Shift+Enter adds a line. Skip while an IME is composing.
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                submit();
+              }
+            }}
             disabled={typingLocked}
-            placeholder={typingLocked ? "Voice required by your teacher" : "Or type your reasoning…"}
-            className="h-11 min-w-0 flex-[1_1_220px] rounded-[10px] border border-edge bg-white px-3.5 text-ink placeholder:text-muted disabled:bg-ground"
+            placeholder={typingLocked ? "Voice required by your teacher" : "Type your reasoning…"}
+            aria-describedby={typingLocked ? undefined : "typed-help"}
+            className="min-h-11 min-w-0 flex-[1_1_220px] resize-none rounded-[10px] border border-edge bg-white px-3.5 py-2.5 leading-snug text-ink placeholder:text-muted disabled:bg-ground"
           />
           {!typingLocked && (
             <button type="submit" className="btn-primary" disabled={!draft.trim() || thinking} aria-label="Send">
@@ -131,6 +152,11 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
             {hintsLeft === 0 ? "No hints left" : `Use hint (${hintsLeft} left)`}
           </button>
         </form>
+        {!typingLocked && (
+          <p id="typed-help" className="-mt-1 text-[12px] text-muted">
+            Enter to send · Shift+Enter for a new line
+          </p>
+        )}
       </div>
     </section>
   );
@@ -160,8 +186,8 @@ function Bubble({ m }: { m: ChatMessage }) {
       <div
         className={
           student
-            ? "rounded-[14px_4px_14px_14px] bg-ink px-3.5 py-3 text-white"
-            : "rounded-[4px_14px_14px_14px] bg-ground px-3.5 py-3"
+            ? "whitespace-pre-wrap rounded-[14px_4px_14px_14px] bg-ink px-3.5 py-3 text-white"
+            : "whitespace-pre-wrap rounded-[4px_14px_14px_14px] bg-ground px-3.5 py-3"
         }
       >
         {m.text}
