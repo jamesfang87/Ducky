@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ducky: talk it through</title>
+    <meta
+      name="description"
+      content="A learning management system where students explain their work out loud and teachers see where the class gets stuck."
+    />
+    <meta property="og:title" content="Ducky: talk it through" />
+    <meta
+      property="og:description"
+      content="Students explain their reasoning out loud. Ducky finds where it broke."
+    />
+    <meta property="og:type" content="website" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M3.5 12.5C5.5 14.5 8 16.5 13.4 16.6A7 7 0 1125.3 15.8C27.8 16.9 29 19 28.6 21.6C28 26.5 22.5 29.2 16 29.2C9 29.2 4.2 26 3.4 20.5C3 17.8 2.8 15 3.5 12.5Z' fill='%23F7C21B'/%3E%3Ccircle cx='21.6' cy='9.5' r='1.45' fill='%2314171C'/%3E%3C/svg%3E"
+    />
+
+    <!--
+      Static mirror of the Next.js landing page (ducky/app/page.tsx) so GitHub Pages
+      can serve it without a build step. If you change the hero, update both files.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --ink: #14171c;
+        --sub: #3a414a;
+        --muted: #5a626c;
+        --ground: #f3f4f1;
+        --line: #e2e4df;
+        --edge: #c9ccc6;
+        --accent: #0b7a62;
+        --accent-dark: #075a48;
+        --accent-tint: #e6f3ef;
+        --warn: #a3530a;
+        --warn-dark: #6b3a08;
+        --warn-tint: #fbf1e6;
+        --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+        --font-display: "Space Grotesk", system-ui, sans-serif;
+        --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--ground);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        font-size: 16px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      a {
+        color: var(--sub);
+        text-decoration: none;
+        transition: color 0.15s ease;
+      }
+      a:hover {
+        color: var(--ink);
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .wrap {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      /* ---------- header ---------- */
+
+      .site-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 16px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--ink);
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+      }
+      .logo:hover {
+        color: var(--ink);
+      }
+
+      .spacer {
+        flex: 1;
+      }
+
+      .nav {
+        display: flex;
+        gap: 16px;
+      }
+
+      /* ---------- hero ---------- */
+
+      main {
+        padding-top: 24px;
+        padding-bottom: 64px;
+      }
+
+      h1 {
+        margin: 0;
+        font-family: var(--font-display);
+        font-size: 40px;
+        font-weight: 700;
+        line-height: 1.04;
+        letter-spacing: -0.03em;
+      }
+
+      .lede {
+        margin: 20px 0 0;
+        font-size: 19px;
+        color: var(--sub);
+        max-width: 72ch;
+      }
+
+      .card {
+        margin-top: 40px;
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: #fff;
+      }
+
+      .card-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .eyebrow {
+        margin: 0 0 4px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      h2 {
+        margin: 0;
+        font-family: var(--font-display);
+        font-size: 20px;
+        font-weight: 600;
+        line-height: 1.375;
+      }
+
+      .chips {
+        display: flex;
+        flex: none;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .chip {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--ground);
+        padding: 4px 10px;
+        font-size: 13px;
+        color: var(--sub);
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 32px;
+        margin-top: 24px;
+      }
+
+      /* ---------- reasoning path ---------- */
+
+      .steps-col {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        min-width: 0;
+      }
+
+      .steps {
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .step {
+        display: flex;
+        gap: 12px;
+      }
+
+      .marker-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .marker {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 999px;
+      }
+      .marker.done {
+        background: var(--accent);
+        color: #fff;
+      }
+      .marker.fixed {
+        border: 2px solid var(--accent);
+        background: var(--accent-tint);
+        color: var(--accent);
+      }
+      .marker.broke {
+        background: var(--warn);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .connector {
+        width: 1px;
+        flex: 1;
+        margin: 4px 0;
+        background: var(--line);
+      }
+
+      .step-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .step-body.gap {
+        padding-bottom: 16px;
+      }
+
+      .step-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .step-row.fixed {
+        border-radius: 10px;
+        background: var(--accent-tint);
+        padding: 8px 12px;
+      }
+
+      .step-text {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.375;
+        color: var(--sub);
+      }
+      .step-row.fixed .step-text {
+        font-weight: 500;
+        color: var(--accent-dark);
+      }
+
+      .tag {
+        display: none;
+        flex: none;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .step-row.fixed .tag {
+        border-color: rgba(11, 122, 98, 0.3);
+        color: var(--accent-dark);
+      }
+
+      .broke {
+        border-radius: 10px;
+        background: var(--warn-tint);
+        padding: 8px 12px;
+      }
+      .broke .step-text {
+        color: var(--warn-dark);
+      }
+      .broke-meta {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        margin: 6px 0 0;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--warn);
+      }
+      .broke-meta svg {
+        margin-top: 1px;
+        flex: none;
+      }
+      .broke-note {
+        margin: 4px 0 0;
+        font-size: 12.5px;
+        line-height: 1.375;
+        color: var(--warn);
+      }
+
+      .quote {
+        margin: 0;
+        border-radius: 10px;
+        background: var(--ground);
+        padding: 10px 12px;
+        font-size: 14px;
+        line-height: 1.375;
+        color: var(--sub);
+      }
+      .quote strong {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      /* ---------- visual column ---------- */
+
+      .aside {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .viz {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--ground);
+        padding: 16px;
+      }
+      .viz svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .viz figcaption {
+        margin-top: 8px;
+        text-align: center;
+        font-size: 12.5px;
+        color: var(--muted);
+      }
+
+      .note {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px;
+        font-size: 12.5px;
+        line-height: 1.375;
+      }
+      .note p {
+        margin: 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+      }
+      .note p + p {
+        margin-top: 6px;
+      }
+      .note .title {
+        align-items: center;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .note .review {
+        color: var(--muted);
+      }
+      .note .review svg {
+        margin-top: 2px;
+        flex: none;
+      }
+      .note .fixed {
+        align-items: center;
+        color: var(--accent-dark);
+      }
+
+      .source {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-size: 13px;
+        color: var(--sub);
+      }
+      .source:hover {
+        background: var(--ground);
+      }
+      .source .muted {
+        color: var(--muted);
+      }
+      .source .strong {
+        font-weight: 500;
+        color: var(--ink);
+      }
+      .source svg {
+        flex: none;
+        color: var(--muted);
+      }
+
+      /* ---------- breakpoints ---------- */
+
+      @media (min-width: 640px) {
+        .tag {
+          display: inline-block;
+        }
+      }
+
+      @media (min-width: 768px) {
+        main {
+          padding-top: 40px;
+        }
+        h1 {
+          font-size: 60px;
+        }
+        h2 {
+          font-size: 24px;
+        }
+        .card {
+          padding: 32px;
+        }
+      }
+
+      @media (min-width: 1024px) {
+        .hero-grid {
+          grid-template-columns: 1.05fr 0.95fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="wrap site-header">
+      <a class="logo" href="./">
+        <svg width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <path
+            d="M3.5 12.5C5.5 14.5 8 16.5 13.4 16.6A7 7 0 1125.3 15.8C27.8 16.9 29 19 28.6 21.6C28 26.5 22.5 29.2 16 29.2C9 29.2 4.2 26 3.4 20.5C3 17.8 2.8 15 3.5 12.5Z"
+            fill="#F7C21B"
+          />
+          <path
+            d="M9.8 19.6C11.4 23.6 16.4 25 20.4 22.6C18.9 19.4 15.1 18 11.9 18.6C11.1 18.8 10.4 19.1 9.8 19.6Z"
+            fill="#E3A600"
+          />
+          <path d="M24.4 11.4C26.4 10.3 29 10.4 30.3 11.3C30.8 11.7 30.6 12.4 30 12.7C28.3 13.6 26 13.7 24.4 13.1Z" fill="#F08A24" />
+          <circle cx="21.6" cy="9.5" r="1.45" fill="#14171C" />
+          <circle cx="22.1" cy="9" r=".45" fill="#fff" />
+        </svg>
+        <span>ducky</span>
+      </a>
+      <div class="spacer"></div>
+      <!-- Point this at the deployed app (or /ducky) once there is a hosted build. -->
+      <nav class="nav" aria-label="Account">
+        <a href="#">Login</a>
+        <a href="#privacy">Privacy</a>
+      </nav>
+    </header>
+
+    <main class="wrap">
+      <h1>Talk it through.<br />Ducky finds where it broke.</h1>
+      <p class="lede">
+        Ducky is a learning management system where students explain their work out loud and teachers see where the
+        class gets stuck.
+      </p>
+
+      <section class="card" aria-label="A reasoning path">
+        <div class="card-head">
+          <div>
+            <p class="eyebrow">A reasoning path · PHYS 1401</p>
+            <h2>A 7 kg bowling ball and a 60 g feather drop from 2 m. Which lands first?</h2>
+          </div>
+          <div class="chips">
+            <span class="chip">Hint 1 of 2</span>
+            <span class="chip">Voice required</span>
+          </div>
+        </div>
+
+        <div class="hero-grid">
+          <div class="steps-col">
+            <ol class="steps">
+              <li class="step">
+                <div class="marker-col">
+                  <span class="marker done" aria-hidden="true">
+                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                      <path d="M2.5 6.2l2.3 2.3 4.7-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                  <span class="connector" aria-hidden="true"></span>
+                </div>
+                <div class="step-body gap">
+                  <div class="step-row">
+                    <p class="step-text">F = mg: gravity pulls the ball down with 69 N, the feather with 0.6 N.</p>
+                    <span class="tag">69 N vs 0.6 N</span>
+                  </div>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="marker-col">
+                  <span class="marker broke" aria-hidden="true">!</span>
+                  <span class="connector" aria-hidden="true"></span>
+                </div>
+                <div class="step-body gap">
+                  <div class="broke">
+                    <p class="step-text">“More force, so the ball must fall faster.”</p>
+                    <p class="broke-meta">
+                      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                        <path d="M7 1.5l6 10.5H1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                        <path d="M7 5.5v3M7 10.2v.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                      </svg>
+                      Misconception · Mass changes fall speed
+                    </p>
+                    <p class="broke-note">Force isn’t acceleration. Something else grew along with the mass.</p>
+                  </div>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="marker-col">
+                  <span class="marker fixed" aria-hidden="true">
+                    <svg width="9" height="9" viewBox="0 0 12 12" fill="none">
+                      <path d="M2.5 6.2l2.3 2.3 4.7-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                  <span class="connector" aria-hidden="true"></span>
+                </div>
+                <div class="step-body gap">
+                  <div class="step-row fixed">
+                    <p class="step-text">a = F/m: 69/7 and 0.6/0.06 both give 9.8 m/s². The mass cancels.</p>
+                    <span class="tag">a = 9.8 m/s²</span>
+                  </div>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="marker-col">
+                  <span class="marker done" aria-hidden="true">
+                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                      <path d="M2.5 6.2l2.3 2.3 4.7-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                </div>
+                <div class="step-body">
+                  <div class="step-row">
+                    <p class="step-text">Both land at t = √(2h/g) ≈ 0.64 s. In air, drag — not weight — separates them.</p>
+                    <span class="tag">t ≈ 0.64 s</span>
+                  </div>
+                </div>
+              </li>
+            </ol>
+
+            <p class="quote">
+              <strong>Ducky:</strong> In air, gravity on the feather hasn’t changed. What else is pushing on it?
+            </p>
+          </div>
+
+          <div class="aside">
+            <figure class="viz">
+              <svg
+                viewBox="0 0 320 152"
+                role="img"
+                aria-label="A bowling ball and a feather side by side, with equal downward arrows, both reaching the ground at the same time."
+              >
+                <path d="M22 20v110" stroke="#C9CCC6" stroke-width="1.5" stroke-dasharray="4 4" />
+                <text x="28" y="18" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#5A626C">h = 2 m</text>
+                <path d="M12 134h296" stroke="#C9CCC6" stroke-width="2" stroke-linecap="round" />
+                <circle cx="92" cy="50" r="17" fill="#14171C" />
+                <text x="92" y="54" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#FFFFFF">7 kg</text>
+                <path d="M228 34c11 6 15 17 10 27-9-2-15-8-17-17z" fill="#F2B705" stroke="#C99100" stroke-width="1.5" />
+                <text x="228" y="76" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#3A414A">60 g</text>
+                <path d="M92 84v34m-4-5 4 5 4-5" stroke="#0B7A62" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M228 84v34m-4-5 4 5 4-5" stroke="#0B7A62" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <text x="300" y="150" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#5A626C">t ≈ 0.64 s</text>
+              </svg>
+              <figcaption>Equal arrows: both fall at 9.8 m/s² and land together.</figcaption>
+            </figure>
+
+            <div class="note">
+              <p class="title">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M2 14l1-4 8-8 3 3-8 8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                </svg>
+                Generated a free-body diagram
+              </p>
+              <p class="review">
+                <svg width="12" height="12" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                  <circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.8" />
+                  <path d="M12 12l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+                Reviewer: the ball’s arrow is longer than the feather’s, so the diagram implies different accelerations.
+              </p>
+              <p class="fixed">
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M2.5 6.2l2.3 2.3 4.7-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                Fixed on pass 2 of 3, then approved.
+              </p>
+            </div>
+
+            <a
+              class="source"
+              href="https://www.google.com/search?q=apollo+15+hammer+feather"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span>
+                <span class="muted">Real world · SerpApi:</span>
+                <span class="strong">Apollo 15 dropped a hammer and a feather on the Moon</span>
+              </span>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M2 8h11M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -21,6 +21,14 @@ Fonts are self-hosted with `@fontsource`, so no network is needed at build time.
 | `/session/demo` | Student interview: voice/text/sketch, reasoning path, misconception tracker, live sim, reviewer loop |
 | `/teacher` | Teacher dashboard: agent policy, live misconception heatmap, SerpApi leak alert, transcripts with score override |
 
+## GitHub Pages
+
+`index.html` at the repo root is a static mirror of the landing page, so the Pages site shows the product instead of this README. No build step, no dependencies.
+
+- Pages must be set to **Deploy from a branch → main → / (root)**.
+- It is a hand-written copy of `app/page.tsx`. If you change the hero, update both.
+- The Login link is a placeholder until there is a hosted app URL.
+
 ## 3-minute demo script
 
 1. Log in as **Teacher**, then open `/teacher` and `/session/demo` in two windows side by side. State syncs across tabs through localStorage. Teachers may preview a student session; a student account cannot open `/teacher`. Use **Sign out** to switch roles.
