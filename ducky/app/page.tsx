@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Logo, Student, Teacher, User, Check } from "@/components/ui/icons";
+import { Logo, User, Check } from "@/components/ui/icons";
+import { RoleToggle, type Role } from "@/components/ui/RoleToggle";
 
 const REASONING_STEPS = [
   {
@@ -52,18 +53,18 @@ function StepMarker({ status }: { status: (typeof REASONING_STEPS)[number]["stat
 }
 
 export default function Landing() {
-  const [role, setRole] = useState<"student" | "teacher">("student");
+  const [role, setRole] = useState<Role>("student");
   const router = useRouter();
 
   // TODO: replace with supabase.auth.signInWithOAuth({ provider: "google" }) and route by profile.role
-  const signIn = () => router.push(role === "student" ? "/session/demo" : "/teacher");
+  const signIn = () => router.push(`/login?role=${role}`);
 
   return (
     <div className="min-h-screen text-base">
       <header className="mx-auto flex max-w-[1240px] flex-wrap items-center gap-4 px-6 py-5">
         <Logo />
         <div className="flex-1" />
-        <Link href="/teacher" className="text-sub no-underline hover:text-ink">For schools</Link>
+        <Link href="/login" className="text-sub no-underline hover:text-ink">Login</Link>
         <a href="#privacy" className="text-sub no-underline hover:text-ink">Privacy</a>
       </header>
 
@@ -79,30 +80,14 @@ export default function Landing() {
               Ducky finds where it broke.
             </h1>
             <p className="mt-5 max-w-[520px] text-[19px] text-sub">
-              Explain your reasoning out loud. Ducky asks why behind each step, shows you a visual when words aren’t
-              enough, and never just hands over the answer.
+              Ducky is a voice-first tutor for problem sets in any subject. You explain each step out loud and it asks
+              the follow-up that exposes the gap, then draws the diagram when words aren’t enough. Teachers set the
+              hint limits and watch which misconceptions are spreading across the class.
             </p>
 
             <div className="card mt-8 max-w-[420px] rounded-2xl p-5">
               <p className="mb-2.5 text-sm font-semibold">I’m a…</p>
-              <div role="group" aria-label="Role" className="grid grid-cols-2 gap-1.5 rounded-xl bg-ground p-1">
-                {(["student", "teacher"] as const).map((r) => {
-                  const Icon = r === "student" ? Student : Teacher;
-                  return (
-                    <button
-                      key={r}
-                      aria-pressed={role === r}
-                      onClick={() => setRole(r)}
-                      className={`flex h-11 items-center justify-center gap-2 rounded-[9px] capitalize transition ${
-                        role === r ? "bg-white font-semibold shadow-sm" : "text-sub hover:text-ink"
-                      }`}
-                    >
-                      <Icon className={role === r ? "text-accent" : "text-muted"} />
-                      {r}
-                    </button>
-                  );
-                })}
-              </div>
+              <RoleToggle role={role} onChange={setRole} />
               <button
                 onClick={signIn}
                 className="mt-3.5 flex h-[50px] w-full items-center justify-center gap-2.5 rounded-xl bg-ink font-semibold text-white transition hover:bg-sub"

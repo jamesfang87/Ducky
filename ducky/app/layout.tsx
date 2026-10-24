@@ -13,7 +13,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Ducky: talk it through",
-  description: "Turn problem sets into a conversation. Ducky asks why behind each step and finds where your reasoning broke.",
+  description: "A voice-first tutor for problem sets: explain each step out loud, and Ducky asks the follow-up that exposes the reasoning gap. Teachers set hint limits and see class misconceptions live.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
