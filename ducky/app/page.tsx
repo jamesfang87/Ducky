@@ -48,26 +48,38 @@ const TRANSCRIPT = [
   "If gravity on it is the same… is the air pushing back on the feather?",
 ];
 
-const STATS = [
+const STAT_GROUPS = [
   {
-    figure: "98th",
-    claim: "percentile: where 1-on-1 tutoring moved the average student, versus a lecture class.",
-    source: "Bloom, 1984. Later reviews put the effect near 0.8 SD, still large.",
+    label: "The problem",
+    tone: "text-[#FF8A7A]",
+    stats: [
+      {
+        figure: "~¼",
+        claim: "of students’ conceptual gap in physics is all a typical lecture course closes.",
+        source: "Hake, 1998 (average normalized gain 0.23)",
+      },
+      {
+        figure: "48%",
+        claim: "of students who start a STEM bachelor’s degree leave the field.",
+        source: "Chen, NCES 2013",
+      },
+    ],
   },
   {
-    figure: "2×",
-    claim: "the conceptual gains on the Force Concept Inventory when courses make students articulate their reasoning.",
-    source: "Hake, 1998; Crouch & Mazur, 2001",
-  },
-  {
-    figure: "~¼",
-    claim: "of students’ conceptual gap in physics is all a typical lecture course closes.",
-    source: "Hake, 1998 (average normalized gain 0.23)",
-  },
-  {
-    figure: "48%",
-    claim: "of students who start a STEM bachelor’s degree leave the field.",
-    source: "Chen, NCES 2013",
+    label: "What works",
+    tone: "text-accent-glow",
+    stats: [
+      {
+        figure: "98th",
+        claim: "percentile: where 1-on-1 tutoring moved the average student, versus a lecture class.",
+        source: "Bloom, 1984. Later reviews put the effect near 0.8 SD, still large.",
+      },
+      {
+        figure: "2×",
+        claim: "the conceptual gains on the Force Concept Inventory when courses make students articulate their reasoning.",
+        source: "Hake, 1998; Crouch & Mazur, 2001",
+      },
+    ],
   },
 ] as const;
 
@@ -470,19 +482,26 @@ export default function Landing() {
               </p>
             </Reveal>
 
-            <dl className="mt-20 grid gap-x-16 gap-y-16 md:grid-cols-2">
-              {STATS.map((s, i) => (
-                <Reveal key={s.figure} delay={(i % 2) * 120}>
-                  <dt className="font-display text-[72px] font-bold leading-none tracking-[-0.05em] text-accent-glow md:text-[104px]">
-                    {s.figure}
-                  </dt>
-                  <dd className="mt-4">
-                    <span className="block max-w-[420px] text-[19px] leading-snug text-white/90">{s.claim}</span>
-                    <span className="mt-3 block text-[13px] text-white/55">{s.source}</span>
-                  </dd>
+            {STAT_GROUPS.map((g) => (
+              <div key={g.label} className="mt-20 border-t border-white/15 pt-10">
+                <Reveal>
+                  <h3 className={`text-[13px] font-semibold uppercase tracking-[0.1em] ${g.tone}`}>{g.label}</h3>
                 </Reveal>
-              ))}
-            </dl>
+                <dl className="mt-10 grid gap-x-16 gap-y-16 md:grid-cols-2">
+                  {g.stats.map((s, i) => (
+                    <Reveal key={s.figure} delay={i * 120}>
+                      <dt className={`font-display text-[72px] font-bold leading-none tracking-[-0.05em] md:text-[104px] ${g.tone}`}>
+                        {s.figure}
+                      </dt>
+                      <dd className="mt-4">
+                        <span className="block max-w-[420px] text-[19px] leading-snug text-white/90">{s.claim}</span>
+                        <span className="mt-3 block text-[13px] text-white/55">{s.source}</span>
+                      </dd>
+                    </Reveal>
+                  ))}
+                </dl>
+              </div>
+            ))}
           </div>
         </section>
 
