@@ -1,46 +1,38 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { User } from "@/components/ui/icons";
 import { RoleToggle, type Role } from "@/components/ui/RoleToggle";
+import { createClient } from "@/lib/supabase/client";
 
 const MODES = ["login", "signup"] as const;
 type Mode = (typeof MODES)[number];
 
 export default function LoginCard() {
-  const router = useRouter();
   const params = useSearchParams();
   const [role, setRole] = useState<Role>(params.get("role") === "teacher" ? "teacher" : "student");
   const [mode, setMode] = useState<Mode>(params.get("mode") === "signup" ? "signup" : "login");
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(params.get("error"));
   const isSignup = mode === "signup";
 
-  // Mock sign-in: sets the session cookie server-side, then follows the role's home.
-  // Replace with supabase.auth.signInWithOAuth({ provider: "google" }) when auth is real.
+  // Real sign-in: Google through Supabase Auth. The chosen role is saved once, on first sign-in.
+  // `select_account` makes Google ask which account to use, so a shared computer never signs in silently.
   const submit = async () => {
     setPending(true);
     setError(null);
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ role }),
-      });
-      const data = (await res.json()) as { redirect?: string; error?: string };
-      if (!res.ok || !data.redirect) throw new Error(data.error ?? "Could not sign you in.");
-
-      // Only follow same-site paths from ?next=, never an absolute URL.
-      const next = params.get("next");
-      const target = next && next.startsWith("/") && !next.startsWith("//") ? next : data.redirect;
-      router.push(target);
-      router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not sign you in.");
-    } finally {
+    const next = params.get("next");
+    const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "";
+    const redirectTo = `${window.location.origin}/auth/callback?role=${role}${safeNext ? `&next=${encodeURIComponent(safeNext)}` : ""}`;
+    const { error } = await createClient().auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo, queryParams: { prompt: "select_account" } },
+    });
+    if (error) {
+      setError(error.message);
       setPending(false);
-    }
+    } // on success the browser is already heading to Google
   };
 
   return (
@@ -75,7 +67,7 @@ export default function LoginCard() {
         disabled={pending}
         className="mt-3.5 flex h-[50px] w-full items-center justify-center gap-2.5 rounded-xl bg-ink font-semibold text-white transition hover:bg-sub disabled:opacity-60"
       >
-        <User /> {pending ? "Signing in…" : isSignup ? "Sign up with Google" : "Log in with Google"}
+        <User /> {pending ? "Opening Google…" : isSignup ? "Sign up with Google" : "Log in with Google"}
       </button>
 
       {error && (

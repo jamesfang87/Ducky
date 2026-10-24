@@ -1,15 +1,7 @@
-import { cookies } from "next/headers";
-import { COOKIE_NAME } from "@/lib/permissions";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST() {
-  const jar = await cookies();
-  // Expire rather than delete so the path matches the cookie set at login.
-  jar.set(COOKIE_NAME, "", {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 0,
-  });
+  const supabase = await createClient();
+  await supabase.auth.signOut(); // revokes the session and clears the auth cookies
   return Response.json({ redirect: "/login" });
 }

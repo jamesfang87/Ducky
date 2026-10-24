@@ -16,7 +16,7 @@ Fonts are self-hosted with `@fontsource`, so no network is needed at build time.
 | Route | Screen |
 |---|---|
 | `/` | Landing page, Student/Teacher toggle, link to login |
-| `/login` | Log in or create an account: role picker, Google sign-in (mocked) |
+| `/login` | Log in or create an account: role picker, Google sign-in via Supabase + two-step code |
 | `/privacy` | Privacy policy |
 | `/session/demo` | Student interview: voice/text/sketch, reasoning path, misconception tracker, live sim, reviewer loop |
 | `/teacher` | Teacher dashboard: agent policy, live misconception heatmap, SerpApi leak alert, transcripts with score override |
@@ -27,7 +27,7 @@ The app is hosted on Vercel at **https://ducky-snowy.vercel.app/**.
 
 - Vercel project settings: **Root Directory = `ducky`**, framework preset Next.js. The repo root is not a Next app, so leaving the root directory blank makes Vercel serve files instead of building.
 - The root `index.html` is only a redirect for GitHub Pages, which can serve static files but cannot run middleware, route handlers, or cookies.
-- No environment variables are needed while auth is mocked. Supabase keys must be added as server-side vars (never `NEXT_PUBLIC_`) when the backend is wired in.
+- Auth is real (Supabase Google sign-in + authenticator-app 2FA). Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel (the anon key is public by design). Never expose the `service_role` key. In Supabase, add the Vercel URL to Auth → URL Configuration → Redirect URLs (e.g. `https://ducky-snowy.vercel.app/**`).
 
 ## 3-minute demo script
 
