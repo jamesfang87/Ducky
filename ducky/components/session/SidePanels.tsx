@@ -1,5 +1,9 @@
-import type { MisconceptionId, Problem, ReasoningStep } from "@/lib/types";
+"use client";
+
+import { useRef } from "react";
+import type { ChatMessage, MisconceptionId, Problem, ReasoningStep } from "@/lib/types";
 import { MISCONCEPTIONS } from "@/lib/mock";
+import { RUBRIC_MAX, type RubricRow } from "@/lib/rubric";
 import { Check } from "@/components/ui/icons";
 
 export function ProblemCard({ problem }: { problem: Problem }) {
@@ -83,6 +87,88 @@ export function MisconceptionTracker({ counts }: { counts: Record<MisconceptionI
           You’ve hit “{top.label.toLowerCase()}” {top.n} times. Try explaining why the force grows but the acceleration doesn’t.
         </p>
       )}
+    </div>
+  );
+}
+
+export function RubricCard({ rows, messages }: { rows: RubricRow[]; messages: ChatMessage[] }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const scored = rows.filter((r) => r.score !== null);
+  const total = scored.reduce((sum, r) => sum + (r.score ?? 0), 0);
+
+  return (
+    <div className="card p-5">
+      <div className="mb-3 flex items-baseline justify-between gap-2">
+        <h2 className="h2">Your rubric scores</h2>
+        {scored.length ? (
+          <span className="font-mono text-sm font-medium">
+            {total} / {scored.length * RUBRIC_MAX}
+          </span>
+        ) : (
+          <span className="text-[13px] text-muted">not started</span>
+        )}
+      </div>
+      <ul className="flex flex-col gap-3">
+        {rows.map((r) => (
+          <li key={r.id}>
+            <div className="flex justify-between gap-2 text-sm">
+              <span>{r.label}</span>
+              <span className="font-mono font-medium text-muted">{r.score === null ? "—" : `${r.score}/${RUBRIC_MAX}`}</span>
+            </div>
+            <div className="mt-1 flex gap-1" aria-hidden="true">
+              {Array.from({ length: RUBRIC_MAX }, (_, i) => (
+                <span
+                  key={i}
+                  className={`h-1.5 flex-1 rounded transition-colors duration-500 ${
+                    r.score !== null && i < r.score ? (r.score <= 1 ? "bg-warn" : "bg-accent") : "bg-ground"
+                  }`}
+                />
+              ))}
+            </div>
+            <p className="mt-1 text-[13px] text-muted">{r.why}</p>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3.5 text-[13px] text-muted">Scored by Ducky as you go. Your teacher can adjust any score.</p>
+      <button className="btn mt-3 h-10 w-full" onClick={() => dialog.current?.showModal()}>
+        View full transcript ({messages.length})
+      </button>
+
+      <dialog
+        ref={dialog}
+        aria-labelledby="transcript-title"
+        onClick={(e) => e.target === dialog.current && dialog.current?.close()}
+        className="w-[min(640px,calc(100vw-32px))] rounded-[14px] p-0 text-ink backdrop:bg-ink/40"
+      >
+        <div className="flex max-h-[80vh] flex-col">
+          <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
+            <h2 id="transcript-title" className="h2">
+              Session transcript
+            </h2>
+            <button className="btn h-9" onClick={() => dialog.current?.close()}>
+              Close
+            </button>
+          </div>
+          <ol className="flex flex-col gap-3 overflow-y-auto px-5 py-4">
+            {messages.map((m) => (
+              <li key={m.id} className={m.role === "system" ? "text-center text-[13px] text-muted" : ""}>
+                {m.role === "system" ? (
+                  m.text
+                ) : (
+                  <>
+                    <p className="eyebrow">
+                      {m.role === "student"
+                        ? `You · ${m.via === "voice" ? `voice, ${m.durationSec ?? 0}s` : "typed"}`
+                        : "Ducky"}
+                    </p>
+                    <p className="mt-0.5 text-[15px] leading-relaxed">{m.text}</p>
+                  </>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </dialog>
     </div>
   );
 }

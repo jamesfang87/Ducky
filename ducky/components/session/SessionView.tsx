@@ -13,7 +13,8 @@ import { useSession } from "@/lib/session";
 import FreeFallViz from "./FreeFallViz";
 import Interview from "./Interview";
 import ReviewerLoop from "./ReviewerLoop";
-import { ExampleCard, MisconceptionTracker, ProblemCard, ReasoningPath } from "./SidePanels";
+import { scoreRubric } from "@/lib/rubric";
+import { ExampleCard, MisconceptionTracker, ProblemCard, ReasoningPath, RubricCard } from "./SidePanels";
 
 const uid = () => crypto.randomUUID();
 
@@ -105,6 +106,7 @@ export default function SessionView() {
   };
 
   const passes = pipeline.filter((p) => p.stage === "vision" && p.status !== "running").length;
+  const rubric = useMemo(() => scoreRubric(messages, steps, hintsUsed), [messages, steps, hintsUsed]);
 
   return (
     <div className="min-h-screen">
@@ -122,9 +124,12 @@ export default function SessionView() {
           </nav>
           <div className="flex-1" />
           <div className="flex flex-wrap items-center gap-2">
-            <span className="chip">{policy.hintLimit} hints max</span>
-            {policy.voiceRequired && <span className="chip">Voice required</span>}
-            <span className="chip">{policy.revealAnswers ? "Answers allowed" : "Answers hidden"}</span>
+            {/* The tutor policy is teacher-only; students just see its effects (hint button, voice prompt). */}
+            <Can allow="policy:edit">
+              <span className="chip">{policy.hintLimit} hints max</span>
+              {policy.voiceRequired && <span className="chip">Voice required</span>}
+              <span className="chip">{policy.revealAnswers ? "Answers allowed" : "Answers hidden"}</span>
+            </Can>
             {session?.role === "student" && (
               <Link href="/classes" className="text-sm text-sub no-underline transition hover:text-ink">
                 My classes
@@ -145,6 +150,7 @@ export default function SessionView() {
           <ProblemCard problem={PROBLEM} />
           <ReasoningPath steps={steps} />
           <MisconceptionTracker counts={counts} />
+          <RubricCard rows={rubric} messages={messages} />
         </section>
 
         <Interview
