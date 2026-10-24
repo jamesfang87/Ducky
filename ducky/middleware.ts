@@ -22,8 +22,19 @@ export async function middleware(req: NextRequest) {
   const rule = RULES.find((r) => r.pattern.test(pathname));
   if (!rule) return NextResponse.next(); // public page (landing, login, privacy)
 
+  // Fail closed: without Supabase keys nobody gets into protected pages (and nothing crashes).
+  const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supaKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supaUrl || !supaKey) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = "";
+    url.searchParams.set("error", "Sign-in is not configured on this deployment yet.");
+    return NextResponse.redirect(url);
+  }
+
   let response = NextResponse.next({ request: req });
-  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  const supabase = createServerClient(supaUrl, supaKey, {
     cookies: {
       getAll: () => req.cookies.getAll(),
       setAll: (toSet) => {

@@ -25,12 +25,14 @@ export default function LoginCard() {
     const next = params.get("next");
     const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "";
     const redirectTo = `${window.location.origin}/auth/callback?role=${role}${safeNext ? `&next=${encodeURIComponent(safeNext)}` : ""}`;
-    const { error } = await createClient().auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo, queryParams: { prompt: "select_account" } },
-    });
-    if (error) {
-      setError(error.message);
+    try {
+      const { error } = await createClient().auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo, queryParams: { prompt: "select_account" } },
+      });
+      if (error) throw error;
+    } catch (e) {
+      setError(e instanceof Error && e.message ? e.message : "Sign-in is not configured on this deployment yet.");
       setPending(false);
     } // on success the browser is already heading to Google
   };
