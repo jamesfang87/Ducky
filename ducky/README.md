@@ -21,13 +21,13 @@ Fonts are self-hosted with `@fontsource`, so no network is needed at build time.
 | `/session/demo` | Student interview: voice/text/sketch, reasoning path, misconception tracker, live sim, reviewer loop |
 | `/teacher` | Teacher dashboard: agent policy, live misconception heatmap, SerpApi leak alert, transcripts with score override |
 
-## GitHub Pages
+## Deploy
 
-`index.html` at the repo root is a static mirror of the landing page, so the Pages site shows the product instead of this README. No build step, no dependencies.
+The app is hosted on Vercel at **https://ducky-snowy.vercel.app/**.
 
-- Pages must be set to **Deploy from a branch → main → / (root)**.
-- It is a hand-written copy of `app/page.tsx`. If you change the hero, update both.
-- The Login link is a placeholder until there is a hosted app URL.
+- Vercel project settings: **Root Directory = `ducky`**, framework preset Next.js. The repo root is not a Next app, so leaving the root directory blank makes Vercel serve files instead of building.
+- The root `index.html` is only a redirect for GitHub Pages, which can serve static files but cannot run middleware, route handlers, or cookies.
+- No environment variables are needed while auth is mocked. Supabase keys must be added as server-side vars (never `NEXT_PUBLIC_`) when the backend is wired in.
 
 ## 3-minute demo script
 
