@@ -26,6 +26,7 @@ Fonts are self-hosted with `@fontsource`, so no network is needed at build time.
 The app is hosted on Vercel at **https://ducky-snowy.vercel.app/**.
 
 - Vercel project settings: **Root Directory = `ducky`**, framework preset Next.js. The repo root is not a Next app, so leaving the root directory blank makes Vercel serve files instead of building.
+- After changing the root directory, redeploy the deployment marked **Production**. Redeploying a Preview does not update the production domain.
 - The root `index.html` is only a redirect for GitHub Pages, which can serve static files but cannot run middleware, route handlers, or cookies.
 - No environment variables are needed while auth is mocked. Supabase keys must be added as server-side vars (never `NEXT_PUBLIC_`) when the backend is wired in.
 
