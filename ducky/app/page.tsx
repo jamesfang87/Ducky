@@ -3,7 +3,53 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Logo, Student, Teacher, User } from "@/components/ui/icons";
+import { Logo, Student, Teacher, User, Check } from "@/components/ui/icons";
+
+const REASONING_STEPS = [
+  {
+    status: "done",
+    text: "A list of 1,000 names: finding one means checking names one at a time.",
+    cost: "O(n)",
+  },
+  {
+    status: "done",
+    text: "If the name were a number 0–999, names[482] is a single jump.",
+    cost: "O(1)",
+  },
+  {
+    status: "broke",
+    text: "“So sorting the list is what makes lookup instant.”",
+    cost: "O(log n)",
+    note: "Closer, but log n still grows with the list. Instant means no searching at all.",
+  },
+  {
+    status: "fixed",
+    text: "Hash “Ana” → 482. Jump straight to bucket 482, and nothing else gets compared.",
+    cost: "O(1)",
+  },
+] as const;
+
+function StepMarker({ status }: { status: (typeof REASONING_STEPS)[number]["status"] }) {
+  if (status === "broke") {
+    return (
+      <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-warn text-[11px] font-bold text-white">
+        !
+      </span>
+    );
+  }
+  if (status === "fixed") {
+    return (
+      <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 border-accent bg-accent-tint text-accent">
+        <Check size={9} />
+      </span>
+    );
+  }
+  return (
+    <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-accent text-white">
+      <Check size={10} />
+    </span>
+  );
+}
 
 export default function Landing() {
   const [role, setRole] = useState<"student" | "teacher">("student");
@@ -73,28 +119,46 @@ export default function Landing() {
             <div className="card rounded-[20px] p-6">
               <p className="eyebrow mb-1">A reasoning path</p>
               <p className="mb-4 font-display text-xl font-semibold">Why does a hash map lookup feel instant?</p>
-              <svg viewBox="0 0 420 120" className="block h-auto w-full" role="img" aria-label="Four reasoning steps on a line; step three is where the reasoning broke and was corrected.">
-                <path d="M20 90 C80 90 90 40 150 40 S230 95 280 70 S360 30 400 30" stroke="#0B7A62" strokeWidth="3" fill="none" strokeLinecap="round" />
-                <circle cx="20" cy="90" r="7" fill="#0B7A62" />
-                <circle cx="150" cy="40" r="7" fill="#0B7A62" />
-                <circle cx="250" cy="82" r="9" fill="#A3530A" />
-                <circle cx="400" cy="30" r="7" fill="#0B7A62" />
-                <g fontFamily="var(--font-inter)" fontSize="11" fill="#3A414A">
-                  <text x="6" y="114">arrays</text>
-                  <text x="122" y="22">index → O(1)</text>
-                  <text x="206" y="112">“just search keys”</text>
-                  <text x="350" y="56">hash → index</text>
-                </g>
-              </svg>
-              <div className="mt-4 flex flex-col gap-2.5 text-[15px]">
-                <div className="rounded-[10px] bg-ground px-3 py-2.5">
-                  <span className="font-semibold">Ducky:</span> Indexing an array is fast because you compute the position.
-                  What if your key is a string, not a number?
-                </div>
-                <div className="max-w-[85%] self-end rounded-[10px] bg-ink px-3 py-2.5 text-white">
-                  So… a hash function turns the string into an index!
-                </div>
-              </div>
+              <ol className="flex flex-col">
+                {REASONING_STEPS.map((s, i) => (
+                  <li key={i} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <StepMarker status={s.status} />
+                      {i < REASONING_STEPS.length - 1 && <span aria-hidden className="my-1 w-px flex-1 bg-line" />}
+                    </div>
+                    <div className={`min-w-0 flex-1 ${i < REASONING_STEPS.length - 1 ? "pb-4" : ""}`}>
+                      {s.status === "broke" ? (
+                        <div className="rounded-[10px] bg-warn-tint px-3 py-2">
+                          <div className="flex items-baseline justify-between gap-3">
+                            <p className="text-[14px] leading-snug text-warn-dark">{s.text}</p>
+                            <span className="flex-none rounded border border-warn/30 px-1.5 py-0.5 font-mono text-[11px] text-warn">{s.cost}</span>
+                          </div>
+                          <p className="mt-1 text-[12.5px] leading-snug text-warn">{s.note}</p>
+                        </div>
+                      ) : (
+                        <div className={s.status === "fixed" ? "rounded-[10px] bg-accent-tint px-3 py-2" : ""}>
+                          <div className="flex items-baseline justify-between gap-3">
+                            <p className={`text-[14px] leading-snug ${s.status === "fixed" ? "font-medium text-accent-dark" : "text-sub"}`}>
+                              {s.text}
+                            </p>
+                            <span
+                              className={`flex-none rounded border px-1.5 py-0.5 font-mono text-[11px] ${
+                                s.status === "fixed" ? "border-accent/30 text-accent-dark" : "border-line text-muted"
+                              }`}
+                            >
+                              {s.cost}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <p className="mt-4 rounded-[10px] bg-ground px-3 py-2.5 text-[14px] leading-snug text-sub">
+                <span className="font-semibold text-ink">Ducky:</span> You went from “sorted” to “instant.” What has to
+                happen to “Ana” before the jump?
+              </p>
             </div>
           </div>
         </div>
