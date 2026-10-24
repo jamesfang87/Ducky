@@ -23,8 +23,9 @@ export default {
       keyframes: {
         bar: { "0%,100%": { transform: "scaleY(0.3)" }, "50%": { transform: "scaleY(1)" } },
         fadein: { from: { opacity: "0", transform: "translateY(4px)" }, to: { opacity: "1", transform: "none" } },
+        bob: { "0%,100%": { transform: "translateY(0) rotate(-3deg)" }, "50%": { transform: "translateY(-6px) rotate(3deg)" } },
       },
-      animation: { bar: "bar 0.9s ease-in-out infinite", fadein: "fadein 0.25s ease-out" },
+      animation: { bar: "bar 0.9s ease-in-out infinite", fadein: "fadein 0.25s ease-out", bob: "bob 1.6s ease-in-out infinite" },
     },
   },
   plugins: [],
