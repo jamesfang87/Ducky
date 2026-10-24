@@ -23,7 +23,7 @@ Fonts are self-hosted with `@fontsource`, so no network is needed at build time.
 
 ## 3-minute demo script
 
-1. Open `/teacher` and `/session/demo` in two windows side by side. State syncs across tabs through localStorage.
+1. Log in as **Teacher**, then open `/teacher` and `/session/demo` in two windows side by side. State syncs across tabs through localStorage. Teachers may preview a student session; a student account cannot open `/teacher`. Use **Sign out** to switch roles.
 2. On the teacher page, show the policy: 2 hints, voice required.
    - The student header updates live.
 3. As the student, tap the mic (Chrome or Edge) and say: "The heavier one hits the ground first."
@@ -49,8 +49,18 @@ Voice uses the browser's Web Speech API. Firefox falls back to typing, even when
 | Transcription | `lib/useSpeech.ts` | Muse Voice Transcribe: stream MediaRecorder chunks |
 | Leak check | `components/teacher/LeakAndTranscripts.tsx` → `checkLeaks()` | `POST /api/leak-check`: SerpApi Google search on distinctive phrases |
 | Shared state | `lib/store.tsx` | Supabase tables + Realtime (policy, sessions, misconception_events), RLS by class |
-| Auth | `app/page.tsx` → `signIn()` | `supabase.auth.signInWithOAuth({ provider: "google" })` |
+| Auth | `lib/auth.ts` → `getSession()`; mock users in `lib/users.ts` | `supabase.auth.getUser()`, then delete the mock table |
+| Login | `app/api/auth/login/route.ts` | `supabase.auth.signInWithOAuth({ provider: "google" })`; set the same cookie from the callback |
+| Route gates | `middleware.ts` (role per path) | Keep the shape; read the Supabase session instead of the id cookie |
 | Mock data | `lib/mock.ts` | Supabase queries |
+
+## Roles and access
+
+- `lib/users.ts` is the mock identity table. The session cookie (`ducky_session`) holds a **user id only**; roles are resolved server-side on every request.
+- `lib/permissions.ts` is the single source of truth: `ROLE_PERMISSIONS` and `can()`. Add a permission there before checking it anywhere.
+- `middleware.ts` gates `/teacher` (teacher only) and `/session/*` (student or teacher). Signed-out requests redirect to `/login?next=…`.
+- Route layouts call `requireRole()` as defense in depth and seed `SessionProvider`, so client components read the session from `useSession()` with no extra fetch. `<Can allow="…">` hides UI only — never treat it as enforcement.
+- The demo cookie is not signed. That is fine for a mock; Supabase Auth replaces it with a real session.
 
 ## Structure
 

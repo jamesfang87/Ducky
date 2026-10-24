@@ -6,6 +6,8 @@ import { HINTS, INITIAL_STEPS, MISCONCEPTIONS, PROBLEM, STUDENT_HISTORY, STUDENT
 import { useStore } from "@/lib/store";
 import { getTutorReply, runVizPipeline } from "@/lib/tutor";
 import type { ChatMessage, MisconceptionId, PipelineEvent, ReasoningStep } from "@/lib/types";
+import { AccountChip } from "@/components/ui/AccountChip";
+import { Can } from "@/components/ui/Can";
 import { Logo } from "@/components/ui/icons";
 import FreeFallViz from "./FreeFallViz";
 import Interview from "./Interview";
@@ -134,9 +136,12 @@ export default function SessionView() {
             {policy.voiceRequired && <span className="chip">Voice required</span>}
             <span className="chip">{policy.revealAnswers ? "Answers allowed" : "Answers hidden"}</span>
             {mmss && <span className="rounded-full bg-ink px-2.5 py-1 font-mono text-[13px] text-white">{mmss} left</span>}
-            <Link href="/teacher" className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-tint text-sm font-semibold text-accent no-underline" aria-label="Account (opens teacher view for the demo)">
-              KL
-            </Link>
+            <Can allow="class:view">
+              <Link href="/teacher" className="text-sm text-sub no-underline transition hover:text-ink">
+                Teacher view
+              </Link>
+            </Can>
+            <AccountChip />
           </div>
         </div>
       </header>

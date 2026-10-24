@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { MISCONCEPTIONS, STUDENT_NAME } from "@/lib/mock";
 import { useStore } from "@/lib/store";
 import type { TranscriptRow } from "@/lib/types";
+import { AccountChip } from "@/components/ui/AccountChip";
 import { Logo } from "@/components/ui/icons";
 import Heatmap from "./Heatmap";
 import { LeakAlert, TranscriptTable } from "./LeakAndTranscripts";
@@ -55,9 +56,7 @@ export default function TeacherDashboard() {
           <button onClick={resetDemo} className="btn h-10 text-sm" title="Clear live events and restore default policy">
             Reset demo
           </button>
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-tint text-sm font-semibold text-accent" aria-label="Signed in as D. Rivera">
-            DR
-          </span>
+          <AccountChip />
         </div>
       </header>
 
