@@ -9,6 +9,7 @@ import type { ChatMessage, MisconceptionId, PipelineEvent, ReasoningStep } from 
 import { AccountChip } from "@/components/ui/AccountChip";
 import { Can } from "@/components/ui/Can";
 import { Logo } from "@/components/ui/icons";
+import { useSession } from "@/lib/session";
 import FreeFallViz from "./FreeFallViz";
 import Interview from "./Interview";
 import ReviewerLoop from "./ReviewerLoop";
@@ -23,6 +24,7 @@ const OPENING: ChatMessage = {
 };
 
 export default function SessionView() {
+  const session = useSession();
   const { policy, events, addEvent } = useStore();
   const [messages, setMessages] = useState<ChatMessage[]>([OPENING]);
   const [thinking, setThinking] = useState(false);
@@ -136,6 +138,11 @@ export default function SessionView() {
             {policy.voiceRequired && <span className="chip">Voice required</span>}
             <span className="chip">{policy.revealAnswers ? "Answers allowed" : "Answers hidden"}</span>
             {mmss && <span className="rounded-full bg-ink px-2.5 py-1 font-mono text-[13px] text-white">{mmss} left</span>}
+            {session?.role === "student" && (
+              <Link href="/classes" className="text-sm text-sub no-underline transition hover:text-ink">
+                My classes
+              </Link>
+            )}
             <Can allow="class:view">
               <Link href="/teacher" className="text-sm text-sub no-underline transition hover:text-ink">
                 Teacher view

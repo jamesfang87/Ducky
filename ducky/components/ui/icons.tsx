@@ -56,6 +56,12 @@ export const Send = ({ className, size = 16 }: P) => (
   </svg>
 );
 
+export const Plus = ({ className, size = 16 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true" className={className}>
+    <path d="M8 2.5v11M2.5 8h11" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+  </svg>
+);
+
 export const Search = ({ className, size = 18 }: P) => (
   <svg width={size} height={size} viewBox="0 0 18 18" fill="none" aria-hidden="true" className={className}>
     <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.8" />

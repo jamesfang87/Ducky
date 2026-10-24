@@ -5,6 +5,7 @@ import { homePath, type Role } from "@/lib/users";
 /** Route gates. Runs before the page renders, so a student typing /teacher never sees a teacher screen. */
 const RULES: { pattern: RegExp; roles: Role[] }[] = [
   { pattern: /^\/teacher(?:\/|$)/, roles: ["teacher"] },
+  { pattern: /^\/classes(?:\/|$)/, roles: ["student"] },
   { pattern: /^\/session(?:\/|$)/, roles: ["student", "teacher"] },
 ];
 
@@ -73,5 +74,5 @@ export async function middleware(req: NextRequest) {
 // The login, MFA, callback and public pages deliberately stay outside the gate.
 // "/" and "/login" only need the stray-code forward, which is cheap, so they are matched too.
 export const config = {
-  matcher: ["/teacher/:path*", "/session/:path*", "/"],
+  matcher: ["/teacher/:path*", "/classes/:path*", "/session/:path*", "/"],
 };

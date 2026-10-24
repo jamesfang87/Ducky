@@ -18,5 +18,5 @@ export interface Session {
 
 /** Where a role lands after signing in (and where it is sent if it opens a route it cannot use). */
 export function homePath(role: Role): string {
-  return role === "teacher" ? "/teacher" : "/session/demo";
+  return role === "teacher" ? "/teacher" : "/classes";
 }
