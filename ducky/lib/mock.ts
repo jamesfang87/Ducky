@@ -15,7 +15,6 @@ export const DEFAULT_POLICY: Policy = {
   hintLimit: 2,
   revealAnswers: false,
   voiceRequired: true,
-  timeLimitMin: 20,
   tone: "Socratic",
   tools: { visualizations: true, webExamples: true, calculator: false },
   guardrails: { jailbreakShield: true, stayOnAssignment: true },

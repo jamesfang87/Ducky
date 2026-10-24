@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { HINTS, INITIAL_STEPS, MISCONCEPTIONS, PROBLEM, STUDENT_HISTORY, STUDENT_NAME } from "@/lib/mock";
 import { useStore } from "@/lib/store";
 import { getTutorReply, runVizPipeline } from "@/lib/tutor";
@@ -36,17 +36,6 @@ export default function SessionView() {
   const [reviewing, setReviewing] = useState(false);
   const [corrected, setCorrected] = useState(false);
   const turn = useRef(0);
-
-  // countdown
-  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
-  useEffect(() => {
-    setSecondsLeft(policy.timeLimitMin ? policy.timeLimitMin * 60 : null);
-  }, [policy.timeLimitMin]);
-  useEffect(() => {
-    if (secondsLeft === null) return;
-    const id = setInterval(() => setSecondsLeft((s) => (s === null ? s : Math.max(0, s - 1))), 1000);
-    return () => clearInterval(id);
-  }, [secondsLeft === null]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const counts = useMemo(() => {
     const c = { ...STUDENT_HISTORY };
@@ -115,7 +104,6 @@ export default function SessionView() {
     setHintsUsed((h) => h + 1);
   };
 
-  const mmss = secondsLeft === null ? null : `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
   const passes = pipeline.filter((p) => p.stage === "vision" && p.status !== "running").length;
 
   return (
@@ -137,7 +125,6 @@ export default function SessionView() {
             <span className="chip">{policy.hintLimit} hints max</span>
             {policy.voiceRequired && <span className="chip">Voice required</span>}
             <span className="chip">{policy.revealAnswers ? "Answers allowed" : "Answers hidden"}</span>
-            {mmss && <span className="rounded-full bg-ink px-2.5 py-1 font-mono text-[13px] text-white">{mmss} left</span>}
             {session?.role === "student" && (
               <Link href="/classes" className="text-sm text-sub no-underline transition hover:text-ink">
                 My classes

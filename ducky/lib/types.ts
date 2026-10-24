@@ -5,7 +5,6 @@ export interface Policy {
   hintLimit: number;
   revealAnswers: boolean;
   voiceRequired: boolean;
-  timeLimitMin: number | null;
   tone: Tone;
   tools: { visualizations: boolean; webExamples: boolean; calculator: boolean };
   guardrails: { jailbreakShield: boolean; stayOnAssignment: boolean };

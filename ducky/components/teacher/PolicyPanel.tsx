@@ -59,21 +59,6 @@ export default function PolicyPanel() {
         <Toggle id="reveal" label="May reveal answers" checked={policy.revealAnswers} onChange={(v) => setPolicy({ revealAnswers: v })} />
         <Toggle id="voice" label="Voice required" checked={policy.voiceRequired} onChange={(v) => setPolicy({ voiceRequired: v })} />
 
-        <label htmlFor="time" className="flex items-center justify-between gap-3">
-          Time limit
-          <select
-            id="time"
-            value={policy.timeLimitMin ?? 0}
-            onChange={(e) => setPolicy({ timeLimitMin: Number(e.target.value) || null })}
-            className="h-10 rounded-lg border border-edge bg-white px-2.5"
-          >
-            <option value={10}>10 min / problem</option>
-            <option value={20}>20 min / problem</option>
-            <option value={30}>30 min / problem</option>
-            <option value={0}>None</option>
-          </select>
-        </label>
-
         <div>
           <p className="mb-2">Tone</p>
           <div className="flex flex-wrap gap-1.5">
