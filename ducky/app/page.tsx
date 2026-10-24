@@ -27,6 +27,47 @@ const REASONING_STEPS = [
   },
 ] as const;
 
+const STATS = [
+  {
+    figure: "98th",
+    claim: "percentile: where 1-on-1 tutoring moved the average student, versus a lecture class.",
+    source: "Bloom, 1984. Later reviews put the effect near 0.8 SD, still large.",
+  },
+  {
+    figure: "2×",
+    claim: "the conceptual gains on the Force Concept Inventory when courses make students articulate their reasoning.",
+    source: "Hake, 1998; Crouch & Mazur, 2001",
+  },
+  {
+    figure: "~¼",
+    claim: "of students’ conceptual gap in physics is all a typical lecture course closes.",
+    source: "Hake, 1998 (average normalized gain 0.23)",
+  },
+  {
+    figure: "48%",
+    claim: "of students who start a STEM bachelor’s degree leave the field.",
+    source: "Chen, NCES 2013",
+  },
+] as const;
+
+const PRINCIPLES = [
+  {
+    title: "Saying it catches it",
+    body: "Students who explain their reasoning build more accurate mental models than those who just read solutions. So Ducky asks students to talk through their work instead of pasting in an answer.",
+    source: "Self-explanation effect · Chi et al., 1989, 1994",
+  },
+  {
+    title: "Words and pictures together",
+    body: "People learn more from explanations paired with visuals than from words alone. Every diagram and simulation Ducky shows is checked by a second model first.",
+    source: "Multimedia principle · Mayer, 2009",
+  },
+  {
+    title: "Misconceptions don’t leave on their own",
+    body: "Ideas like “heavier things fall faster” survive lectures. Ducky names each one as it shows up and puts it on the teacher’s heatmap.",
+    source: "Force Concept Inventory · Hestenes et al., 1992",
+  },
+] as const;
+
 function StepMarker({ status }: { status: (typeof REASONING_STEPS)[number]["status"] }) {
   if (status === "broke") {
     return (
@@ -186,6 +227,39 @@ export default function Landing() {
             </div>
           </div>
         </div>
+
+        <section aria-labelledby="research" className="mt-20">
+          <p className="eyebrow mb-2">Why it works</p>
+          <h2 id="research" className="font-display text-[28px] font-bold leading-tight tracking-[-0.02em] md:text-[36px]">
+            Tutoring works. It just doesn’t scale.
+          </h2>
+          <p className="mt-3 max-w-[720px] text-[17px] text-sub">
+            Intro lectures seat hundreds, and high school teachers often see 150 or more students a day. Nobody can
+            hear every student reason through a problem. Ducky can, and it shows the teacher what it heard.
+          </p>
+
+          <dl className="mt-8 grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+            {STATS.map((s) => (
+              <div key={s.figure} className="card flex flex-col rounded-2xl p-5">
+                <dt className="font-display text-[40px] font-bold leading-none tracking-[-0.03em] text-accent">{s.figure}</dt>
+                <dd className="mt-2 flex flex-1 flex-col">
+                  <span className="text-[15px] leading-snug text-ink">{s.claim}</span>
+                  <span className="mt-auto pt-3 text-[12.5px] text-muted">{s.source}</span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4">
+            {PRINCIPLES.map((p) => (
+              <div key={p.title} className="flex flex-col rounded-2xl bg-white/60 p-5 ring-1 ring-line">
+                <h3 className="font-display text-[19px] font-semibold">{p.title}</h3>
+                <p className="mt-1.5 flex-1 text-[15px] text-sub">{p.body}</p>
+                <p className="mt-3 text-[12.5px] text-muted">{p.source}</p>
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
     </div>
   );
