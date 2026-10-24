@@ -101,10 +101,11 @@ export function SrOnly({ children }: { children: React.ReactNode }) {
 export function DuckMark({ size = 30 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <path d="M4 18c0 6 5 10 12 10s12-3 12-8c0-3-2-4-4-4h-3c1-1 1.5-2.5 1.5-4A6.5 6.5 0 0010 12c0 1.6.6 3 1.5 4H8c-2 0-4 0-4 2z" fill="#F2B705" />
-      <path d="M20.5 10.5l5-1.2c.9-.2 1.4.9.7 1.5l-3.2 2.6z" fill="#E07A1F" />
-      <circle cx="17.5" cy="10" r="1.4" fill="#14171C" />
-      <path d="M9 21c2.5 2 6 2.6 9.5 1.6" stroke="#C99100" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M3.5 12.5C5.5 14.5 8 16.5 13.4 16.6A7 7 0 1125.3 15.8C27.8 16.9 29 19 28.6 21.6C28 26.5 22.5 29.2 16 29.2C9 29.2 4.2 26 3.4 20.5C3 17.8 2.8 15 3.5 12.5Z" fill="#F7C21B" />
+      <path d="M9.8 19.6C11.4 23.6 16.4 25 20.4 22.6C18.9 19.4 15.1 18 11.9 18.6C11.1 18.8 10.4 19.1 9.8 19.6Z" fill="#E3A600" />
+      <path d="M24.4 11.4C26.4 10.3 29 10.4 30.3 11.3C30.8 11.7 30.6 12.4 30 12.7C28.3 13.6 26 13.7 24.4 13.1Z" fill="#F08A24" />
+      <circle cx="21.6" cy="9.5" r="1.45" fill="#14171C" />
+      <circle cx="22.1" cy="9" r=".45" fill="#fff" />
     </svg>
   );
 }
