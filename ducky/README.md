@@ -17,6 +17,7 @@ Fonts are self-hosted with `@fontsource`, so no network is needed at build time.
 |---|---|
 | `/` | Landing page, Student/Teacher toggle, link to login |
 | `/login` | Log in or create an account: role picker, Google sign-in (mocked) |
+| `/privacy` | Privacy policy |
 | `/session/demo` | Student interview: voice/text/sketch, reasoning path, misconception tracker, live sim, reviewer loop |
 | `/teacher` | Teacher dashboard: agent policy, live misconception heatmap, SerpApi leak alert, transcripts with score override |
 

@@ -56,7 +56,7 @@ export default function Landing() {
         <Logo />
         <div className="flex-1" />
         <Link href="/login" className="text-sub no-underline hover:text-ink">Login</Link>
-        <a href="#privacy" className="text-sub no-underline hover:text-ink">Privacy</a>
+        <Link href="/privacy" className="text-sub no-underline hover:text-ink">Privacy</Link>
       </header>
 
       <main className="mx-auto max-w-[1240px] px-6 pb-16 pt-6 md:pt-10">
