@@ -5,11 +5,11 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from "rea
 import { Check, DuckMark, Logo, Mic, Pencil, Search, Send, Warn } from "@/components/ui/icons";
 
 const BEATS = [
-  { eyebrow: "Explain", title: "Students talk it through.", body: "Out loud, in writing, or on a sketch. Step by step, in their own words." },
-  { eyebrow: "Catch", title: "It hears where it broke.", body: "Misconceptions are named the moment they show up." },
-  { eyebrow: "Fix", title: "Then they fix it themselves.", body: "A hint, never the answer. The correction is theirs." },
-  { eyebrow: "Check", title: "Every visual gets a second look.", body: "A second model reviews each diagram before a student sees it." },
-  { eyebrow: "Ask", title: "And it keeps asking.", body: "One more question, until the idea actually holds up." },
+  { eyebrow: "Explain", title: "Say it out loud.", body: "Talk, type, or sketch. Your own words, one step at a time." },
+  { eyebrow: "Catch", title: "It hears where you slipped.", body: "A misconception gets named the moment it shows up." },
+  { eyebrow: "Fix", title: "You fix it yourself.", body: "A nudge, never the answer. The correction is yours." },
+  { eyebrow: "Check", title: "Every diagram gets double-checked.", body: "A second model reviews each visual before you see it." },
+  { eyebrow: "Ask", title: "Then it asks one more.", body: "Until the idea actually holds." },
 ] as const;
 
 const STAT_GROUPS = [
@@ -19,12 +19,12 @@ const STAT_GROUPS = [
     stats: [
       {
         figure: "45%",
-        claim: "of U.S. 12th graders score below the NAEP Basic level in math, the highest share ever recorded.",
+        claim: "of U.S. 12th graders score below NAEP Basic in math. The highest share ever recorded.",
         source: "NAEP 2024 · The Nation’s Report Card, released September 2025",
       },
       {
         figure: "33.8%",
-        claim: "of students fail traditional lecture-based STEM courses, versus 21.8% when students actively engage.",
+        claim: "of students fail lecture-based STEM courses. With active learning, that drops to 21.8%.",
         source: "Freeman et al., PNAS 2014 · 225 studies",
       },
     ],
@@ -40,7 +40,7 @@ const STAT_GROUPS = [
       },
       {
         figure: "2×",
-        claim: "the learning gain from an AI tutor versus in-class active learning, in less time, in a randomized trial with Harvard physics students.",
+        claim: "the learning gain of an AI tutor over active learning in class, in less time. Randomized trial, Harvard physics students.",
         source: "Kestin et al., Scientific Reports 2025",
       },
     ],
@@ -49,18 +49,18 @@ const STAT_GROUPS = [
 
 const PRINCIPLES = [
   {
-    title: "Saying it catches it",
-    body: "Students who explain their reasoning build more accurate mental models than those who just read solutions. So students talk through their work instead of pasting in an answer.",
+    title: "Say it to see it",
+    body: "Explaining your reasoning builds sharper mental models than reading a solution. So you talk through the work instead of pasting in an answer.",
     source: "Self-explanation · Bisra et al., 2018 · 64 studies, g = 0.55",
   },
   {
-    title: "Words and pictures together",
-    body: "People learn more from explanations paired with visuals than from words alone. Every diagram and simulation is checked by a second model first.",
+    title: "Words plus pictures",
+    body: "People learn more from words paired with visuals. Every diagram is checked by a second model before you see it.",
     source: "Multimedia principle · Mayer, 2009",
   },
   {
-    title: "Misconceptions don’t leave on their own",
-    body: "Ideas like “heavier things fall faster” survive lectures. Each one is named as it shows up and lands on the teacher’s heatmap.",
+    title: "Misconceptions don’t fade",
+    body: "Ideas like “heavier things fall faster” survive lecture. Ducky names each one the moment it appears and sends it to your teacher’s heatmap.",
     source: "Force Concept Inventory · Hestenes et al., 1992",
   },
 ] as const;
@@ -253,21 +253,6 @@ function Aura({ on }: { on: boolean }) {
   );
 }
 
-function FloatCard({ className, children, show, delay }: { className: string; children: ReactNode; show: boolean; delay: number }) {
-  return (
-    <div
-      className={`absolute z-30 hidden rounded-xl border border-white/15 bg-[#0d1319] px-4 py-3 text-[13px] text-white shadow-[0_20px_40px_-12px_rgba(0,0,0,0.5)] lg:block ${className}`}
-      style={{
-        opacity: show ? 1 : 0,
-        transform: show ? "translateY(0) scale(1)" : "translateY(18px) scale(0.96)",
-        transition: `opacity 900ms ${delay}ms cubic-bezier(0.16,1,0.3,1), transform 900ms ${delay}ms cubic-bezier(0.16,1,0.3,1)`,
-      }}
-    >
-      <div>{children}</div>
-    </div>
-  );
-}
-
 type Spark = { x: number; y: number; vx: number; vy: number; life: number; max: number; size: number; phase: number; white: boolean };
 
 /** Four-point star particles: a soft ambient shimmer plus a burst when the laptop lands and when the lid opens. */
@@ -446,21 +431,23 @@ function Hero() {
           style={{ background: "radial-gradient(closest-side, rgba(255,255,255,0.85), rgba(111,211,182,0.45) 45%, transparent 100%)" }}
         />
       )}
-      <div className="relative mx-auto grid min-h-[calc(100svh-3rem)] max-w-[1440px] items-center gap-8 px-6 pb-28 pt-14 lg:grid-cols-[minmax(0,0.68fr)_minmax(0,1.55fr)] lg:pt-8">
+      <div className="relative mx-auto grid min-h-[calc(100svh-3rem)] max-w-[1440px] items-center gap-8 px-6 pb-28 pt-14 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.45fr)] lg:pt-8">
         <div className="relative z-20" style={{ opacity: 1 - hs * 1.3, transform: `translateY(${-hs * 70}px)` }}>
           <p {...rise(0, "text-[13px] font-semibold uppercase tracking-[0.14em] text-accent-glow")}>Built at HackTX 2026</p>
-          <h1 {...rise(120, "mt-4 font-display text-[56px] font-bold leading-[0.98] tracking-[-0.045em] md:text-[88px]")}>
-            Talk it
-            <br />
-            through.
-          </h1>
-          <p {...rise(260, "mt-4 font-display text-[28px] font-semibold leading-tight tracking-[-0.03em] text-accent-glow md:text-[40px]")}>
-            Find exactly where it broke.
+          <div {...rise(120, "mt-4 flex items-center gap-4")}>
+            <h1 className="font-display text-[56px] font-bold leading-[0.98] tracking-[-0.045em] md:text-[80px]">
+              Talk it
+              <br />
+              through.
+            </h1>
+            <div className="hidden flex-none sm:block">
+              <DuckMark size={104} />
+            </div>
+          </div>
+          <p {...rise(300, "mt-6 max-w-[460px] text-[18px] leading-relaxed text-white/75 md:text-[20px]")}>
+            Explain your work out loud, in writing, or with a sketch. Ducky hears exactly where it broke.
           </p>
-          <p {...rise(400, "mt-6 max-w-[500px] text-[18px] leading-relaxed text-white/70 md:text-[20px]")}>
-            Students explain their work out loud, in writing, or with a sketch. Teachers see where the whole class gets stuck.
-          </p>
-          <div {...rise(540, "mt-9 flex flex-wrap items-center gap-5")}>
+          <div {...rise(460, "mt-9 flex flex-wrap items-center gap-5")}>
             <Link href="/login" className="rounded-full bg-white px-7 py-3.5 text-[16px] font-semibold text-ink no-underline transition-colors hover:bg-white/85">
               Try a session
             </Link>
@@ -468,11 +455,6 @@ function Hero() {
               See how it works ›
             </a>
           </div>
-          <ul {...rise(700, "mt-12 grid max-w-[520px] grid-cols-3 gap-4 border-t border-white/10 pt-6 text-[13px] text-white/60")}>
-            <li><span className="block font-display text-[22px] font-semibold text-white">3 ways</span>to explain it: voice, text, sketch</li>
-            <li><span className="block font-display text-[22px] font-semibold text-white">Live</span>class heatmap for teachers</li>
-            <li><span className="block font-display text-[22px] font-semibold text-white">2-step</span>sign-in protects student data</li>
-          </ul>
         </div>
 
         <div className="relative" style={{ transform: `translateY(${hs * 60}px) scale(${1 + hs * 0.08})` }}>
@@ -487,18 +469,6 @@ function Hero() {
               <DemoScreen beat={stage >= 2 ? beat : 0} />
             </MacBook>
           </div>
-          <FloatCard show={stage >= 2} delay={700} className="left-[3%] top-[-13%]">
-            <p className="flex items-center gap-2 font-semibold"><span className="h-2 w-2 rounded-full bg-[#FF9A5A]" /> Misconception caught</p>
-            <p className="mt-0.5 text-white/65">Mass changes fall speed</p>
-          </FloatCard>
-          <FloatCard show={stage >= 2} delay={1100} className="right-[3%] top-[-13%]">
-            <p className="flex items-center gap-2 font-semibold"><span className="h-2 w-2 rounded-full bg-accent-glow" /> Diagram approved</p>
-            <p className="mt-0.5 text-white/65">Second model, pass 2 of 3</p>
-          </FloatCard>
-          <FloatCard show={stage >= 2} delay={1500} className="bottom-[-15%] right-[12%]">
-            <p className="flex items-center gap-2 font-semibold"><span className="h-2 w-2 rounded-full bg-white" /> Teacher heatmap updated</p>
-            <p className="mt-0.5 text-white/65">Sample class data</p>
-          </FloatCard>
         </div>
       </div>
       <div aria-hidden className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-ground" />
@@ -895,7 +865,7 @@ export default function Landing() {
             </Reveal>
             <ScrollWords
               className="mt-8 max-w-[640px] text-[18px] leading-relaxed text-white md:text-[21px]"
-              text="Intro lectures seat hundreds, and high school teachers often see 150 or more students a day. Nobody can hear every student reason through a problem. Now someone can, and the teacher sees what it heard."
+              text="Lecture halls seat hundreds. High school teachers see 150 students a day. No one can listen to every student think. Ducky can, and your teacher sees what it heard."
             />
 
             {STAT_GROUPS.map((g) => (
