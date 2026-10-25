@@ -88,7 +88,7 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
       <ResizeHandle
         orientation="horizontal"
         label="Resize chat height"
-        className="-my-1.5 mx-auto"
+        className="-my-2.5 w-full"
         measure={() => scroller.current?.getBoundingClientRect().height ?? 360}
         min={200}
         max={() => Math.max(200, window.innerHeight - 160)}

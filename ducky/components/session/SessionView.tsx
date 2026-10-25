@@ -62,8 +62,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   // Layout prefs: visualization column width on wide screens (null = default) and whether it's minimized.
   const [vizWidth, setVizWidth] = usePersistedState<number | null>("ducky:vizWidth", null);
   const [vizMinimized, setVizMinimized] = usePersistedState("ducky:vizMinimized", false);
-  const mainRef = useRef<HTMLElement>(null);
-  const leftRef = useRef<HTMLElement>(null);
+  const panesRef = useRef<HTMLDivElement>(null);
   const vizRef = useRef<HTMLElement>(null);
 
   const userId = session?.userId;
@@ -308,8 +307,8 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
         </div>
       </header>
 
-      <main ref={mainRef} className="mx-auto flex max-w-[1360px] flex-wrap items-start gap-5 p-6 xl:flex-nowrap">
-        <section ref={leftRef} aria-label="Problem and progress" className="flex min-w-0 flex-[1_1_280px] flex-col gap-4">
+      <main className="mx-auto flex max-w-[1360px] flex-wrap items-start gap-5 p-6 xl:flex-nowrap">
+        <section aria-label="Problem and progress" className="flex min-w-0 flex-[1_1_280px] flex-col gap-4">
           <ProblemCard problem={problem} />
           <ReasoningPath steps={steps} />
           {canReveal && (
@@ -329,6 +328,8 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
           <RubricCard rows={rubric} messages={messages} />
         </section>
 
+        {/* Chat and visualization sit side by side from 1024px, with a drag bar between them. */}
+        <div ref={panesRef} className="flex min-w-0 flex-[4_1_760px] flex-wrap items-start gap-5 lg:flex-nowrap">
         <Interview
           messages={messages}
           thinking={thinking}
@@ -341,17 +342,17 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
         />
 
         {vizMinimized ? (
-          <section aria-label="Visualization (minimized)" className="flex-[1_1_100%] xl:flex-none">
+          <section aria-label="Visualization (minimized)" className="flex-[1_1_100%] lg:flex-none">
             <button
               type="button"
               onClick={() => setVizMinimized(false)}
-              className="card flex w-full items-center gap-2.5 px-4 py-3 text-sm font-semibold transition hover:border-accent xl:h-60 xl:w-14 xl:flex-col xl:px-0 xl:py-4"
+              className="card flex w-full items-center gap-2.5 px-4 py-3 text-sm font-semibold transition hover:border-accent lg:h-60 lg:w-14 lg:flex-col lg:px-0 lg:py-4"
             >
               <VizIcon size={22} />
-              <span className="xl:[writing-mode:vertical-rl]">Show visualization</span>
-              {viz.status === "loading" && <Spinner size={14} className="ml-auto text-accent xl:ml-0" />}
+              <span className="lg:[writing-mode:vertical-rl]">Show visualization</span>
+              {viz.status === "loading" && <Spinner size={14} className="ml-auto text-accent lg:ml-0" />}
               {viz.status === "ok" && (
-                <span className="ml-auto h-2 w-2 rounded-full bg-accent xl:ml-0">
+                <span className="ml-auto h-2 w-2 rounded-full bg-accent lg:ml-0">
                   <span className="sr-only">(a visual is ready)</span>
                 </span>
               )}
@@ -363,11 +364,11 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
               orientation="vertical"
               label="Resize chat and visualization"
               invert
-              className="hidden xl:-mx-3 xl:flex"
+              className="hidden lg:-mx-3.5 lg:flex"
               measure={() => vizRef.current?.getBoundingClientRect().width ?? 420}
-              min={320}
-              // Leave the chat at least 360px next to the problem column.
-              max={() => Math.max(320, (mainRef.current?.clientWidth ?? 1360) - 48 - (leftRef.current?.offsetWidth ?? 280) - 360 - 40)}
+              min={280}
+              // Leave the chat at least 360px.
+              max={() => Math.max(280, (panesRef.current?.clientWidth ?? 900) - 360 - 40)}
               onResize={setVizWidth}
               onReset={() => setVizWidth(null)}
             />
@@ -376,7 +377,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
               ref={vizRef}
               aria-label="Visualization"
               style={vizWidth ? ({ "--viz-w": `${vizWidth}px` } as React.CSSProperties) : undefined}
-              className={`flex min-w-0 flex-[2_1_420px] flex-col gap-4 ${vizWidth ? "xl:w-[var(--viz-w)] xl:flex-none" : ""}`}
+              className={`flex min-w-0 flex-[2_1_420px] flex-col gap-4 ${vizWidth ? "lg:w-[var(--viz-w)] lg:flex-none" : ""}`}
             >
               <div className="-mb-2 flex items-center justify-between gap-2 px-1">
                 <p className="eyebrow">Visualization</p>
@@ -430,6 +431,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
             </section>
           </>
         )}
+        </div>
       </main>
     </div>
   );

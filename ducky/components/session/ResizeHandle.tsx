@@ -31,8 +31,9 @@ export default function ResizeHandle({ orientation, label, measure, min, max, on
       aria-orientation={orientation}
       aria-label={`${label}. Drag or use arrow keys to resize; double-click to reset.`}
       tabIndex={0}
+      title="Drag to resize · double-click to reset"
       className={`group flex flex-none touch-none select-none items-center justify-center rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent ${
-        vertical ? "w-3 cursor-col-resize self-stretch" : "h-3 cursor-row-resize"
+        vertical ? "w-5 cursor-col-resize self-stretch" : "h-5 cursor-row-resize"
       } ${className}`}
       onPointerDown={(e) => {
         e.preventDefault();
@@ -61,8 +62,14 @@ export default function ResizeHandle({ orientation, label, measure, min, max, on
     >
       <span
         aria-hidden="true"
-        className={`rounded-full bg-edge transition group-hover:bg-accent group-active:bg-accent ${vertical ? "h-10 w-1" : "h-1 w-10"}`}
-      />
+        className={`flex items-center justify-center gap-[3px] rounded-full border border-edge bg-white shadow-sm transition group-hover:border-accent group-hover:bg-accent-tint group-active:border-accent group-active:bg-accent-tint ${
+          vertical ? "h-16 w-3.5 flex-col" : "h-3.5 w-16"
+        }`}
+      >
+        {[0, 1, 2].map((i) => (
+          <span key={i} className="h-[3px] w-[3px] rounded-full bg-sub group-hover:bg-accent" />
+        ))}
+      </span>
     </div>
   );
 }
