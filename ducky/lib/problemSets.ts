@@ -45,28 +45,40 @@ export const PROBLEM_SETS: ProblemSetRecord[] = [
     sessionIds: ["demo-phys-2", "demo-phys-2-p2", "demo-phys-2-p3"],
   },
   {
-    id: "cs-314-ps1",
+    id: "cs-314-stacks",
     classId: "cs-314",
     number: 1,
-    title: "Insertion sort",
-    summary: "Trace the passes, count comparisons, and name the worst case.",
+    title: "Stacks and queues",
+    summary: "Track stack and queue state, then evaluate a postfix expression.",
     problems: 3,
     completed: 0,
     due: "Mon, Nov 2",
     posted: "Thu, Oct 22",
-    sessionIds: ["demo-cs", "demo-cs-p2", "demo-cs-p3"],
+    sessionIds: ["demo-cs-stacks-p1", "demo-cs-stacks-p2", "demo-cs-stacks-p3"],
   },
   {
-    id: "cs-314-ps2",
+    id: "cs-314-sorting",
     classId: "cs-314",
     number: 2,
-    title: "Hash maps",
-    summary: "Buckets, collisions, and why average O(1) hides a linear worst case.",
-    problems: 4,
+    title: "Sorting",
+    summary: "Insertion sort traces, mergesort's merge step, and worst-case runtime.",
+    problems: 3,
     completed: 0,
     due: "Mon, Nov 9",
     posted: "Fri, Oct 23",
-    sessionIds: ["demo-cs-2", "demo-cs-2-p2", "demo-cs-2-p3", "demo-cs-2-p4"],
+    sessionIds: ["demo-cs-sorting-p1", "demo-cs-sorting-p2", "demo-cs-sorting-p3"],
+  },
+  {
+    id: "cs-314-bst",
+    classId: "cs-314",
+    number: 3,
+    title: "Binary search trees",
+    summary: "Insertion, traversals, search paths, and recursive tree code.",
+    problems: 3,
+    completed: 0,
+    due: "Mon, Nov 16",
+    posted: "Fri, Oct 23",
+    sessionIds: ["demo-cs-bst-p1", "demo-cs-bst-p2", "demo-cs-bst-p3"],
   },
   {
     id: "math-325k-ps1",
@@ -139,10 +151,14 @@ export function getClassProgress(classId: string): ClassProgress {
   const problems = sets.reduce((total, set) => total + set.problems, 0);
   const completed = sets.reduce((total, set) => total + set.completed, 0);
   const unfinished = sets.filter((set) => set.completed < set.problems);
+  // Keep showing the set the student is already working on; otherwise start
+  // with the lowest-numbered set rather than the newest one.
+  const inProgress = unfinished.filter((set) => set.completed > 0);
+  const next = inProgress[0] ?? [...unfinished].sort((a, b) => a.number - b.number)[0] ?? null;
   return {
     problems,
     completed,
-    due: unfinished.find((set) => set.due)?.due ?? null,
-    activeSet: unfinished[0] ?? null,
+    due: next?.due ?? null,
+    activeSet: next,
   };
 }

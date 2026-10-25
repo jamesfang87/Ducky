@@ -9,7 +9,7 @@ import type { Policy, Problem } from "@/lib/types";
  * these functions, so swapping in Supabase later only changes this file.
  *
  * Each signed-in user gets their own copy of a session template ("demo",
- * "demo-cs"), keyed by (sessionId, userId), so nobody can read or advance
+ * "demo-cs-stacks-p1"), keyed by (sessionId, userId), so nobody can read or advance
  * someone else's session.
  */
 
@@ -290,277 +290,361 @@ const TEMPLATES: Record<string, Template> = {
     startStep: 0,
     opening: "The ball leaves the cliff horizontally. What is its vertical velocity at that instant?",
   },
-  "demo-cs": {
+  "demo-cs-stacks-p1": {
     problem: {
       index: 1,
       total: 3,
       course: "CS 314",
-      set: "Problem Set 1 · Insertion sort",
+      set: "Problem Set 1 · Stacks and queues",
       prompt:
-        "Trace insertion sort on the array [5, 2, 4, 6, 1, 3], showing the array after each pass of the outer loop. Then explain why insertion sort takes O(n²) comparisons in the worst case, and what input causes that worst case.",
+        "What does this code print?\n\n" +
+        "Deque<Integer> stack = new ArrayDeque<>();\n" +
+        "stack.push(4);\n" +
+        "stack.push(7);\n" +
+        "stack.push(2);\n" +
+        "stack.pop();\n" +
+        "stack.push(9);\n" +
+        "System.out.print(stack.peek());\n" +
+        "System.out.print(stack.pop());\n" +
+        "System.out.print(stack.size());",
     },
     policy: { ...DEFAULT_POLICY, revealAfterHints: true },
     solution: {
       text:
-        "Passes: [2,5,4,6,1,3] → [2,4,5,6,1,3] → [2,4,5,6,1,3] → [1,2,4,5,6,3] → [1,2,3,4,5,6]. " +
-        "Each new element is compared with every element in the sorted prefix in the worst case, so the total is 1 + 2 + … + (n−1) = n(n−1)/2 = O(n²). " +
-        "The worst case is a reverse-sorted array.",
-      finalAnswerPatterns: [
-        /\[\s*1\s*,\s*2\s*,\s*3\s*,\s*4\s*,\s*5\s*,\s*6\s*\]/,
-        /\[\s*1\s*,\s*2\s*,\s*4\s*,\s*5\s*,\s*6\s*,\s*3\s*\]/,
-        /n\s*\(\s*n\s*[-−]\s*1\s*\)\s*\/\s*2/i,
-      ],
+        "The stack is [4], then [4, 7], then [4, 7, 2]. The pop removes 2, leaving [4, 7]. " +
+        "Pushing 9 gives [4, 7, 9]. peek prints 9 without removing it, pop prints 9 and removes it, " +
+        "and size prints 2. Output: 992.",
+      finalAnswerPatterns: [/\b9\s*,?\s*9\s*,?\s*2\b/],
     },
     misconceptions: [
-      { id: "cs-swap-vs-shift", label: "Thinks insertion sort swaps distant elements instead of shifting the prefix" },
-      { id: "cs-prefix-unsorted", label: "Doesn't see that the left part is always sorted" },
-      { id: "cs-best-case-n2", label: "Thinks it's O(n²) even on already-sorted input" },
-      { id: "cs-worst-case-input", label: "Wrong worst-case input (e.g. random instead of reverse-sorted)" },
-      { id: "cs-counts-passes-not-comparisons", label: "Counts outer passes (n) instead of total comparisons" },
+      { id: "stk-peek-removes", label: "Thinks peek removes the top element" },
+      { id: "stk-lifo-vs-fifo", label: "Treats the stack as a queue" },
+      { id: "stk-size-order", label: "Counts the size before the second pop" },
+      { id: "stk-top-direction", label: "Reads the bottom of the stack instead of the top" },
     ],
     hints: [
-      "Look only at the first two elements. After the first pass, what must be true about the part of the array to the left of the element you're inserting?",
-      "For the element at index i, how many elements might it have to move past in the worst case? Now add that up for every i.",
+      "Track the stack after the three pushes and the first pop.",
+      "Does peek remove anything? How many elements are left after the second pop?",
     ],
     steps: [
-      "Understand the invariant: the left part is sorted",
-      "Trace each pass on [5, 2, 4, 6, 1, 3]",
-      "Count comparisons in the worst case",
-      "Name the worst-case input and the Big-O",
+      "Track the stack after each push",
+      "Apply pop and note that it removes the top",
+      "Distinguish peek from pop",
+      "Count the remaining elements for size",
     ],
     startStep: 0,
-    opening: "Before we trace anything: when insertion sort looks at a new element, what's true about everything to its left?",
+    opening: "What is on top of the stack after the first three pushes?",
   },
-  "demo-cs-p2": {
+  "demo-cs-stacks-p2": {
     problem: {
       index: 2,
       total: 3,
       course: "CS 314",
-      set: "Problem Set 1 · Insertion sort",
+      set: "Problem Set 1 · Stacks and queues",
       prompt:
-        "Trace insertion sort on [3, 1, 4, 2]. Show the array after each pass of the outer loop, and count the comparisons.",
+        "What does this code print?\n\n" +
+        "Queue<Integer> q = new ArrayDeque<>();\n" +
+        "q.add(4);\n" +
+        "q.add(7);\n" +
+        "q.add(2);\n" +
+        "q.remove();\n" +
+        "q.add(9);\n" +
+        "System.out.print(q.peek());\n" +
+        "System.out.print(q.remove());\n" +
+        "System.out.print(q.size());",
     },
     policy: { ...DEFAULT_POLICY, revealAfterHints: true },
     solution: {
       text:
-        "Pass 1 inserts 1: [1, 3, 4, 2], 1 comparison. " +
-        "Pass 2 inserts 4: [1, 3, 4, 2], 1 comparison. " +
-        "Pass 3 inserts 2: [1, 2, 3, 4], 3 comparisons (2 vs 4, 2 vs 3, 2 vs 1). " +
-        "Total: 5 comparisons.",
-      finalAnswerPatterns: [/\[\s*1\s*,\s*2\s*,\s*3\s*,\s*4\s*\]/i, /5\s*comparisons?/i],
+        "The queue is [4, 7, 2]. remove() takes the front 4, leaving [7, 2], and adding 9 gives [7, 2, 9]. " +
+        "peek prints 7 without removing it, remove prints 7 and leaves [2, 9], and size prints 2. Output: 772.",
+      finalAnswerPatterns: [/\b7\s*,?\s*7\s*,?\s*2\b/],
     },
     misconceptions: [
-      { id: "is2-counts-swaps", label: "Counts swaps instead of comparisons" },
-      { id: "is2-misses-last-compare", label: "Stops the count before the failed comparison" },
-      { id: "is2-wrong-prefix", label: "Shows an unsorted prefix after a pass" },
-      { id: "is2-extra-pass", label: "Runs a fourth pass after the array is sorted" },
+      { id: "q-fifo-vs-lifo", label: "Uses LIFO order for the queue" },
+      { id: "q-peek-removes", label: "Thinks peek removes the front element" },
+      { id: "q-remove-end", label: "Removes the newest element instead of the oldest" },
+      { id: "q-size-order", label: "Counts the size before the second removal" },
     ],
     hints: [
-      "After each pass, everything to the left of the current element is sorted. What is the sorted prefix on pass 2?",
-      "For 2, how many elements does it compare against before it stops?",
+      "After the three adds, which element is at the front of the queue?",
+      "Does peek change the queue, and what does remove take?",
     ],
     steps: [
-      "Start with [3] as the sorted prefix",
-      "Insert 1 and show the array",
-      "Insert 4 and show the array",
-      "Insert 2 and count every comparison",
+      "Track the queue after each add",
+      "Remove from the front and add to the back",
+      "Distinguish peek from remove",
+      "Count the remaining elements for size",
     ],
     startStep: 0,
-    opening: "On the first pass, what exactly happens to the second element?",
+    opening: "After the three adds, which element is at the front of the queue?",
   },
-  "demo-cs-p3": {
+  "demo-cs-stacks-p3": {
     problem: {
       index: 3,
       total: 3,
       course: "CS 314",
-      set: "Problem Set 1 · Insertion sort",
+      set: "Problem Set 1 · Stacks and queues",
       prompt:
-        "Explain why insertion sort runs in O(n) time on an already-sorted array but O(n²) on a reverse-sorted array. Include the comparison counts for an array of length n.",
+        "Evaluate the postfix expression 5 3 + 8 2 - * using a stack. Give the final value and the stack after each operator.",
     },
     policy: { ...DEFAULT_POLICY, revealAfterHints: true },
     solution: {
       text:
-        "Sorted: each new element compares once with its left neighbor and moves nowhere, so there are n−1 comparisons = O(n). " +
-        "Reverse-sorted: the element at position i moves past all i elements before it, so the total is 1 + 2 + … + (n−1) = n(n−1)/2 = O(n²).",
-      finalAnswerPatterns: [
-        /n\s*(?:-|−)\s*1\s*comparisons?/i,
-        /n\s*\(\s*n\s*(?:-|−)\s*1\s*\)\s*\/\s*2/i,
-        /O\s*\(\s*n\s*(?:\^?2|²)\s*\)/i,
-      ],
+        "Push 5 and 3, then '+' pops 3 and 5 and pushes 8. Push 8 and 2, then '-' pops 2 and 8 and pushes 6. " +
+        "Finally '*' pops 6 and 8 and pushes 48. Final value: 48. " +
+        "The stack is [8] after '+', [8, 6] after '-', and [48] after '*'.",
+      finalAnswerPatterns: [/\b48\b/],
     },
     misconceptions: [
-      { id: "is3-confuses-best-worst", label: "Swaps the best and worst cases" },
-      { id: "is3-forgets-shifts", label: "Counts comparisons but not shifts in the reverse case" },
-      { id: "is3-series-error", label: "Sums 1 + 2 + … + n incorrectly" },
-      { id: "is3-bigo-from-n", label: "Says both cases are O(n) because there are n elements" },
+      { id: "postfix-operand-order", label: "Reverses the operands for subtraction or division" },
+      { id: "postfix-operator-push", label: "Pushes operators instead of applying them" },
+      { id: "postfix-infix", label: "Evaluates it as if it were infix" },
+      { id: "postfix-final-stack", label: "Stops before the final operator" },
     ],
     hints: [
-      "In the sorted case, how many comparisons does the inner loop make before it stops?",
-      "In the reverse case, how far does the element at index i have to move?",
+      "Where do 5 and 3 go when you read the expression left to right?",
+      "When you see '-', which two values does it combine, and in what order?",
     ],
     steps: [
-      "Count comparisons for one element in the sorted case",
-      "Sum them for n elements",
-      "Count comparisons for one element in the reverse case",
-      "Sum the series and state the Big-O",
+      "Push operands as you read them",
+      "On an operator, pop two values",
+      "Apply the operator with the second pop on the left",
+      "Push the result",
+      "Read the final stack",
     ],
     startStep: 0,
-    opening: "Start with the best case: what does the inner loop do when the array is already sorted?",
+    opening: "Where do 5 and 3 go when you read the expression left to right?",
   },
-  "demo-cs-2": {
+  "demo-cs-sorting-p1": {
     problem: {
       index: 1,
-      total: 4,
+      total: 3,
       course: "CS 314",
-      set: "Problem Set 2 · Hash maps",
+      set: "Problem Set 2 · Sorting",
       prompt:
-        "A hash table has 8 buckets and uses h(k) = k mod 8 with separate chaining. Insert 12, 20, 5, 29, and 17 in that order, and show the table. Then explain why a lookup is O(1) on average but O(n) in the worst case.",
+        "Show the array after each pass of insertion sort on [7, 3, 9, 1, 5], then give the total number of comparisons, including the comparison that stops each inner loop.",
     },
     policy: { ...DEFAULT_POLICY, revealAfterHints: true },
     solution: {
       text:
-        "Buckets: 1 → [17]; 4 → [12, 20]; 5 → [5, 29]; every other bucket is empty. " +
-        "12 mod 8 = 4 and 20 mod 8 = 4 collide, and so do 5 and 29 (both 5). " +
-        "With a good hash and a bounded load factor each chain stays short, so a lookup is O(1) on average. " +
-        "In the worst case every key hashes to one bucket, so the chain holds all n keys and a lookup walks O(n) nodes.",
-      finalAnswerPatterns: [
-        /bucket\s*4[^.]*12[^.]*20/i,
-        /12[^.]*20[^.]*bucket\s*4/i,
-        /worst[^.]*O\s*\(\s*n\s*\)/i,
-      ],
+        "Pass 1 inserts 3: [3, 7, 9, 1, 5], 1 comparison. " +
+        "Pass 2 inserts 9: [3, 7, 9, 1, 5], 1 comparison. " +
+        "Pass 3 inserts 1: [1, 3, 7, 9, 5], 3 comparisons. " +
+        "Pass 4 inserts 5: [1, 3, 5, 7, 9], 3 comparisons. " +
+        "Total: 8 comparisons.",
+      finalAnswerPatterns: [/\[\s*1\s*,\s*3\s*,\s*5\s*,\s*7\s*,\s*9\s*\]/i, /8\s*comparisons?/i],
     },
     misconceptions: [
-      { id: "hm-drops-collision", label: "Drops one of the keys that collide in a bucket" },
-      { id: "hm-mod-error", label: "Computes a bucket with the wrong modulus" },
-      { id: "hm-worst-case-constant", label: "Says the worst case is also O(1) because the hash is O(1)" },
-      { id: "hm-no-collisions", label: "Claims there are no collisions" },
-      { id: "hm-load-factor-bigo", label: "Thinks the load factor changes the big-O of a single lookup" },
+      { id: "ins-swaps-not-shifts", label: "Swaps elements instead of shifting the prefix" },
+      { id: "ins-missing-pass", label: "Skips a pass or stops before the last element" },
+      { id: "ins-count-success-only", label: "Counts only comparisons that trigger a shift" },
+      { id: "ins-unsorted-prefix", label: "Loses the sorted-prefix invariant" },
     ],
     hints: [
-      "Take each key mod 8. Which two keys land in the same bucket?",
-      "If every key landed in one bucket, how many nodes would you walk to find the last one?",
+      "After the first pass, what does the array look like?",
+      "For 5, how many elements does it compare against before it stops?",
     ],
     steps: [
-      "Compute h(k) = k mod 8 for each key",
-      "Place each key in its bucket with separate chaining",
-      "Explain why the average lookup is O(1)",
-      "Describe the worst case and its complexity",
+      "Start with [7] as the sorted prefix",
+      "Insert 3, shifting 7 right",
+      "Insert 9 and note one comparison",
+      "Insert 1 and count three comparisons",
+      "Insert 5 and count three comparisons",
     ],
     startStep: 0,
-    opening: "Start with the hash function: which bucket does 12 land in, and why?",
+    opening: "After the first pass, what does the array look like?",
   },
-  "demo-cs-2-p2": {
+  "demo-cs-sorting-p2": {
     problem: {
       index: 2,
-      total: 4,
+      total: 3,
       course: "CS 314",
-      set: "Problem Set 2 · Hash maps",
+      set: "Problem Set 2 · Sorting",
       prompt:
-        "An 8-bucket table uses h(k) = k mod 8 with separate chaining. Insert 9, 17, 25, 33, and 1 in that order, show the table, and say how many comparisons it takes to find 33.",
+        "A mergesort call on [38, 27, 43, 3, 9, 82, 10] splits it into [38, 27, 43] and [3, 9, 82, 10], then sorts each half. " +
+        "The sorted halves are [27, 38, 43] and [3, 9, 10, 82]. Give the array after the merge step and the number of comparisons the merge makes.",
     },
     policy: { ...DEFAULT_POLICY, revealAfterHints: true },
     solution: {
       text:
-        "All five keys have remainder 1 when divided by 8, so they all land in bucket 1. " +
-        "The chain in insertion order is [9, 17, 25, 33, 1]. " +
-        "Finding 33 compares 9, 17, 25, then 33: 4 comparisons.",
+        "Compare the fronts: 27 vs 3 → 3; 27 vs 9 → 9; 27 vs 10 → 10; 27 vs 82 → 27; 38 vs 82 → 38; 43 vs 82 → 43. " +
+        "The left half is empty, so copy the remaining 82. " +
+        "Merged array: [3, 9, 10, 27, 38, 43, 82]. The merge makes 6 comparisons.",
       finalAnswerPatterns: [
-        /bucket\s*1/i,
-        /\[\s*9\s*,\s*17\s*,\s*25\s*,\s*33\s*,\s*1\s*\]/i,
-        /4\s*comparisons?/i,
+        /\[\s*3\s*,\s*9\s*,\s*10\s*,\s*27\s*,\s*38\s*,\s*43\s*,\s*82\s*\]/i,
+        /6\s*comparisons?/i,
       ],
     },
     misconceptions: [
-      { id: "hm2-splits-buckets", label: "Spreads the keys across different buckets" },
-      { id: "hm2-counts-one", label: "Counts 1 comparison because it looks up the bucket directly" },
-      { id: "hm2-drops-key", label: "Drops a key from the chain" },
-      { id: "hm2-wrong-order", label: "Sorts the chain instead of keeping insertion order" },
+      { id: "merge-compares-nonfront", label: "Compares arbitrary elements instead of the two fronts" },
+      { id: "merge-forgets-remainder", label: "Leaves out the rest of a half after one side empties" },
+      { id: "merge-counts-copies", label: "Counts copies as comparisons" },
+      { id: "merge-unsorted-halves", label: "Merges the unsorted halves instead of the sorted ones" },
     ],
     hints: [
-      "Compute each key mod 8. What do all five remainders have in common?",
-      "The chain keeps insertion order. How many nodes come before 33?",
+      "Which two elements does the merge compare first?",
+      "After 10 is copied, what are the two front elements?",
     ],
     steps: [
-      "Hash each key mod 8",
-      "Build the chain in insertion order",
-      "Count comparisons up to 33",
-      "Explain why this is the worst case",
+      "Put a pointer at the front of each sorted half",
+      "Compare the two front values and copy the smaller",
+      "Advance that half's pointer",
+      "Repeat until one half is empty, then copy the rest",
+      "Count the comparisons between fronts",
     ],
     startStep: 0,
-    opening: "Hash the first two keys. Where do they land?",
+    opening: "Which two elements does the merge compare first?",
   },
-  "demo-cs-2-p3": {
+  "demo-cs-sorting-p3": {
     problem: {
       index: 3,
-      total: 4,
+      total: 3,
       course: "CS 314",
-      set: "Problem Set 2 · Hash maps",
-      prompt:
-        "A table has 10 buckets and h(k) = k mod 10. Insert 15, 25, 35, and 5. Show the table, then compute the load factor and explain what it predicts about lookup cost.",
+      set: "Problem Set 2 · Sorting",
+      prompt: "What is the worst-case runtime of insertion sort, and what input shape produces it?",
     },
     policy: { ...DEFAULT_POLICY, revealAfterHints: true },
     solution: {
       text:
-        "Every key ends in 5, so all four hash to bucket 5: [15, 25, 35, 5]. " +
-        "The load factor is α = n/m = 4/10 = 0.4. " +
-        "With separate chaining the expected chain length is α, so lookups are O(1 + α), " +
-        "but this particular hash clusters all four keys, so a lookup takes up to 4 comparisons.",
-      finalAnswerPatterns: [/0\.4/i, /bucket\s*5/i, /\[\s*15\s*,\s*25\s*,\s*35\s*,\s*5\s*\]/i],
+        "The worst case is O(n²). It happens on reverse-sorted input: each new element shifts past every earlier element, " +
+        "so the total work is 1 + 2 + … + (n − 1) = n(n − 1)/2, which is O(n²).",
+      finalAnswerPatterns: [/O\s*\(\s*n\s*(?:\^?2|²)\s*\)/i, /reverse[- ]sorted/i],
     },
     misconceptions: [
-      { id: "hm3-load-factor-count", label: "Says the load factor is 4 instead of 4/10" },
-      { id: "hm3-assumes-even", label: "Assumes the load factor guarantees an even spread" },
-      { id: "hm3-wrong-bucket", label: "Uses a different bucket for the keys" },
-      { id: "hm3-ignores-clustering", label: "Claims the lookup is 1 comparison because α < 1" },
+      { id: "ins2-confuses-best", label: "Gives the best-case O(n) instead of the worst case" },
+      { id: "ins2-wrong-input", label: "Names sorted or random input as the worst case" },
+      { id: "ins2-linear", label: "Says O(n) because there is one outer loop" },
+      { id: "ins2-no-series", label: "Knows each element moves but cannot sum the work" },
     ],
     hints: [
-      "All four keys end in 5. What does mod 10 do to them?",
-      "Load factor is the number of keys divided by the number of buckets.",
+      "Which input makes the inner loop work hardest?",
+      "For the element at position i, how many earlier elements might it pass?",
     ],
     steps: [
-      "Hash each key mod 10",
-      "Show the chain in bucket 5",
-      "Compute the load factor n/m",
-      "Compare the expected chain length with this actual chain",
+      "Identify the best and worst input shapes",
+      "Count the shifts for one element",
+      "Sum the shifts over all elements",
+      "Simplify the sum to Big-O",
     ],
     startStep: 0,
-    opening: "Hash 15 and 25 mod 10. What do they have in common?",
+    opening: "Which input makes the inner loop work hardest?",
   },
-  "demo-cs-2-p4": {
+  "demo-cs-bst-p1": {
     problem: {
-      index: 4,
-      total: 4,
+      index: 1,
+      total: 3,
       course: "CS 314",
-      set: "Problem Set 2 · Hash maps",
+      set: "Problem Set 3 · Binary search trees",
       prompt:
-        "Explain why separate chaining gives O(1) average lookup but O(n) worst-case lookup. Describe a set of keys and a hash function that produces the worst case.",
+        "Insert 50, 30, 70, 20, 40, 60, 80 into an empty binary search tree. Give the inorder and preorder traversals.",
     },
     policy: { ...DEFAULT_POLICY, revealAfterHints: true },
     solution: {
       text:
-        "The average case assumes uniform hashing and a bounded load factor α = n/m, so the expected chain length is α and a lookup is O(1 + α) = O(1). " +
-        "In the worst case all n keys collide in one bucket. For example, h(k) = 0 for every key, or keys that all share the same remainder mod m. " +
-        "The chain then holds n nodes and a lookup is O(n).",
-      finalAnswerPatterns: [/h\s*\(\s*k\s*\)\s*=\s*0/i, /O\s*\(\s*n\s*\)/i, /all\s+n\s+keys/i],
+        "The root is 50; 30 goes left and 70 right. Then 20 and 40 go below 30, and 60 and 80 go below 70. " +
+        "Inorder (left, root, right): 20, 30, 40, 50, 60, 70, 80. " +
+        "Preorder (root, left, right): 50, 30, 20, 40, 70, 60, 80.",
+      finalAnswerPatterns: [
+        /20\s*,?\s*30\s*,?\s*40\s*,?\s*50\s*,?\s*60\s*,?\s*70\s*,?\s*80/,
+        /50\s*,?\s*30\s*,?\s*20\s*,?\s*40\s*,?\s*70\s*,?\s*60\s*,?\s*80/,
+      ],
     },
     misconceptions: [
-      { id: "hm4-worst-constant", label: "Says the worst case is also O(1)" },
-      { id: "hm4-average-always", label: "Thinks uniform hashing is guaranteed rather than assumed" },
-      { id: "hm4-resizing-fixes-adversary", label: "Believes resizing alone prevents adversarial collisions" },
-      { id: "hm4-low-load-fixes-worst", label: "Says a low load factor makes the worst case O(1)" },
+      { id: "bst-inorder-wrong", label: "Uses root-left-right for inorder" },
+      { id: "bst-insert-order", label: "Ignores comparisons and inserts by level" },
+      { id: "bst-duplicates", label: "Places equal keys on both sides" },
+      { id: "bst-preorder-wrong", label: "Gives the inorder sequence for preorder" },
     ],
     hints: [
-      "What assumption about the hash function keeps chains short?",
-      "Can you choose a hash function where every key gets the same bucket?",
+      "Where does 30 go relative to the root 50?",
+      "In inorder, do you visit the root before or after the left subtree?",
     ],
     steps: [
-      "State the assumption behind the average case",
-      "Relate expected chain length to the load factor",
-      "Construct an all-collide example",
-      "State the worst-case complexity",
+      "Insert each key by comparing with the current node",
+      "Build the tree shape",
+      "Inorder: left, root, right",
+      "Preorder: root, left, right",
     ],
     startStep: 0,
-    opening: "What has to be true about the hash function for the average case to hold?",
+    opening: "Where does 30 go relative to the root 50?",
+  },
+  "demo-cs-bst-p2": {
+    problem: {
+      index: 2,
+      total: 3,
+      course: "CS 314",
+      set: "Problem Set 3 · Binary search trees",
+      prompt:
+        "Using the BST from Problem 1 (root 50, with 30, 70, 20, 40, 60, 80 inserted), list the nodes visited when searching for 60.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "Start at 50: 60 > 50, so go right to 70. Then 60 < 70, so go left to 60 and stop. " +
+        "The search visits 50, 70, 60.",
+      finalAnswerPatterns: [/50\s*(?:,|→|->)\s*70\s*(?:,|→|->)\s*60/],
+    },
+    misconceptions: [
+      { id: "search-stops-root", label: "Stops at the root without comparing" },
+      { id: "search-wrong-direction", label: "Goes left when the target is larger" },
+      { id: "search-inorder", label: "Lists an inorder traversal instead of the search path" },
+      { id: "search-misses", label: "Says 60 is not in the tree" },
+    ],
+    hints: [
+      "60 is larger than 50. Which subtree do you search?",
+      "At 70, is 60 smaller or larger? Which way do you go?",
+    ],
+    steps: [
+      "Compare the target with the current node",
+      "Go left if it is smaller, right if it is larger",
+      "Repeat until found or the child is null",
+      "List only the nodes visited",
+    ],
+    startStep: 0,
+    opening: "60 is larger than 50. Which subtree do you search?",
+  },
+  "demo-cs-bst-p3": {
+    problem: {
+      index: 3,
+      total: 3,
+      course: "CS 314",
+      set: "Problem Set 3 · Binary search trees",
+      prompt:
+        "Using the same BST, give the exact output of this method:\n\n" +
+        "void mystery(Node n) {\n" +
+        "  if (n == null) return;\n" +
+        "  mystery(n.right);\n" +
+        "  System.out.print(n.val + \" \");\n" +
+        "  mystery(n.left);\n" +
+        "}",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "The method recurses right, prints the node, then recurses left: right, root, left. " +
+        "That is reverse inorder, so the values come out from largest to smallest: " +
+        "80 70 60 50 40 30 20.",
+      finalAnswerPatterns: [/80\s+70\s+60\s+50\s+40\s+30\s+20/],
+    },
+    misconceptions: [
+      { id: "rev-inorder-as-inorder", label: "Reads the method as left-root-right" },
+      { id: "rev-prints-root-first", label: "Prints the root before recursing right" },
+      { id: "rev-misses-leaves", label: "Skips leaves or stops early" },
+      { id: "rev-postorder", label: "Calls the traversal postorder" },
+    ],
+    hints: [
+      "The method recurses right before printing. Which node prints first?",
+      "For a BST, what order does right-root-left produce?",
+    ],
+    steps: [
+      "Read the order of recursive calls and the print",
+      "Identify right, root, left",
+      "Recognize that as reverse inorder",
+      "Apply it to the tree",
+    ],
+    startStep: 0,
+    opening: "The method recurses right before printing. Which node prints first?",
   },
   "demo-math-325k-ps1-p1": {
     problem: {

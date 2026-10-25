@@ -30,7 +30,11 @@ export function ProblemCard({
         ))}
       </div>
       <p className="eyebrow mb-1.5">Problem {problem.index}</p>
-      <p className="text-base leading-relaxed">{problem.prompt}</p>
+      {problem.prompt.includes("\n") ? (
+        <pre className="overflow-x-auto whitespace-pre font-mono text-[13px] leading-relaxed">{problem.prompt}</pre>
+      ) : (
+        <p className="text-base leading-relaxed">{problem.prompt}</p>
+      )}
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
         <span className="text-[13px] text-muted">
