@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { sendJson } from "./dialog";
 import { PROBLEM, TRANSCRIPTS } from "@/lib/mock";
 import type { LeakHit, TranscriptRow } from "@/lib/types";
@@ -12,6 +12,8 @@ export function LeakAlert() {
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  const [variants, setVariants] = useState<string[] | null>(null);
+  const [rewriting, setRewriting] = useState(false);
   const leaked = result?.status === "leaked" && !dismissed;
 
   const run = async () => {
@@ -24,6 +26,18 @@ export function LeakAlert() {
       setError(e instanceof Error ? e.message : "The leak check failed.");
     } finally {
       setChecking(false);
+    }
+  };
+
+  const rewrite = async () => {
+    setRewriting(true);
+    setError(null);
+    try {
+      setVariants((await sendJson<{ variants: string[] }>("/api/teacher/mutate", "POST", { prompt: PROBLEM.prompt })).variants);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't write rewrites.");
+    } finally {
+      setRewriting(false);
     }
   };
 
@@ -61,8 +75,24 @@ export function LeakAlert() {
           {error}
         </p>
       )}
+      {variants && (
+        <ol className="mt-3.5 flex flex-col gap-2.5">
+          {variants.map((v, i) => (
+            <li key={i} className="rounded-[10px] border border-line p-3 text-sm">
+              <p>{v}</p>
+              <button type="button" className="btn mt-2 h-8 px-3 text-[13px]" onClick={() => void navigator.clipboard?.writeText(v)}>
+                Copy
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
       <div className="mt-3.5 flex flex-wrap gap-2">
-        {leaked && <button className="btn-dark">Suggest a rewrite</button>}
+        {leaked && (
+          <button className="btn-dark" onClick={rewrite} disabled={rewriting}>
+            {rewriting ? "Rewriting…" : "Suggest a rewrite"}
+          </button>
+        )}
         <button className="btn h-10" onClick={run} disabled={checking}>
           {checking ? (
             <>
@@ -86,19 +116,43 @@ export function LeakAlert() {
 
 export function TranscriptTable({ liveRow }: { liveRow?: TranscriptRow }) {
   const [rows, setRows] = useState<TranscriptRow[]>(TRANSCRIPTS);
+  const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [saved, setSaved] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const all = liveRow ? [liveRow, ...rows] : rows;
+
+  // Overrides saved earlier come back with their reasons.
+  useEffect(() => {
+    sendJson<{ overrides: { id: string; teacher: number; reason: string }[] }>("/api/teacher/rubric", "GET")
+      .then(({ overrides }) => {
+        setRows((rs) => rs.map((r) => ({ ...r, override: overrides.find((o) => o.id === r.id)?.teacher ?? r.override })));
+        setReasons((x) => ({ ...x, ...Object.fromEntries(overrides.map((o) => [o.id, o.reason])) }));
+        setSaved(Object.fromEntries(overrides.map((o) => [o.id, o.reason])));
+      })
+      .catch(() => {});
+  }, []);
 
   const setOverride = (id: string, v: string) =>
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, override: v === "" ? null : Math.max(0, Math.min(100, Number(v))) } : r)));
+
+  const save = async (r: TranscriptRow) => {
+    setErrors((e) => ({ ...e, [r.id]: "" }));
+    try {
+      await sendJson("/api/teacher/rubric", "POST", { id: r.id, ai: r.aiScore, score: r.override, reason: reasons[r.id] ?? "" });
+      setSaved((s) => ({ ...s, [r.id]: r.override === null ? "" : (reasons[r.id] ?? "") }));
+    } catch (e) {
+      setErrors((x) => ({ ...x, [r.id]: e instanceof Error ? e.message : "Couldn't save." }));
+    }
+  };
 
   return (
     <section aria-label="Transcripts and rubric scores" className="card min-w-0 flex-[3_1_480px] p-5">
       <div className="mb-3.5 flex flex-wrap items-baseline gap-2">
         <h2 className="font-display text-lg font-semibold">Transcripts &amp; rubric scores</h2>
-        <span className="text-[13px] text-muted">AI score · you can override</span>
+        <span className="text-[13px] text-muted">AI score · override with a reason, both are kept</span>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[520px] border-collapse text-sm">
+        <table className="w-full min-w-[560px] border-collapse text-sm">
           <thead>
             <tr className="text-left text-xs uppercase tracking-[0.06em] text-muted">
               <th className="pb-2.5 pr-2 font-semibold">Student</th>
@@ -109,7 +163,7 @@ export function TranscriptTable({ liveRow }: { liveRow?: TranscriptRow }) {
           </thead>
           <tbody>
             {all.map((r) => (
-              <tr key={r.id} className="border-t border-line">
+              <tr key={r.id} className="border-t border-line align-top">
                 <td className="py-3 pr-2 font-semibold">
                   {r.student}
                   {r.id === "live" && <span className="ml-2 rounded bg-accent-tint px-1.5 py-0.5 text-[11px] font-semibold text-accent-dark">LIVE</span>}
@@ -138,6 +192,27 @@ export function TranscriptTable({ liveRow }: { liveRow?: TranscriptRow }) {
                     disabled={r.id === "live"}
                     className={`h-9 w-16 rounded-lg border px-2 ${r.override !== null ? "border-accent" : "border-edge"} disabled:bg-ground`}
                   />
+                  {r.id !== "live" && (
+                    <div className="mt-2 flex flex-col gap-1.5">
+                      <input
+                        aria-label={`Reason for ${r.student}'s override`}
+                        placeholder="Why? (shown to the student)"
+                        value={reasons[r.id] ?? ""}
+                        onChange={(e) => setReasons((x) => ({ ...x, [r.id]: e.target.value }))}
+                        className="h-8 w-52 rounded-lg border border-edge px-2 text-[13px]"
+                      />
+                      <button
+                        type="button"
+                        className="btn h-8 w-fit px-3 text-[13px]"
+                        onClick={() => void save(r)}
+                        disabled={r.override !== null && !(reasons[r.id] ?? "").trim()}
+                      >
+                        {r.override === null ? "Use AI score" : "Save override"}
+                      </button>
+                      {saved[r.id] && r.override !== null && <p className="text-[12px] text-muted">Saved: AI {r.aiScore} → you {r.override}</p>}
+                      {errors[r.id] && <p className="text-[12px] text-warn">{errors[r.id]}</p>}
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}
