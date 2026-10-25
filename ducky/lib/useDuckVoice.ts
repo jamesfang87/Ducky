@@ -50,7 +50,7 @@ export function useDuckVoice(messages: ChatMessage[]) {
   const suppressNext = useRef(false);
   // Set once the server says ElevenLabs isn't configured; skip straight to the browser voice.
   const serverOff = useRef(false);
-  const audio = useRef<{ ctx: AudioContext; el: HTMLAudioElement; raf: number } | null>(null);
+  const audio = useRef<{ el: HTMLAudioElement; raf: number } | null>(null);
 
   useEffect(() => {
     setSupported(typeof Audio !== "undefined" || "speechSynthesis" in window);
@@ -62,6 +62,30 @@ export function useDuckVoice(messages: ChatMessage[]) {
     return () => window.speechSynthesis.removeEventListener("voiceschanged", load);
   }, []);
 
+  // One AudioContext for the whole session. Browsers cap how many can exist, and a context made
+  // outside a user gesture starts suspended, which would silence anything routed through it.
+  const sharedCtx = useRef<AudioContext | null>(null);
+  const getCtx = () => (sharedCtx.current ??= new AudioContext());
+
+  // The first tap, click or key press unlocks audio and speech for the rest of the page's life.
+  useEffect(() => {
+    const unlock = () => {
+      try {
+        void getCtx().resume();
+        if ("speechSynthesis" in window) {
+          const u = new SpeechSynthesisUtterance(" ");
+          u.volume = 0;
+          window.speechSynthesis.speak(u);
+        }
+      } catch {}
+      for (const ev of ["pointerdown", "keydown", "touchstart"]) window.removeEventListener(ev, unlock);
+    };
+    for (const ev of ["pointerdown", "keydown", "touchstart"]) window.addEventListener(ev, unlock, { passive: true });
+    return () => {
+      for (const ev of ["pointerdown", "keydown", "touchstart"]) window.removeEventListener(ev, unlock);
+    };
+  }, []);
+
   const endAudio = () => {
     const a = audio.current;
     if (!a) return;
@@ -69,39 +93,64 @@ export function useDuckVoice(messages: ChatMessage[]) {
     cancelAnimationFrame(a.raf);
     a.el.pause();
     URL.revokeObjectURL(a.el.src);
-    void a.ctx.close();
     level.current = -1;
   };
 
-  /** Plays MP3 audio, tracking its loudness. Resolves when it ends or is stopped. */
+  /**
+   * Plays MP3 audio, tracking its loudness. Resolves true when it played (or was stopped on purpose),
+   * false when playback failed, so the caller can fall back to the browser voice instead of staying silent.
+   */
   const playAudio = (blob: Blob, gen: number) =>
-    new Promise<void>((resolve) => {
+    new Promise<boolean>((resolve) => {
       const el = new Audio(URL.createObjectURL(blob));
-      const ctx = new AudioContext();
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 512;
-      ctx.createMediaElementSource(el).connect(analyser);
-      analyser.connect(ctx.destination);
-      const buf = new Float32Array(analyser.fftSize);
-      const meter = () => {
-        analyser.getFloatTimeDomainData(buf);
-        let sum = 0;
-        for (const s of buf) sum += s * s;
-        // RMS of speech sits around 0.02–0.2; stretch that to 0–1.
-        level.current = Math.min(1, Math.max(0, (Math.sqrt(sum / buf.length) - 0.015) * 6));
-        if (audio.current) audio.current.raf = requestAnimationFrame(meter);
-      };
-      audio.current = { ctx, el, raf: requestAnimationFrame(meter) };
-      const done = () => {
+      let settled = false;
+      let watchdog = 0;
+      const settle = (ok: boolean) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(watchdog);
         if (audio.current?.el === el) endAudio();
-        resolve();
+        else URL.revokeObjectURL(el.src);
+        resolve(ok);
       };
-      el.onended = done;
-      el.onerror = done;
-      el.onpause = done;
-      if (gen !== generation.current) return done();
-      void ctx.resume();
-      el.play().catch(done);
+      // Never hang the queue: if nothing finishes in 45 s, give up and let the fallback speak.
+      watchdog = window.setTimeout(() => settle(false), 45_000);
+
+      void (async () => {
+        const ctx = getCtx();
+        try {
+          if (ctx.state !== "running") await Promise.race([ctx.resume(), new Promise((r) => setTimeout(r, 400))]);
+        } catch {}
+        if (gen !== generation.current) return settle(true);
+
+        let raf = 0;
+        // Only route through Web Audio when it is actually running, or the element would go silent.
+        if (ctx.state === "running") {
+          try {
+            const analyser = ctx.createAnalyser();
+            analyser.fftSize = 512;
+            ctx.createMediaElementSource(el).connect(analyser);
+            analyser.connect(ctx.destination);
+            const buf = new Float32Array(analyser.fftSize);
+            const meter = () => {
+              analyser.getFloatTimeDomainData(buf);
+              let sum = 0;
+              for (const v of buf) sum += v * v;
+              // RMS of speech sits around 0.02–0.2; stretch that to 0–1.
+              level.current = Math.min(1, Math.max(0, (Math.sqrt(sum / buf.length) - 0.015) * 6));
+              if (audio.current?.el === el) audio.current.raf = requestAnimationFrame(meter);
+            };
+            raf = requestAnimationFrame(meter);
+          } catch {}
+        }
+        audio.current = { el, raf };
+        el.onended = () => settle(true);
+        el.onerror = () => settle(false);
+        el.onpause = () => {
+          if (!el.ended) settle(gen !== generation.current);
+        };
+        el.play().catch(() => settle(false));
+      })();
     });
 
   /** Browser voice. Resolves when the utterance ends or is cancelled. */
@@ -112,10 +161,17 @@ export function useDuckVoice(messages: ChatMessage[]) {
       if (voice.current) u.voice = voice.current;
       u.pitch = PITCH;
       u.rate = RATE;
+      // Chrome sometimes never fires onend (long text, blocked speech). Don't let that wedge the queue.
+      const guard = window.setTimeout(resolve, Math.max(4000, text.length * 110));
+      const finish = () => {
+        window.clearTimeout(guard);
+        resolve();
+      };
       u.onboundary = (e) => {
         if (e.name === "word") setWordTick((n) => n + 1);
       };
-      u.onend = u.onerror = () => resolve();
+      u.onend = u.onerror = finish;
+      window.speechSynthesis.resume();
       window.speechSynthesis.speak(u);
     });
 
@@ -136,8 +192,7 @@ export function useDuckVoice(messages: ChatMessage[]) {
           });
           if (res.status === 503) serverOff.current = true;
           if (res.ok && gen === generation.current) {
-            await playAudio(await res.blob(), gen);
-            played = true;
+            played = await playAudio(await res.blob(), gen);
           }
         } catch {}
       }
