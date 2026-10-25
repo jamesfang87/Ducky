@@ -37,7 +37,7 @@ export function compileSystemPrompt(
     "Once the student has shown their full chain of reasoning to the answer (every reasoning step, in their own words, including why it works), stop asking questions: affirm their reasoning in one or two sentences, ask nothing further, and set reasoning_complete to true. Never set it for a bare final answer without the reasoning.",
     "Say at most 2 sentences per turn. Your words are spoken aloud, so no markdown, lists, or LaTeX.",
     "Track progress through the REASONING STEPS: in steps_completed, list every step the student correctly explained in this message (several at once is fine, in any order). Count a step only when the student said it, not when you did, and not for a partial or wrong answer.",
-    "Always probe WHY a step works or why a law applies, not just what the next step is.",
+    "Probe WHY a step works or why a law applies, but at most one follow-up per step: once the student has explained a step, move on to the next open step. Never re-ask about a step the turn state lists as completed, and don't add extra questions beyond the REASONING STEPS.",
     "Never correct the student directly. If they say something wrong, ask a question that lets them discover it.",
     policy.revealAnswers
       ? "The teacher allows the final answer. Only give it after the student has explained their reasoning, then ask them why it works."
@@ -95,10 +95,11 @@ export interface TurnState {
   hintLimit: number;
   currentStep: number;
   completedSteps: number[];
+  steps: string[];
   revealed: boolean;
 }
 
-/** System prompt + the last 6 turns verbatim + the new message with this turn's state. */
+/** System prompt + the recent turns verbatim + the new message with this turn's state. */
 export function buildMessages(
   system: string,
   recent: StoredTurn[],
@@ -108,14 +109,20 @@ export function buildMessages(
   const left = Math.max(0, state.hintLimit - state.hintsUsed);
   const notes = [
     `Hints remaining: ${left}.${left === 0 ? " Do not give hints." : ""}`,
-    `Current step: ${state.currentStep}.`,
-    `Steps already completed: ${state.completedSteps.length ? state.completedSteps.join(", ") : "none"}.`,
   ];
+  const done = new Set(state.completedSteps);
+  const open = state.steps.map((label, i) => ({ label, i })).filter(({ i }) => !done.has(i));
+  if (done.size) notes.push(`Completed steps (never ask about these again): ${[...done].map((i) => `${i}. ${state.steps[i]}`).join("; ")}.`);
+  if (open.length) {
+    notes.push(`Open steps: ${open.map(({ i, label }) => `${i}. ${label}`).join("; ")}. Ask only about step ${open[0].i}.`);
+  } else {
+    notes.push("The student has completed every step. Ask nothing: affirm their reasoning in one or two sentences and set reasoning_complete to true.");
+  }
   if (state.revealed) notes.push("The student has already viewed the answer (no credit). You may discuss it and check they understand why it works.");
 
   return [
     { role: "system", content: system },
-    ...recent.slice(-6).map(
+    ...recent.map(
       (t): ChatCompletionMessageParam =>
         t.role === "student" ? { role: "user", content: wrap("student", t.text) } : { role: "assistant", content: t.text },
     ),

@@ -2,6 +2,7 @@ import { HttpError } from "@/lib/auth";
 import { errorStatus, loadOwnSession, readJson } from "@/lib/server/guard";
 import { streamChat } from "@/lib/server/llm";
 import { EMPTY_META, parseMeta } from "@/lib/server/meta";
+import { gradeProgress } from "@/lib/server/progress";
 import { buildMessages, compileSystemPrompt, META_MARKER } from "@/lib/server/prompt";
 import { SSE_HEADERS, sseError, sseFrame } from "@/lib/server/sse";
 import {
@@ -74,11 +75,15 @@ export async function POST(req: Request) {
   const guardLeaks = !policy.revealAnswers && !s.revealed;
 
   const system = compileSystemPrompt(policy, getProblem(s), solution, getMisconceptions(s), steps);
-  const messages = buildMessages(system, getRecentTurns(s, 6), message, {
+  // Grade the whole conversation first, so the tutor knows what's done and doesn't circle back.
+  completeSteps(s, await gradeProgress(steps, solution, getRecentTurns(s, 40), message));
+  const allStepsDone = s.completedSteps.length === steps.length;
+  const messages = buildMessages(system, getRecentTurns(s, 16), message, {
     hintsUsed: s.hintsUsed,
     hintLimit: policy.hintLimit,
     currentStep: s.currentStep,
     completedSteps: s.completedSteps,
+    steps,
     revealed: s.revealed,
   });
 
@@ -143,6 +148,7 @@ export async function POST(req: Request) {
         }
 
         const meta = inMeta ? parseMeta(metaRaw, known, steps.length) : { ...EMPTY_META };
+        if (allStepsDone) meta.reasoning_complete = true;
         if (meta.current_step !== null) setCurrentStep(s, meta.current_step);
         // Finishing the whole chain, or a correct answer on the last step, completes every step.
         const allDone = meta.reasoning_complete || (meta.step_assessment === "correct" && s.currentStep === steps.length - 1);
