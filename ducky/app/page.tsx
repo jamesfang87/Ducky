@@ -877,7 +877,7 @@ export default function Landing() {
             </Reveal>
             <ScrollWords
               className="mt-8 max-w-[640px] text-[18px] leading-relaxed text-white md:text-[21px]"
-              text="Lecture halls seat hundreds. High school teachers see more than 150 students a day. The result: nobody can listen to every student think. Ducky can, and your teacher sees what it heard."
+              text="College professors instruct hundreds of students. High school teachers see more than 150 students daily. The result? Nobody can listen to every student think. That’s why we made Ducky."
             />
 
             {STAT_GROUPS.map((g) => (
