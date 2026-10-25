@@ -7,7 +7,6 @@ import { useDuckVoice } from "@/lib/useDuckVoice";
 import { Check, Mic, Pencil, Send, Shield, Speaker, Stop, Warn } from "@/components/ui/icons";
 import { usePersistedState } from "@/lib/usePersistedState";
 import DuckAvatar, { type DuckState } from "./DuckAvatar";
-import ResizeHandle from "./ResizeHandle";
 import SketchPad from "./SketchPad";
 
 interface Props {
@@ -50,8 +49,6 @@ export default function Interview({ messages, thinking, responding, resetToken, 
         ? "listening"
         : "idle";
   const scroller = useRef<HTMLDivElement>(null);
-  // Height of the message list in px; null keeps the default size.
-  const [chatHeight, setChatHeight] = usePersistedState<number | null>("ducky:chatHeight", null);
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
@@ -115,7 +112,7 @@ export default function Interview({ messages, thinking, responding, resetToken, 
   }, [draft]);
 
   return (
-    <section aria-label="Interview" className="card flex min-w-0 flex-[2_1_460px] flex-col">
+    <section aria-label="Interview" className="card flex min-w-0 flex-col overflow-hidden lg:min-h-0 lg:min-w-[340px] lg:flex-1">
       <div className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-4">
         <span className="h-2.5 w-2.5 rounded-full bg-accent" />
         <h2 className="h2">Talk it through</h2>
@@ -176,8 +173,8 @@ export default function Interview({ messages, thinking, responding, resetToken, 
 
       <div
         ref={scroller}
-        style={chatHeight ? { height: chatHeight } : undefined}
-        className={`flex flex-col gap-4 overflow-y-auto p-5 ${chatHeight ? "" : "max-h-[560px] min-h-[360px] flex-1"}`}
+        // Fills the card's height on wide screens so the chat ends level with its neighbours.
+        className="flex h-[60vh] flex-col gap-4 overflow-y-auto p-5 lg:h-auto lg:min-h-0 lg:flex-1"
         aria-live="polite"
       >
         {messages.map((m) => (
@@ -195,16 +192,6 @@ export default function Interview({ messages, thinking, responding, resetToken, 
         )}
       </div>
 
-      <ResizeHandle
-        orientation="horizontal"
-        label="Resize chat height"
-        className="-my-2.5 w-full"
-        measure={() => scroller.current?.getBoundingClientRect().height ?? 360}
-        min={200}
-        max={() => Math.max(200, window.innerHeight - 160)}
-        onResize={setChatHeight}
-        onReset={() => setChatHeight(null)}
-      />
 
       {finished ? (
         <div className="flex items-center gap-2 border-t border-line px-5 py-4 text-sm" role="status">

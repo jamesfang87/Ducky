@@ -15,7 +15,7 @@ const frameDoc = (svg: string) =>
   `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">` +
   `<style>html,body{margin:0;height:100%;background:#fff;overflow:hidden}svg{display:block;width:100%;height:100%}</style></head><body>${svg}</body></html>`;
 
-/** Step-through player for a generated visual explanation. */
+/** Step-through player for a generated visual explanation. Fills its container; the parent draws the card. */
 export default function VisualPlayer({ title, frames, onClose }: { title: string; frames: Frame[]; onClose?: () => void }) {
   const [i, setI] = useState(0);
   const [playing, setPlaying] = useState(true);
@@ -43,7 +43,7 @@ export default function VisualPlayer({ title, frames, onClose }: { title: string
   };
 
   return (
-    <div className="card overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col">
       <div className="flex flex-wrap items-center gap-2.5 px-5 py-4">
         <h2 className="h2">{title}</h2>
         <div className="flex-1" />
@@ -57,7 +57,7 @@ export default function VisualPlayer({ title, frames, onClose }: { title: string
         )}
       </div>
 
-      <div className="relative aspect-video w-full border-y border-line bg-surface">
+      <div className="relative min-h-[200px] w-full flex-1 border-y border-line bg-surface">
         <iframe
           key={i}
           title={`${title}, step ${i + 1} of ${frames.length}`}

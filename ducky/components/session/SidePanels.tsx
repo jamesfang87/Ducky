@@ -80,9 +80,9 @@ export function ProblemCard({
   );
 }
 
-export function ReasoningPath({ steps }: { steps: ReasoningStep[] }) {
+export function ReasoningPath({ steps, className = "" }: { steps: ReasoningStep[]; className?: string }) {
   return (
-    <div className="card p-5">
+    <div className={`card p-5 ${className}`}>
       <h2 className="h2 mb-3">Your reasoning path</h2>
       <ol className="flex flex-col">
         {steps.map((s, i) => (

@@ -83,11 +83,50 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   const [vizTopic, setVizTopic] = useState("");
   const [resources, setResources] = useState<ResourcesState>({ status: "idle" });
   const vizBusy = useRef(false);
-  // Layout prefs: visualization column width on wide screens (null = default) and whether it's minimized.
-  const [vizWidth, setVizWidth] = usePersistedState<number | null>("ducky:vizWidth", null);
+  // Layout prefs: sidebar and visualization column widths on wide screens, as a percent of the
+  // window so the panes scale with it (null = default), and whether the visual is minimized.
+  const [sidePct, setSidePct] = usePersistedState<number | null>("ducky:sidePct", null);
+  const [vizPct, setVizPct] = usePersistedState<number | null>("ducky:vizPct", null);
   const [vizMinimized, setVizMinimized] = usePersistedState("ducky:vizMinimized", false);
-  const panesRef = useRef<HTMLDivElement>(null);
+  const [vizFull, setVizFull] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+  const sideRef = useRef<HTMLElement>(null);
   const vizRef = useRef<HTMLElement>(null);
+  const vizBoxRef = useRef<HTMLDivElement>(null);
+
+  // Width of the pane row in px, without its padding.
+  const rowWidth = () => {
+    const el = mainRef.current;
+    if (!el) return 1200;
+    const s = getComputedStyle(el);
+    return el.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight);
+  };
+  const toPct = (px: number) => (px / rowWidth()) * 100;
+  // Whatever the sidebar and visual leave over is the chat's; keep it at least this wide.
+  const CHAT_MIN = 340 + 2 * 20;
+
+  const toggleFull = () => {
+    if (vizFull) {
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+      setVizFull(false);
+      return;
+    }
+    setVizFull(true);
+    // The fixed overlay alone covers the window where the Fullscreen API isn't available (iOS).
+    vizBoxRef.current?.requestFullscreen?.().catch(() => {});
+  };
+
+  useEffect(() => {
+    if (!vizFull) return;
+    const onChange = () => !document.fullscreenElement && setVizFull(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setVizFull(false);
+    document.addEventListener("fullscreenchange", onChange);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("fullscreenchange", onChange);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [vizFull]);
 
   const userId = session?.userId;
   // Saving starts only once the saved chat (if any) has been loaded, so the opening line never overwrites it.
@@ -413,9 +452,9 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   const stuckLabel = revealedStep !== null ? info.steps[revealedStep] ?? null : null;
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-[1360px] flex-wrap items-center gap-4 px-6 py-3.5">
+    <div className="flex min-h-screen flex-col lg:h-[100dvh] lg:min-h-0 lg:overflow-hidden">
+      <header className="flex-none border-b border-line bg-surface">
+        <div className="flex flex-wrap items-center gap-4 px-5 py-3.5">
           <Logo />
           <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm text-muted">
             {problemSet ? (
@@ -476,8 +515,15 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-[1360px] flex-wrap items-start gap-5 p-6 xl:flex-nowrap">
-        <section aria-label="Problem and progress" className="flex min-w-0 flex-[1_1_280px] flex-col gap-4">
+      {/* From 1024px the panes fill the window below the header and share one bottom edge;
+          each pane scrolls on its own. Narrower screens stack them and scroll the page. */}
+      <main ref={mainRef} className="flex flex-col gap-5 p-5 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-0">
+        <section
+          ref={sideRef}
+          aria-label="Problem and progress"
+          style={{ "--side-w": `${sidePct ?? 24}%` } as React.CSSProperties}
+          className="flex min-w-0 flex-col gap-4 lg:min-h-0 lg:min-w-[220px] lg:flex-[0_1_var(--side-w)] lg:overflow-y-auto [&>*]:flex-none lg:[&>:last-child]:flex-auto"
+        >
           <ProblemCard
             problem={problem}
             nextHref={nextSessionId ? `/session/${nextSessionId}` : undefined}
@@ -486,7 +532,6 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
             resetting={resetting}
             resetError={resetError}
           />
-          <ReasoningPath steps={steps} />
           {info.resourcesEnabled && <ResourcesCard state={resources} onSearch={(t) => void searchResources(t)} />}
           {canReveal && (
             <div className="card p-5">
@@ -517,8 +562,17 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
           />
         </section>
 
-        {/* Chat and visualization sit side by side from 1024px, with a drag bar between them. */}
-        <div ref={panesRef} className="flex min-w-0 flex-[4_1_760px] flex-wrap items-start gap-5 lg:flex-nowrap">
+        <ResizeHandle
+          orientation="vertical"
+          label="Resize sidebar"
+          className="hidden lg:flex"
+          measure={() => sideRef.current?.getBoundingClientRect().width ?? 300}
+          min={220}
+          max={() => Math.max(220, rowWidth() - (vizRef.current?.getBoundingClientRect().width ?? 0) - CHAT_MIN)}
+          onResize={(px) => setSidePct(toPct(px))}
+          onReset={() => setSidePct(null)}
+        />
+
         <Interview
           messages={messages}
           thinking={thinking}
@@ -533,97 +587,122 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
           onHint={handleHint}
         />
 
-        {vizMinimized ? (
-          <section aria-label="Visualization (minimized)" className="flex-[1_1_100%] lg:flex-none">
+        <ResizeHandle
+          orientation="vertical"
+          label="Resize chat and visualization"
+          invert
+          className="hidden lg:flex"
+          measure={() => vizRef.current?.getBoundingClientRect().width ?? 420}
+          min={280}
+          max={() => Math.max(280, rowWidth() - (sideRef.current?.getBoundingClientRect().width ?? 0) - CHAT_MIN)}
+          onResize={(px) => setVizPct(toPct(px))}
+          onReset={() => setVizPct(null)}
+        />
+
+        {/* Visualization on top, reasoning path below it. */}
+        <section
+          ref={vizRef}
+          aria-label="Visualization and reasoning path"
+          style={{ "--viz-w": `${vizPct ?? 34}%` } as React.CSSProperties}
+          className="flex min-w-0 flex-col gap-4 lg:min-h-0 lg:min-w-[280px] lg:flex-[0_1_var(--viz-w)]"
+        >
+          {vizMinimized ? (
             <button
               type="button"
               onClick={() => setVizMinimized(false)}
-              className="card flex w-full items-center gap-2.5 px-4 py-3 text-sm font-semibold transition hover:border-accent lg:h-60 lg:w-14 lg:flex-col lg:px-0 lg:py-4"
+              className="card flex w-full flex-none items-center gap-2.5 px-4 py-3 text-sm font-semibold transition hover:border-accent"
             >
               <VizIcon size={22} />
-              <span className="lg:[writing-mode:vertical-rl]">Show visualization</span>
-              {viz.status === "loading" && <Spinner size={14} className="ml-auto text-accent lg:ml-0" />}
+              Show visualization
+              {viz.status === "loading" && <Spinner size={14} className="ml-auto text-accent" />}
               {viz.status === "ok" && (
-                <span className="ml-auto h-2 w-2 rounded-full bg-accent lg:ml-0">
+                <span className="ml-auto h-2 w-2 rounded-full bg-accent">
                   <span className="sr-only">(a visual is ready)</span>
                 </span>
               )}
             </button>
-          </section>
-        ) : (
-          <>
-            <ResizeHandle
-              orientation="vertical"
-              label="Resize chat and visualization"
-              invert
-              className="hidden lg:-mx-3.5 lg:flex"
-              measure={() => vizRef.current?.getBoundingClientRect().width ?? 420}
-              min={280}
-              // Leave the chat at least 360px.
-              max={() => Math.max(280, (panesRef.current?.clientWidth ?? 900) - 360 - 40)}
-              onResize={setVizWidth}
-              onReset={() => setVizWidth(null)}
-            />
-
-            <section
-              ref={vizRef}
-              aria-label="Visualization"
-              style={vizWidth ? ({ "--viz-w": `${vizWidth}px` } as React.CSSProperties) : undefined}
-              className={`flex min-w-0 flex-[2_1_420px] flex-col gap-4 ${vizWidth ? "lg:w-[var(--viz-w)] lg:flex-none" : ""}`}
+          ) : (
+            <div
+              ref={vizBoxRef}
+              role={vizFull ? "dialog" : undefined}
+              aria-label={vizFull ? "Visualization, full screen" : undefined}
+              className={
+                vizFull
+                  ? "fixed inset-0 z-50 flex flex-col bg-ground p-4"
+                  : "flex h-[min(70vh,560px)] flex-col lg:h-auto lg:min-h-0 lg:flex-[1_1_60%]"
+              }
             >
-              <div className="-mb-2 flex items-center justify-between gap-2 px-1">
-                <p className="eyebrow">Visualization</p>
-                <button type="button" className="text-sm text-sub transition hover:text-ink" onClick={() => setVizMinimized(true)}>
-                  Minimize
-                </button>
-              </div>
-              {viz.status === "loading" ? (
-                <div className="card flex min-h-[300px] flex-col items-center justify-center gap-2 p-8 text-center" role="status">
-                  <Spinner size={18} className="text-accent" />
-                  <p className="font-semibold">Ducky is sketching it…</p>
-                  <p className="max-w-[320px] text-sm text-muted">“{viz.topic}”. This can take up to half a minute.</p>
-                </div>
-              ) : viz.status === "ok" ? (
-                <VisualPlayer title={viz.title} frames={viz.frames} onClose={() => setViz({ status: "idle" })} />
-              ) : (
-                <div className="card flex min-h-[300px] flex-col items-center justify-center gap-2 p-8 text-center">
-                  <VizIcon size={40} />
-                  <p className="font-semibold">{viz.status === "message" ? viz.message : "Want to see it?"}</p>
-                  {info.visualsEnabled ? (
-                    <>
-                      <p className="max-w-[320px] text-sm text-muted">
-                        Ask in the chat (“can you show me?”) or describe what you want to see from this problem.
-                      </p>
-                      <form
-                        className="mt-2 flex w-full max-w-[380px] flex-col gap-2.5"
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          void showVisual(vizTopic || info.steps[currentStep] || problem.prompt);
-                        }}
-                      >
-                        <input
-                          value={vizTopic}
-                          onChange={(e) => setVizTopic(e.target.value)}
-                          maxLength={300}
-                          placeholder={info.steps[currentStep] ?? "What should Ducky draw?"}
-                          aria-label="What should Ducky draw?"
-                          className="h-11 w-full rounded-lg border border-line px-3 text-sm"
-                        />
-                        <button type="submit" className="btn-primary h-11 w-full px-3 text-sm">
-                          Show me visually
-                        </button>
-                      </form>
-                    </>
-                  ) : (
-                    <p className="max-w-[300px] text-sm text-muted">Your teacher turned visuals off for this assignment.</p>
+              <div className="card flex min-h-0 flex-1 flex-col overflow-hidden">
+                <div className="flex flex-none items-center gap-3 border-b border-line px-5 py-2.5">
+                  <p className="eyebrow">Visualization</p>
+                  <div className="flex-1" />
+                  <button type="button" className="text-sm text-sub transition hover:text-ink" onClick={toggleFull}>
+                    {vizFull ? "Exit full screen" : "Full screen"}
+                  </button>
+                  {!vizFull && (
+                    <button type="button" className="text-sm text-sub transition hover:text-ink" onClick={() => setVizMinimized(true)}>
+                      Minimize
+                    </button>
                   )}
                 </div>
-              )}
-              {sessionId === "demo" && solved && policy.tools.webExamples && <ExampleCard />}
-            </section>
-          </>
-        )}
-        </div>
+                {viz.status === "loading" ? (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center" role="status">
+                    <Spinner size={18} className="text-accent" />
+                    <p className="font-semibold">Ducky is sketching it…</p>
+                    <p className="max-w-[320px] text-sm text-muted">“{viz.topic}”. This can take up to half a minute.</p>
+                  </div>
+                ) : viz.status === "ok" ? (
+                  <div className="min-h-0 flex-1">
+                    <VisualPlayer title={viz.title} frames={viz.frames} onClose={() => setViz({ status: "idle" })} />
+                  </div>
+                ) : (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-2 overflow-y-auto p-8 text-center">
+                    <VizIcon size={40} />
+                    <p className="font-semibold">{viz.status === "message" ? viz.message : "Want to see it?"}</p>
+                    {info.visualsEnabled ? (
+                      <>
+                        <p className="max-w-[320px] text-sm text-muted">
+                          Ask in the chat (“can you show me?”) or describe what you want to see from this problem.
+                        </p>
+                        <form
+                          className="mt-2 flex w-full max-w-[380px] flex-col gap-2.5"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            void showVisual(vizTopic || info.steps[currentStep] || problem.prompt);
+                          }}
+                        >
+                          <input
+                            value={vizTopic}
+                            onChange={(e) => setVizTopic(e.target.value)}
+                            maxLength={300}
+                            placeholder={info.steps[currentStep] ?? "What should Ducky draw?"}
+                            aria-label="What should Ducky draw?"
+                            className="h-11 w-full rounded-lg border border-line px-3 text-sm"
+                          />
+                          <button type="submit" className="btn-primary h-11 w-full px-3 text-sm">
+                            Show me visually
+                          </button>
+                        </form>
+                      </>
+                    ) : (
+                      <p className="max-w-[300px] text-sm text-muted">Your teacher turned visuals off for this assignment.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {sessionId === "demo" && solved && policy.tools.webExamples && (
+            <div className="flex-none">
+              <ExampleCard />
+            </div>
+          )}
+          {/* Takes the whole column while the visual is minimized; otherwise up to 40% of it, scrolling past that. */}
+          <ReasoningPath
+            steps={steps}
+            className={vizMinimized ? "lg:min-h-0 lg:flex-1 lg:overflow-y-auto" : "flex-none lg:max-h-[40%] lg:overflow-y-auto"}
+          />
+        </section>
       </main>
     </div>
   );
