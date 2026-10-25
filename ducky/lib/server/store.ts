@@ -67,7 +67,7 @@ export interface StoredTurn {
 }
 
 export interface GuardEvent {
-  kind: "answer_leak" | "hint_limit" | "visual_declined" | "visual_failed";
+  kind: "answer_leak" | "hint_limit" | "visual_declined" | "visual_failed" | "jailbreak" | "answer_hunt" | "rate_limit";
   excerpt: string;
   at: number;
 }

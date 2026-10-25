@@ -1,6 +1,7 @@
 import { HttpError } from "@/lib/auth";
 import { recordAttempt } from "@/lib/server/attempts";
 import { errorStatus, loadOwnSession, readJson } from "@/lib/server/guard";
+import { checkInput, checkRate } from "@/lib/server/inputGuard";
 import { streamChat } from "@/lib/server/llm";
 import { EMPTY_META, parseMeta } from "@/lib/server/meta";
 import { analyzeTurn } from "@/lib/server/progress";
@@ -56,6 +57,11 @@ export async function POST(req: Request) {
     if (via === "text" && getPolicy(session).voiceRequired) {
       throw new HttpError(400, "Your teacher asked for spoken answers on this problem. Use the mic.");
     }
+    const rate = checkRate(session.userId);
+    if (!rate.ok) {
+      saveGuardEvent(session, { kind: "rate_limit", excerpt: message.slice(0, 200) });
+      throw new HttpError(429, `You're sending messages very quickly. Take a breath and try again in ${rate.retryAfter} seconds.`);
+    }
   } catch (e) {
     const { status, message } = errorStatus(e);
     return sseError(status, message);
@@ -63,6 +69,23 @@ export async function POST(req: Request) {
 
   const s = session;
   await loadSavedTurns(s, history);
+
+  // Jailbreak and answer-hunting attempts get an in-character reply with no model call, and are logged for the teacher.
+  const flagged = checkInput(message, getPolicy(s).revealAnswers || s.revealed);
+  if (flagged) {
+    saveGuardEvent(s, { kind: flagged.kind, excerpt: message.slice(0, 200) });
+    saveTurn(s, { role: "student", text: message, via });
+    saveTurn(s, { role: "tutor", text: flagged.reply });
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(sseFrame("say", { text: flagged.reply }));
+        controller.enqueue(sseFrame("meta", { ...EMPTY_META, completedSteps: s.completedSteps, hintsUsed: s.hintsUsed, hintLimit: getPolicy(s).hintLimit, canReveal: canReveal(s) }));
+        controller.enqueue(sseFrame("done", {}));
+        controller.close();
+      },
+    });
+    return new Response(stream, { headers: SSE_HEADERS });
+  }
 
   // The student already showed their full reasoning: the tutor stops asking (no model call).
   if (s.completed) {
