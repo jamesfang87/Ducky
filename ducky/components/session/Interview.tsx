@@ -57,7 +57,6 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
       <div className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-4">
         <span className="h-2.5 w-2.5 rounded-full bg-accent" />
         <h2 className="h2">Talk it through</h2>
-        <span className="text-[13px] text-muted">Socratic tutor · stays on this problem</span>
         <div className="flex-1" />
         <span className="text-[13px] text-sub">
           Hints <span className="font-mono font-medium">{hintsUsed} / {hintLimit}</span>

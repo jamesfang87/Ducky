@@ -117,7 +117,7 @@ export default function ClassView({ classId }: { classId: string }) {
                 Problem sets
               </h2>
               <p className="mt-0.5 text-sm text-sub">
-                Posted by {record.teacher}. Pick one to talk it through with Ducky.
+                Posted by {record.teacher}.
               </p>
             </div>
             <span className="chip">

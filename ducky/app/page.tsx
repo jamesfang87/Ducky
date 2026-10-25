@@ -656,7 +656,6 @@ function DemoScreen({ beat }: { beat: number }) {
           <div className="flex flex-none items-center gap-3 border-b border-line px-5 py-3.5">
             <span className="h-2.5 w-2.5 rounded-full bg-accent" />
             <span className="font-display text-[17px] font-semibold">Talk it through</span>
-            <span className="text-[12.5px] text-muted">Socratic tutor · stays on this problem</span>
             <div className="flex-1" />
             <span className="font-mono text-[12.5px] text-muted">Hints 0 / 2</span>
           </div>
