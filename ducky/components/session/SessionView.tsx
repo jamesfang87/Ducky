@@ -24,6 +24,7 @@ import { Logo, Spinner } from "@/components/ui/icons";
 import { useSession } from "@/lib/session";
 import Interview from "./Interview";
 import { DuckyRadioButton } from "./DuckyRadio";
+import { ProofOfThinkingCard } from "./ProofOfThinking";
 import VisualPlayer from "./VisualPlayer";
 import ResizeHandle from "./ResizeHandle";
 import { usePersistedState } from "@/lib/usePersistedState";
@@ -431,6 +432,17 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
             stuckStep={stuckLabel}
           />
           <RubricCard rows={rubric} messages={messages} />
+          <ProofOfThinkingCard
+            student={session?.name ?? "Student"}
+            course={problem.course}
+            set={problem.set}
+            problem={`Problem ${problem.index} of ${problem.total}`}
+            messages={messages}
+            steps={steps}
+            hintsUsed={hintsUsed}
+            hintLimit={info.hintLimit}
+            revealed={revealedStep !== null}
+          />
         </section>
 
         {/* Chat and visualization sit side by side from 1024px, with a drag bar between them. */}
