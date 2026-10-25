@@ -100,6 +100,8 @@ export interface TurnState {
   revealed: boolean;
   /** A visual the server is already drawing for this message, if any. */
   sketching: string | null;
+  /** A recorded explanation the student can play right now, from their teacher or a classmate. */
+  voiceNote?: { author: string; role: "teacher" | "student"; text: string; checkQuestion: string } | null;
 }
 
 /** System prompt + the recent turns verbatim + the new message with this turn's state. */
@@ -124,6 +126,15 @@ export function buildMessages(
   // The model tends to drop the META block unless reminded every turn.
   notes.push(`After your spoken sentences, always write a line with exactly ${META_MARKER} and then the JSON object from OUTPUT FORMAT.`);
   if (state.sketching) notes.push(`A visual is being drawn for the student: ${state.sketching}. Tell them in a few words that you're sketching it.`);
+  if (state.voiceNote) {
+    const v = state.voiceNote;
+    const who = v.role === "teacher" ? `${v.author}, the student's teacher,` : `A classmate who was stuck on this same point`;
+    notes.push(
+      `${who} recorded a short explanation of exactly this; it is on the student's screen with a play button. ` +
+        `Their words are in the <document> below. In one short sentence, tell the student ${v.role === "teacher" ? v.author : "a classmate"} left a voice note on this and suggest they play it. ` +
+        `Then ask your question using that framing and vocabulary, not a new analogy of your own${v.checkQuestion ? ` (for example: ${v.checkQuestion})` : ""}. Never read the note aloud or add to it.`,
+    );
+  }
   if (state.revealed) notes.push("The student has already viewed the answer (no credit). You may discuss it and check they understand why it works.");
 
   return [
@@ -132,6 +143,9 @@ export function buildMessages(
       (t): ChatCompletionMessageParam =>
         t.role === "student" ? { role: "user", content: wrap("student", t.text) } : { role: "assistant", content: t.text },
     ),
-    { role: "user", content: `${wrap("student", message)}\n\n[Turn state, from the server: ${notes.join(" ")}]` },
+    {
+      role: "user",
+      content: `${wrap("student", message)}\n\n[Turn state, from the server: ${notes.join(" ")}]${state.voiceNote ? `\n\n${wrap("document", state.voiceNote.text)}` : ""}`,
+    },
   ];
 }

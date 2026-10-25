@@ -8,6 +8,7 @@ import { EMPTY_META, parseMeta } from "@/lib/server/meta";
 import { analyzeTurn } from "@/lib/server/progress";
 import { buildMessages, compileSystemPrompt, META_MARKER } from "@/lib/server/prompt";
 import { SSE_HEADERS, sseError, sseFrame } from "@/lib/server/sse";
+import { creditNotes, noteFor } from "@/lib/server/voiceNotes";
 import {
   canReveal,
   completeSteps,
@@ -19,6 +20,7 @@ import {
   getSteps,
   incrementHints,
   loadSavedTurns,
+  noteScopeOf,
   saveGuardEvent,
   saveMisconceptionEvent,
   saveResolvedEvent,
@@ -111,7 +113,13 @@ export async function POST(req: Request) {
   const system = compileSystemPrompt(policy, getProblem(s), solution, getMisconceptions(s), steps);
   // Grade the whole conversation first, so the tutor knows what's done and doesn't circle back.
   const analysis = await analyzeTurn(steps, solution, getMisconceptions(s), getRecentTurns(s, 40), message);
+  const doneBefore = new Set(s.completedSteps);
   completeSteps(s, analysis.completed);
+  // A teacher (or classmate) recorded this exact point: the student hears them, and the tutor builds on their framing.
+  const voiceNote = await noteFor(s, noteScopeOf(s), { misconception: analysis.misconception?.id ?? null, step: s.currentStep }).catch((e) => {
+    console.warn("[/api/turn] voice note lookup failed:", e);
+    return null;
+  });
   const sketching = policy.tools.visualizations ? analysis.visual : null;
   const allStepsDone = s.completedSteps.length === steps.length;
   const messages = buildMessages(system, getRecentTurns(s, 16), message, {
@@ -122,6 +130,7 @@ export async function POST(req: Request) {
     steps,
     revealed: s.revealed,
     sketching,
+    voiceNote: voiceNote && { author: voiceNote.author, role: voiceNote.role, text: voiceNote.text, checkQuestion: voiceNote.checkQuestion },
   });
 
   const stream = new ReadableStream<Uint8Array>({
@@ -212,9 +221,11 @@ export async function POST(req: Request) {
           hintsUsed: s.hintsUsed,
           hintLimit: policy.hintLimit,
           canReveal: canReveal(s),
+          voice_note: voiceNote,
         });
         send("done", {});
 
+        void creditNotes(s, resolved, s.completedSteps.filter((i) => !doneBefore.has(i))).catch(() => {});
         saveTurn(s, { role: "student", text: message, via });
         saveTurn(s, { role: "tutor", text: spoken.join(" ") });
         if (meta.misconception) saveMisconceptionEvent(s, meta.misconception.id);
