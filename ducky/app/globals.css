@@ -48,6 +48,8 @@
 @layer base {
   :root { --font-inter: "Inter"; --font-display: "Space Grotesk"; --font-mono: "JetBrains Mono"; }
   body { @apply bg-ground text-ink antialiased; }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select { background-color: rgb(var(--surface)); color: rgb(var(--ink)); }
+  input::placeholder, textarea::placeholder { color: rgb(var(--muted)); opacity: 0.8; }
   :focus-visible { outline: 2px solid rgb(var(--accent)); outline-offset: 2px; }
 }
 @layer components {

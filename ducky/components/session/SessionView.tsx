@@ -509,7 +509,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
                         Ask in the chat (“can you show me?”) or describe what you want to see from this problem.
                       </p>
                       <form
-                        className="mt-2 flex w-full max-w-[380px] gap-2"
+                        className="mt-2 flex w-full max-w-[380px] flex-col gap-2.5"
                         onSubmit={(e) => {
                           e.preventDefault();
                           void showVisual(vizTopic || info.steps[currentStep] || problem.prompt);
@@ -521,9 +521,9 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
                           maxLength={300}
                           placeholder={info.steps[currentStep] ?? "What should Ducky draw?"}
                           aria-label="What should Ducky draw?"
-                          className="h-10 min-w-0 flex-1 rounded-lg border border-line px-3 text-sm"
+                          className="h-11 w-full rounded-lg border border-line px-3 text-sm"
                         />
-                        <button type="submit" className="btn-primary h-10 flex-none px-3 text-sm">
+                        <button type="submit" className="btn-primary h-11 w-full px-3 text-sm">
                           Show me visually
                         </button>
                       </form>

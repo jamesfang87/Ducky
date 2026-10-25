@@ -2,7 +2,7 @@
  * Ducky Radio: a generative lofi track that follows the student's reasoning.
  *
  * - Every step explained correctly adds a layer (pads -> bass -> drums -> melody).
- * - A flagged misconception swaps the chords for an unresolved ii-V loop and closes the filter.
+ * - A flagged misconception swaps in softer, unresolved chords and gently closes the filter.
  * - Fixing it resolves back to the home chord. Finishing the problem lands on a held Cmaj9.
  *
  * Everything is synthesized with Web Audio (no audio files, nothing to download or license).
@@ -19,12 +19,13 @@ const HOME = [
   [50, 53, 57, 60],
   [48, 52, 55, 59],
 ];
-// Tension: Dm7b5 - G7b9 on repeat. It never lands on C.
+// "Soft focus" while a misconception is open: Dm9 and G7sus4 on repeat. Still warm, but it hangs
+// without landing on C until the student fixes it.
 const TENSE = [
-  [50, 53, 56, 60],
-  [55, 59, 62, 65],
-  [50, 53, 56, 60],
-  [55, 59, 62, 65],
+  [50, 53, 57, 64],
+  [55, 60, 62, 65],
+  [50, 53, 57, 64],
+  [55, 60, 62, 65],
 ];
 const SCALE = [60, 62, 64, 67, 69, 72, 74, 76]; // C major pentatonic, two octaves
 
@@ -50,7 +51,7 @@ export class DuckyRadio {
     if (!this.ctx) this.build();
     await this.ctx!.resume();
     this.master.gain.cancelScheduledValues(this.ctx!.currentTime);
-    this.master.gain.setTargetAtTime(0.5, this.ctx!.currentTime, 0.4);
+    this.master.gain.setTargetAtTime(0.38, this.ctx!.currentTime, 0.6);
     this.nextTime = this.ctx!.currentTime + 0.1;
     this.beat = 0;
     this.finished = false;
@@ -70,7 +71,7 @@ export class DuckyRadio {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
     // Tension closes the filter and dulls the room; resolving opens it back up.
-    this.filter.frequency.setTargetAtTime(next.tension ? 650 : 900 + next.progress * 2600, t, 0.6);
+    this.filter.frequency.setTargetAtTime(next.tension ? 1300 : 1500 + next.progress * 2200, t, 0.6);
     if (next.done && !wasDone && this.running) this.resolve();
     if (!next.done) this.finished = false;
   }
@@ -82,7 +83,7 @@ export class DuckyRadio {
     this.master.gain.value = 0;
     this.filter = ctx.createBiquadFilter();
     this.filter.type = "lowpass";
-    this.filter.frequency.value = 900;
+    this.filter.frequency.value = 1500;
     this.filter.Q.value = 0.7;
     this.filter.connect(this.master);
     this.master.connect(ctx.destination);
@@ -104,7 +105,7 @@ export class DuckyRadio {
     hp.type = "highpass";
     hp.frequency.value = 1500;
     const g = ctx.createGain();
-    g.gain.value = 0.09;
+    g.gain.value = 0.05;
     src.connect(hp).connect(g).connect(this.master);
     src.start();
   }
@@ -129,7 +130,7 @@ export class DuckyRadio {
     const when = t + swing;
 
     // Layer 0, always: soft electric-piano chords on 1 and the "and" of 3.
-    if (eighth === 0 || eighth === 5) this.chord(chord, when, tension ? 0.05 : 0.07);
+    if (eighth === 0 || eighth === 5) this.chord(chord, when, 0.06);
 
     // Layer 1, from 25%: bass on the root.
     if (progress >= 0.25 && (eighth === 0 || eighth === 6)) this.tone(midi(chord[0] - 24), when, BEAT * 1.6, 0.2, "sine");
@@ -138,7 +139,7 @@ export class DuckyRadio {
     if (progress >= 0.5) {
       if (eighth === 0 || eighth === 5) this.kick(when);
       if (eighth === 4) this.snare(when);
-      this.hat(when, eighth % 2 === 0 ? 0.05 : 0.03);
+      this.hat(when, eighth % 2 === 0 ? 0.03 : 0.018);
     }
 
     // Layer 3, from 75%: a sparse melody over the chord. Silent while a misconception is open.
@@ -161,7 +162,7 @@ export class DuckyRadio {
   }
 
   private chord(notes: number[], t: number, vol: number) {
-    notes.forEach((m, i) => this.tone(midi(m), t + i * 0.012, BEAT * 3, vol, "triangle", 0.35));
+    notes.forEach((m, i) => this.tone(midi(m), t + i * 0.012, BEAT * 3, vol, "triangle", 0.5));
   }
 
   private tone(freq: number, t: number, dur: number, vol: number, type: OscillatorType, attack = 0.02) {
@@ -173,7 +174,7 @@ export class DuckyRadio {
     o2.type = "sine";
     o.frequency.value = freq;
     o2.frequency.value = freq * 2.003; // slightly detuned octave: the "warped tape" shimmer
-    const detune = this.state.tension ? (Math.random() - 0.5) * 18 : (Math.random() - 0.5) * 6;
+    const detune = (Math.random() - 0.5) * 5;
     o.detune.value = detune;
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(vol, t + attack);

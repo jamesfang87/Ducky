@@ -101,8 +101,19 @@ export default function DuckAvatar({ state, wordTick = 0, level, size = 156 }: P
   const look = state === "thinking" ? { x: 4, y: -7 } : state === "listening" ? { x: -3, y: 2 } : { x: 3, y: -3 };
 
   return (
-    <div className="flex-none select-none overflow-hidden rounded-2xl" style={{ width: size, height: size, background: C.sky }}>
-      <svg role="img" aria-label={label} viewBox="0 0 512 512" width={size} height={size} className="block">
+    <div className="relative flex-none select-none overflow-hidden rounded-2xl" style={{ width: size, height: size, background: "rgb(var(--accent-tint))" }}>
+      {/* The backdrop shifts with what Ducky is doing, and follows the theme. */}
+      {(
+        [
+          ["idle", "radial-gradient(circle at 50% 70%, rgb(var(--accent-glow) / 0.18), transparent 70%)"],
+          ["listening", "radial-gradient(circle at 50% 60%, rgb(var(--accent) / 0.5), rgb(var(--accent-tint)) 75%)"],
+          ["thinking", "radial-gradient(circle at 50% 60%, rgb(var(--warn-soft) / 0.7), rgb(var(--accent-tint)) 75%)"],
+          ["speaking", "radial-gradient(circle at 50% 55%, rgb(255 214 77 / 0.65), rgb(var(--accent-glow) / 0.35) 55%, rgb(var(--accent-tint)) 85%)"],
+        ] as const
+      ).map(([s, bg]) => (
+        <div key={s} aria-hidden="true" className="absolute inset-0 transition-opacity duration-700" style={{ background: bg, opacity: state === s ? 1 : 0 }} />
+      ))}
+      <svg role="img" aria-label={label} viewBox="0 0 512 512" width={size} height={size} className="relative block">
         <style>{`
           .duck-blink { animation: duck-blink 4.6s infinite; transform-box: fill-box; transform-origin: center; }
           @keyframes duck-blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }

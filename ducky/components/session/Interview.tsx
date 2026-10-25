@@ -136,7 +136,7 @@ export default function Interview({ messages, thinking, responding, hintsUsed, h
         </span>
       </div>
 
-      <div className="flex items-center gap-4 border-b border-line bg-[#EEF5F9] px-5 py-3">
+      <div className="flex items-center gap-4 border-b border-line bg-surface px-5 py-3">
         <DuckAvatar state={duckState} wordTick={voice.wordTick} level={voice.level} />
         <div className="min-w-0">
           <p className="font-display text-lg font-bold">Ducky</p>
