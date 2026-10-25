@@ -68,6 +68,35 @@ export const PROBLEM_SETS: ProblemSetRecord[] = [
     posted: "Fri, Oct 23",
     sessionIds: ["demo-cs-2", "demo-cs-2-p2", "demo-cs-2-p3", "demo-cs-2-p4"],
   },
+  {
+    id: "math-325k-ps1",
+    classId: "math-325k",
+    number: 1,
+    title: "Mathematical induction",
+    summary: "Sum identities, divisibility, and strong induction.",
+    problems: 3,
+    completed: 0,
+    due: "Fri, Nov 6",
+    posted: "Mon, Oct 19",
+    sessionIds: ["demo-math-325k-ps1-p1", "demo-math-325k-ps1-p2", "demo-math-325k-ps1-p3"],
+  },
+  {
+    id: "math-325k-ps2",
+    classId: "math-325k",
+    number: 2,
+    title: "Functions and countability",
+    summary: "Injective, surjective, bijective, and which infinite sets can be listed.",
+    problems: 4,
+    completed: 0,
+    due: "Fri, Nov 13",
+    posted: "Wed, Oct 21",
+    sessionIds: [
+      "demo-math-325k-ps2-p1",
+      "demo-math-325k-ps2-p2",
+      "demo-math-325k-ps2-p3",
+      "demo-math-325k-ps2-p4",
+    ],
+  },
 ];
 
 const BY_CLASS: Record<string, ProblemSetRecord[]> = PROBLEM_SETS.reduce(

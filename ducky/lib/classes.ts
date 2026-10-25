@@ -5,7 +5,7 @@
 
 import { getClassProgress, getProblemSets, type ProblemSetRecord } from "./problemSets";
 
-export type ClassTone = "accent" | "amber" | "blue";
+export type ClassTone = "accent" | "amber" | "blue" | "violet";
 
 export interface ClassRecord {
   id: string;
@@ -46,6 +46,15 @@ export const CLASSES: ClassRecord[] = [
     joinCode: "CSC9X2",
     tone: "blue",
   },
+  {
+    id: "math-325k",
+    course: "MATH 325K",
+    name: "Discrete Mathematics",
+    teacher: "R. Iyer",
+    term: "Fall 2026",
+    joinCode: "MTH4D2",
+    tone: "violet",
+  },
 ];
 
 export const CLASS_BY_ID: Record<string, ClassRecord> = Object.fromEntries(
@@ -59,7 +68,7 @@ export const CLASS_BY_ID: Record<string, ClassRecord> = Object.fromEntries(
  * the catalog is replaced with a real `classes` query, a student with no mock
  * enrollment falls back to this list instead of an empty page.
  */
-export const DEMO_ENROLLMENT_IDS = ["phys-1401", "cs-314"];
+export const DEMO_ENROLLMENT_IDS = ["phys-1401", "cs-314", "math-325k"];
 
 /** Uppercase, strip separators, cap at 6. Safe to run on every keystroke. */
 export function normalizeJoinCode(input: string): string {

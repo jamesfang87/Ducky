@@ -6,6 +6,7 @@ const DOT: Record<ClassTone, string> = {
   accent: "bg-accent",
   amber: "bg-warn",
   blue: "bg-[#2F6FEB]",
+  violet: "bg-[#7C3AED]",
 };
 
 export function ClassCard({ record }: { record: ClassRecord }) {

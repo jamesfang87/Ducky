@@ -562,6 +562,265 @@ const TEMPLATES: Record<string, Template> = {
     startStep: 0,
     opening: "What has to be true about the hash function for the average case to hold?",
   },
+  "demo-math-325k-ps1-p1": {
+    problem: {
+      index: 1,
+      total: 3,
+      course: "MATH 325K",
+      set: "Problem Set 1 · Mathematical induction",
+      prompt:
+        "Prove by induction that for every integer n ≥ 1, 1 + 3 + 5 + ⋯ + (2n − 1) = n².",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "Base case n = 1: the left side is 1 and the right side is 1² = 1. " +
+        "Assume for some k ≥ 1 that 1 + 3 + ⋯ + (2k − 1) = k². " +
+        "Then the sum for k + 1 is k² + (2(k + 1) − 1) = k² + 2k + 1 = (k + 1)². " +
+        "So P(k) implies P(k + 1), and by induction the identity holds for every n ≥ 1.",
+      finalAnswerPatterns: [],
+    },
+    misconceptions: [
+      { id: "ind-missing-base", label: "Skips the base case" },
+      { id: "ind-assumes-result", label: "Assumes P(k + 1) instead of proving it" },
+      { id: "ind-wrong-next-term", label: "Adds 2k − 1 instead of 2k + 1" },
+      { id: "ind-no-conclusion", label: "Does the algebra but never invokes induction" },
+    ],
+    hints: [
+      "Start with n = 1. What is the left side, and what is the right side?",
+      "Write the sum for k + 1. How does it relate to the sum for k? What term did you add?",
+    ],
+    steps: [
+      "Write P(n) and check the base case n = 1",
+      "State the induction hypothesis for n = k",
+      "Add the next term, 2k + 1, to both sides",
+      "Simplify k² + 2k + 1 and conclude P(k + 1)",
+      "Invoke induction to finish",
+    ],
+    startStep: 0,
+    opening: "Before any algebra: what does P(1) say, and is it true?",
+  },
+  "demo-math-325k-ps1-p2": {
+    problem: {
+      index: 2,
+      total: 3,
+      course: "MATH 325K",
+      set: "Problem Set 1 · Mathematical induction",
+      prompt: "Prove by induction that for every integer n ≥ 0, 7 divides 8ⁿ − 1.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "Base case n = 0: 8⁰ − 1 = 0 = 7 · 0. " +
+        "Assume 8^k − 1 = 7m for some integer m. " +
+        "Then 8^(k+1) − 1 = 8 · 8^k − 1 = 8(8^k − 1) + 7 = 8(7m) + 7 = 7(8m + 1). " +
+        "That is divisible by 7, so P(k + 1) holds. By induction, 7 divides 8ⁿ − 1 for every n ≥ 0.",
+      finalAnswerPatterns: [],
+    },
+    misconceptions: [
+      { id: "ind2-wrong-base", label: "Starts at n = 1 while claiming the result for n ≥ 0" },
+      { id: "ind2-no-hypothesis", label: "Never uses the assumption that 8^k − 1 is divisible by 7" },
+      { id: "ind2-loses-seven", label: "Rewrites incorrectly and loses the extra +7" },
+      { id: "ind2-assumes-conclusion", label: "Assumes 8^(k+1) − 1 is divisible by 7" },
+    ],
+    hints: [
+      "What is 8⁰ − 1? Is it divisible by 7?",
+      "Write 8^(k+1) as 8 · 8^k. How can you make the hypothesis 8^k − 1 appear?",
+    ],
+    steps: [
+      "Check the base case n = 0",
+      "Write the induction hypothesis as a multiple of 7",
+      "Rewrite 8^(k+1) − 1 to expose 8^k − 1",
+      "Factor out 7 and conclude",
+    ],
+    startStep: 0,
+    opening: "What does the statement say for n = 0, and why is that the right base case?",
+  },
+  "demo-math-325k-ps1-p3": {
+    problem: {
+      index: 3,
+      total: 3,
+      course: "MATH 325K",
+      set: "Problem Set 1 · Mathematical induction",
+      prompt:
+        "Prove that every integer n ≥ 12 can be written as 4a + 5b for some nonnegative integers a and b.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "Base cases: 12 = 4 · 3, 13 = 4 · 2 + 5, 14 = 4 + 5 · 2, and 15 = 5 · 3. " +
+        "For the strong step, assume every integer from 12 through k − 1 has such a representation, with k ≥ 16. " +
+        "Then k − 4 ≥ 12, so k − 4 = 4a + 5b for some a, b ≥ 0. " +
+        "Adding one more 4 gives k = 4(a + 1) + 5b. " +
+        "By strong induction, every n ≥ 12 has a representation.",
+      finalAnswerPatterns: [],
+    },
+    misconceptions: [
+      { id: "ind3-one-base", label: "Checks only n = 12 and assumes the rest follow" },
+      { id: "ind3-weak-hypothesis", label: "Assumes only P(k) instead of every value below k" },
+      { id: "ind3-negative-coeff", label: "Allows negative a or b" },
+      { id: "ind3-gap", label: "Uses k − 4 without checking k − 4 ≥ 12" },
+    ],
+    hints: [
+      "Which four values do you need to check so that subtracting 4 always lands on a known value?",
+      "If k − 4 is representable, how do you represent k?",
+    ],
+    steps: [
+      "Check the four base cases 12, 13, 14, and 15",
+      "State the strong hypothesis for every value from 12 through k − 1",
+      "For k ≥ 16, note k − 4 ≥ 12 and apply the hypothesis",
+      "Add one 4 to get the representation for k",
+    ],
+    startStep: 0,
+    opening: "Why might a single base case not be enough for this problem?",
+  },
+  "demo-math-325k-ps2-p1": {
+    problem: {
+      index: 1,
+      total: 4,
+      course: "MATH 325K",
+      set: "Problem Set 2 · Functions and countability",
+      prompt:
+        "Let A = {1, 2, 3}, B = {a, b, c}, and C = {a, b}. Classify each function as injective, surjective, bijective, or neither, and explain: f: A → B with f(1) = a, f(2) = b, f(3) = c; g: A → B with g(1) = a, g(2) = a, g(3) = b; h: A → C with h(1) = a, h(2) = b, h(3) = a. Then give an example of a function that is injective but not surjective.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "f is bijective: its three outputs are distinct and every element of B is hit. " +
+        "g is neither: 1 and 2 share a, so it is not injective, and c is never hit, so it is not surjective. " +
+        "h is surjective but not injective: both a and b are hit, but 1 and 3 share a. " +
+        "An injective-only example is k: {1, 2} → B with k(1) = a and k(2) = b: the outputs are distinct, but c is not hit.",
+      finalAnswerPatterns: [],
+    },
+    misconceptions: [
+      { id: "fn-codomain-range", label: "Treats the codomain as the range" },
+      { id: "fn-injective-one-output", label: "Thinks injective means each input has one output" },
+      { id: "fn-counts-sizes", label: "Uses set sizes alone without checking the actual mapping" },
+      { id: "fn-bijective-everywhere", label: "Calls any function with distinct outputs bijective without checking coverage" },
+    ],
+    hints: [
+      "For injectivity, do any two inputs share an output?",
+      "For surjectivity, is every element of the codomain actually used?",
+    ],
+    steps: [
+      "Recall what injective, surjective, and bijective mean",
+      "Classify f by checking distinct outputs and coverage of B",
+      "Classify g: find a repeated output and a missed codomain element",
+      "Classify h: find a repeated output but check whether C is covered",
+      "Build an injective-only example by making the codomain larger than the domain",
+    ],
+    startStep: 0,
+    opening: "Start with definitions: what has to be true for a function to be injective?",
+  },
+  "demo-math-325k-ps2-p2": {
+    problem: {
+      index: 2,
+      total: 4,
+      course: "MATH 325K",
+      set: "Problem Set 2 · Functions and countability",
+      prompt: "Define f: Z → Z by f(n) = 2n. Is f injective? Is f surjective? Justify both answers.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "Injective: if f(a) = f(b), then 2a = 2b, so a = b. " +
+        "Not surjective: 1 is in the codomain Z, but 2n = 1 has no integer solution. " +
+        "The range is the even integers, not all of Z. So f is injective but not surjective.",
+      finalAnswerPatterns: [],
+    },
+    misconceptions: [
+      { id: "fn2-injective-implies-surjective", label: "Assumes injective means surjective" },
+      { id: "fn2-domain-confusion", label: "Confuses the domain with the codomain" },
+      { id: "fn2-odd-preimage", label: "Claims every odd integer has an integer half" },
+      { id: "fn2-bijective", label: "Calls it bijective because its graph is a line" },
+    ],
+    hints: [
+      "If 2a = 2b, what can you divide both sides by?",
+      "Try to solve 2n = 1 for an integer n. What happens?",
+    ],
+    steps: [
+      "Write the definitions of injective and surjective for this domain and codomain",
+      "Prove injectivity by assuming f(a) = f(b)",
+      "Look for an integer in the codomain with no preimage",
+      "Conclude that f is injective but not surjective",
+    ],
+    startStep: 0,
+    opening: "Before deciding, say what injective and surjective each require here.",
+  },
+  "demo-math-325k-ps2-p3": {
+    problem: {
+      index: 3,
+      total: 4,
+      course: "MATH 325K",
+      set: "Problem Set 2 · Functions and countability",
+      prompt:
+        "Show that the set of integers Z is countably infinite by describing a bijection with N or an explicit listing.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "List the integers as 0, 1, −1, 2, −2, 3, −3, … . " +
+        "Every integer appears exactly once: 0 at the start, and each n ≥ 1 appears as n followed by −n. " +
+        "So this listing is a bijection N → Z, and Z is countably infinite.",
+      finalAnswerPatterns: [],
+    },
+    misconceptions: [
+      { id: "cnt-infinite-uncountable", label: "Thinks every infinite set is uncountable" },
+      { id: "cnt-positives-only", label: "Lists only the nonnegative integers" },
+      { id: "cnt-duplicates", label: "Lists an integer twice and misses another" },
+      { id: "cnt-subset-larger", label: "Thinks Z cannot be countable because N is a subset of Z" },
+    ],
+    hints: [
+      "Can you write the integers in a sequence that never skips one?",
+      "Where does 3 appear in 0, 1, −1, 2, −2, …? Where does −3 appear?",
+    ],
+    steps: [
+      "Recall the definition of countably infinite",
+      "Propose a listing that alternates positive and negative integers",
+      "Show every integer appears exactly once",
+      "Conclude that the listing is a bijection with N",
+    ],
+    startStep: 0,
+    opening: "What does it mean, precisely, for a set to be countably infinite?",
+  },
+  "demo-math-325k-ps2-p4": {
+    problem: {
+      index: 4,
+      total: 4,
+      course: "MATH 325K",
+      set: "Problem Set 2 · Functions and countability",
+      prompt: "Prove that the open interval (0, 1) is uncountable using Cantor's diagonal argument.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "Suppose (0, 1) were countable, so its elements could be listed as r1, r2, r3, … . " +
+        "Write each rn as a decimal 0.dn1 dn2 dn3 … . " +
+        "Define d = 0.e1 e2 e3 … by choosing en ≠ dnn, avoiding 0 and 9 (pick 1 unless dnn = 1, then pick 2). " +
+        "Then d is in (0, 1), but d differs from rn in the nth digit for every n, so d is not in the list. " +
+        "That contradiction shows (0, 1) is uncountable.",
+      finalAnswerPatterns: [],
+    },
+    misconceptions: [
+      { id: "diag-9-issue", label: "Ignores the two-decimal-expansion problem (0.4999… = 0.5000…)" },
+      { id: "diag-one-missing", label: "Thinks one missing number is not a contradiction" },
+      { id: "diag-finite-list", label: "Argues about a finite list instead of a complete infinite list" },
+      { id: "diag-not-in-interval", label: "Builds a number outside (0, 1)" },
+    ],
+    hints: [
+      "Suppose you had a complete list. What could you change in the first number to make a new number?",
+      "How do you change the nth digit so the new number cannot equal the nth number on the list?",
+    ],
+    steps: [
+      "Assume for contradiction that (0, 1) can be listed",
+      "Write the decimal digits of each number on the list",
+      "Build a new number that differs from the nth number in the nth digit",
+      "Choose digits away from 0 and 9 to avoid duplicate decimal representations",
+      "Show the new number is in (0, 1) but missing from the list",
+    ],
+    startStep: 0,
+    opening: "What would it mean to have a complete list of every number between 0 and 1?",
+  },
 };
 
 interface Db {
