@@ -25,6 +25,8 @@ export interface ServerMisconceptionEvent {
   misconception: string;
   problem: number;
   student: string;
+  /** Which problem (session id) it happened on, so a teacher can answer it with a voice note. */
+  sessionId?: string;
   at: number;
 }
 
@@ -57,6 +59,8 @@ export interface ServerSession {
   visualBusy: boolean;
   /** Study-resource searches so far (each costs a SerpApi credit unless cached). */
   resourceSearches: number;
+  /** Voice-note segments already offered in this session ("noteId:segment"), so each plays once. */
+  notesOffered?: string[];
 }
 
 export interface StoredTurn {
@@ -122,6 +126,8 @@ export interface Template {
   opening: string;
   /** Session id of the next problem in the same set, if any. */
   next?: string | null;
+  /** The class an uploaded problem belongs to (demo templates have none). */
+  classId?: string;
 }
 
 const TEMPLATES: Record<string, Template> = {
@@ -1032,6 +1038,58 @@ export function resetSession(s: ServerSession): ServerSession {
 }
 
 const tpl = (s: ServerSession): Template => templateOf(s.id)!;
+/** Template for a session id (demo or cached upload), for code that has no student session. */
+export const templateFor = (sessionId: string): Template | undefined => templateOf(sessionId);
+/** Where a session's voice notes live: its class, or "demo" for the built-in sets. */
+export const noteScopeOf = (s: ServerSession): string => tpl(s).classId ?? "demo";
+
+/** The built-in demo problems, for pickers on the teacher side. */
+export function listDemoProblems(): { id: string; course: string; set: string; index: number; prompt: string; steps: string[]; misconceptions: ServerMisconception[] }[] {
+  return Object.entries(TEMPLATES).map(([id, t]) => ({
+    id,
+    course: t.problem.course,
+    set: t.problem.set,
+    index: t.problem.index,
+    prompt: t.problem.prompt,
+    steps: t.steps,
+    misconceptions: t.misconceptions,
+  }));
+}
+
+/**
+ * Where students are stuck right now: misconceptions flagged and still open, by problem, with how
+ * many different students hit each. Feeds "record a voice note for this" on the teacher side.
+ */
+export function stuckSpots(): { sessionId: string; misconception: string; label: string; problemLabel: string; students: number; lastAt: number }[] {
+  const groups = new Map<string, { sessionId: string; misconception: string; students: Set<string>; lastAt: number }>();
+  for (const e of db.misconceptionEvents) {
+    if (!e.sessionId) continue;
+    const fixed = db.resolvedEvents.some((r) => r.student === e.student && r.misconception === e.misconception && r.at > e.at);
+    if (fixed) continue;
+    const key = `${e.sessionId}|${e.misconception}`;
+    const g = groups.get(key) ?? { sessionId: e.sessionId, misconception: e.misconception, students: new Set<string>(), lastAt: 0 };
+    g.students.add(e.student);
+    g.lastAt = Math.max(g.lastAt, e.at);
+    groups.set(key, g);
+  }
+  return [...groups.values()]
+    .flatMap((g) => {
+      const t = templateOf(g.sessionId);
+      if (!t) return [];
+      return [
+        {
+          sessionId: g.sessionId,
+          misconception: g.misconception,
+          label: t.misconceptions.find((m) => m.id === g.misconception)?.label ?? g.misconception,
+          problemLabel: `${t.problem.course} · ${t.problem.set} · Problem ${t.problem.index}`,
+          students: g.students.size,
+          lastAt: g.lastAt,
+        },
+      ];
+    })
+    .sort((a, b) => b.students - a.students || b.lastAt - a.lastAt)
+    .slice(0, 12);
+}
 export const getProblem = (s: ServerSession): Problem => tpl(s).problem;
 export const getPolicy = (s: ServerSession): ServerPolicy => tpl(s).policy;
 /** Server-only. Never put this in a response, except through the gated reveal route. */
@@ -1131,6 +1189,7 @@ export function saveMisconceptionEvent(s: ServerSession, misconception: string):
     misconception,
     problem: s.problemIndex,
     student: s.student,
+    sessionId: s.id,
     at: Date.now(),
   };
   db.misconceptionEvents.push(e);

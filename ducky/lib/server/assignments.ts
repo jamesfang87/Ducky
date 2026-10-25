@@ -178,5 +178,6 @@ export async function loadUploadedTemplate(supabase: SupabaseClient, problemId: 
     startStep: 0,
     opening: material.opening || "Before we work anything out: what is this problem asking, in your own words?",
     next: order[at + 1]?.id ?? null,
+    classId: asg.class_id,
   };
 }
