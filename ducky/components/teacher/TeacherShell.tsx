@@ -13,6 +13,7 @@ const NAV = [
   { href: "/teacher/assignments", label: "Assignments" },
   { href: "/teacher/transcripts", label: "Transcripts" },
   { href: "/teacher/help", label: "Help queue" },
+  { href: "/teacher/agent-ci", label: "Agent CI" },
 ];
 
 /** Header + left sidebar shared by the teacher's overview, Tutor agents, Assignments and Transcripts pages. */
