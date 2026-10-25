@@ -13,6 +13,8 @@ import SketchPad from "./SketchPad";
 interface Props {
   messages: ChatMessage[];
   thinking: boolean;
+  /** Ducky's turn is still streaming; don't reopen the mic yet. */
+  responding: boolean;
   hintsUsed: number;
   hintLimit: number;
   voiceRequired: boolean;
@@ -22,10 +24,19 @@ interface Props {
   onHint: () => void;
 }
 
-export default function Interview({ messages, thinking, hintsUsed, hintLimit, voiceRequired, finished, onSend, onHint }: Props) {
+export default function Interview({ messages, thinking, responding, hintsUsed, hintLimit, voiceRequired, finished, onSend, onHint }: Props) {
   const [draft, setDraft] = useState("");
   const [sketching, setSketching] = useState(false);
-  const speech = useSpeech((text, secs) => onSend(text, "voice", secs));
+  const [handsFree, setHandsFree] = usePersistedState("ducky:handsFree", true);
+  // Hands-free only starts after the student has used the mic once, so the page
+  // never opens the microphone on load.
+  const engaged = useRef(false);
+  const lastInputVia = useRef<"voice" | "text" | null>(null);
+  const speech = useSpeech((text, secs) => {
+    engaged.current = true;
+    lastInputVia.current = "voice";
+    onSend(text, "voice", secs);
+  });
   const voice = useDuckVoice(messages);
   const duckState: DuckState = voice.speaking
     ? "speaking"
@@ -42,6 +53,30 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
   }, [messages, thinking]);
 
+  // After Ducky finishes a spoken reply, reopen the mic so the student can just
+  // keep talking. A pause then sends the turn automatically. Waiting for
+  // `responding` to clear avoids opening the mic during a streaming pause.
+  useEffect(() => {
+    if (responding || voice.speaking || thinking || finished) return;
+    if (!handsFree || !engaged.current || lastInputVia.current !== "voice") return;
+    if (speech.listening || speech.transcribing || speech.error) return;
+    const t = setTimeout(() => {
+      if (responding || voice.speaking || thinking || speech.listening || speech.transcribing) return;
+      void speech.start({ autoStop: true });
+    }, 500);
+    return () => clearTimeout(t);
+  }, [responding, voice.speaking, thinking, finished, handsFree, speech.listening, speech.transcribing, speech.error, speech.start]);
+
+  // Any student input takes the turn back: Ducky stops talking immediately.
+  const takeOver = (via: "voice" | "text") => {
+    engaged.current = true;
+    lastInputVia.current = via;
+    const last = messages[messages.length - 1];
+    // If Ducky hasn't said anything yet this turn, silence the reply that is coming.
+    voice.stop({ suppressNext: responding && last?.role === "student" });
+    if (via === "text" && speech.listening) speech.cancel();
+  };
+
   // Voice required, but fall back to typing when the browser has no speech recognition.
   const typingLocked = voiceRequired && speech.supported;
   const hintsLeft = Math.max(0, hintLimit - hintsUsed);
@@ -49,6 +84,7 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
   const submit = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!draft.trim() || thinking) return;
+    takeOver("text");
     onSend(draft.trim(), "text");
     setDraft("");
   };
@@ -68,6 +104,19 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
         <span className="h-2.5 w-2.5 rounded-full bg-accent" />
         <h2 className="h2">Talk it through</h2>
         <div className="flex-1" />
+        {speech.supported && (
+          <button
+            type="button"
+            onClick={() => setHandsFree((h) => !h)}
+            aria-pressed={handsFree}
+            title="Keep listening after Ducky finishes speaking"
+            className={`chip transition hover:border-accent ${
+              handsFree ? "border-accent/30 bg-accent-tint text-accent-dark" : "text-muted"
+            }`}
+          >
+            Hands-free {handsFree ? "on" : "off"}
+          </button>
+        )}
         {voice.supported && (
           <button
             type="button"
@@ -93,11 +142,13 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
           <p className="font-display text-lg font-bold">Ducky</p>
           <p className="text-[13px] text-sub" aria-live="polite">
             {duckState === "speaking"
-              ? "Talking…"
+              ? "Talking… tap the mic or type to interrupt."
               : duckState === "thinking"
                 ? "Thinking it over…"
                 : duckState === "listening"
-                  ? "Listening to you…"
+                  ? handsFree
+                    ? "Listening… pause when you're done."
+                    : "Listening to you…"
                   : finished
                     ? "Nice work. That's the whole explanation."
                     : "Explain your reasoning. I'll keep asking why."}
@@ -158,11 +209,12 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
           <button
             onClick={() => {
               if (speech.listening) return speech.stop();
-              voice.stop(); // the student is talking; Ducky goes quiet
-              return speech.start();
+              takeOver("voice"); // Ducky goes quiet the moment the student starts
+              return speech.start({ autoStop: handsFree });
             }}
             disabled={!speech.supported || thinking || speech.transcribing}
-            aria-label={speech.listening ? "Stop and send" : "Tap to talk"}
+            aria-label={speech.listening ? "Send my answer" : voice.speaking ? "Interrupt Ducky and talk" : "Tap to talk"}
+            title={speech.listening ? "Pause to send" : voice.speaking ? "Interrupt Ducky" : "Tap to talk"}
             className={`flex h-16 w-16 flex-none items-center justify-center rounded-full text-white transition disabled:opacity-40 ${
               speech.listening ? "bg-warn shadow-[0_0_0_8px_#FBF1E6]" : "bg-accent shadow-[0_0_0_8px_#E6F3EF] hover:bg-accent-dark"
             }`}
@@ -174,12 +226,16 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
               {!speech.supported
                 ? "Voice isn’t supported in this browser. Type below."
                 : speech.listening
-                  ? "Listening… tap to send"
+                  ? handsFree
+                    ? "Listening… pause when you're done"
+                    : "Listening… tap to send"
                   : speech.transcribing
                     ? "Transcribing…"
-                    : typingLocked
-                    ? "Tap to talk through your reasoning"
-                    : "Tap to talk, or type below"}
+                    : voice.speaking
+                      ? "Ducky is talking. Tap the mic or type to interrupt."
+                      : typingLocked
+                        ? "Tap to talk through your reasoning"
+                        : "Tap to talk, or type below"}
             </p>
             {speech.listening && (
               <div aria-hidden="true" className="mt-0.5 flex h-7 items-center gap-[3px]">
@@ -202,7 +258,13 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
             id="typed"
             rows={1}
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onFocus={() => {
+              if (speech.listening || voice.speaking) takeOver("text");
+            }}
+            onChange={(e) => {
+              takeOver("text");
+              setDraft(e.target.value);
+            }}
             onKeyDown={(e) => {
               // Enter sends; Shift+Enter adds a line. Skip while an IME is composing.
               if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {

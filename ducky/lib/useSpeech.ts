@@ -29,6 +29,9 @@ type SRCtor = new () => SR;
 const TARGET_RATE = 16_000;
 const MAX_SECONDS = 60;
 const MIN_SECONDS = 0.4;
+/** Loudness (RMS) that counts as speech, and how long a pause ends the turn. */
+const VOICE_RMS = 0.02;
+const SILENCE_MS = 1_600;
 
 interface Recording {
   stream: MediaStream;
@@ -38,6 +41,11 @@ interface Recording {
   rate: number;
   captions: SR | null;
   timer: ReturnType<typeof setTimeout>;
+  startedAt: number;
+  lastVoiceAt: number;
+  heardVoice: boolean;
+  autoStop: boolean;
+  monitor: ReturnType<typeof setInterval> | null;
 }
 
 /** Average-and-decimate to 16 kHz; good enough for speech. */
@@ -87,9 +95,9 @@ export function useSpeech(onFinal: (text: string, seconds: number) => void) {
   const [interim, setInterim] = useState("");
   const [error, setError] = useState<string | null>(null);
   const rec = useRef<Recording | null>(null);
+  const starting = useRef(false);
   const captionFinal = useRef("");
   const captionLive = useRef("");
-  const startedAt = useRef(0);
   const cb = useRef(onFinal);
   cb.current = onFinal;
 
@@ -125,11 +133,13 @@ export function useSpeech(onFinal: (text: string, seconds: number) => void) {
     }
   };
 
-  const stop = useCallback(async () => {
+  /** Stop recording. `send` transcribes and hands the text to the caller; false discards it. */
+  const finish = useCallback(async (send: boolean) => {
     const r = rec.current;
     if (!r) return;
     rec.current = null;
     clearTimeout(r.timer);
+    if (r.monitor) clearInterval(r.monitor);
     r.proc.disconnect();
     r.stream.getTracks().forEach((t) => t.stop());
     void r.ctx.close();
@@ -138,7 +148,12 @@ export function useSpeech(onFinal: (text: string, seconds: number) => void) {
     } catch {}
     setListening(false);
 
-    const secs = (Date.now() - startedAt.current) / 1000;
+    if (!send) {
+      setInterim("");
+      return;
+    }
+
+    const secs = (Date.now() - r.startedAt) / 1000;
     const total = r.chunks.reduce((n, c) => n + c.length, 0);
     if (total / r.rate < MIN_SECONDS) {
       setInterim("");
@@ -175,45 +190,90 @@ export function useSpeech(onFinal: (text: string, seconds: number) => void) {
     if (text) cb.current(text, Math.max(1, Math.round(secs)));
   }, []);
 
-  const start = useCallback(async () => {
-    if (rec.current) return;
-    setError(null);
-    setInterim("");
-    captionFinal.current = "";
-    captionLive.current = "";
+  const stop = useCallback(() => void finish(true), [finish]);
+  /** Throw the recording away without sending it. */
+  const cancel = useCallback(() => void finish(false), [finish]);
 
-    let stream: MediaStream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
-    } catch (e) {
-      const name = e instanceof DOMException ? e.name : "";
-      setError(name === "NotAllowedError" ? "Microphone permission denied" : "Couldn't open the microphone");
-      return;
-    }
+  const start = useCallback(
+    async (options?: { autoStop?: boolean }) => {
+      if (rec.current || starting.current) return;
+      starting.current = true;
+      setError(null);
+      setInterim("");
+      captionFinal.current = "";
+      captionLive.current = "";
 
-    const w = window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext };
-    const Ctx = (w.AudioContext || w.webkitAudioContext)!;
-    const ctx = new Ctx();
-    const source = ctx.createMediaStreamSource(stream);
-    // ScriptProcessor is deprecated but works everywhere without a separate worklet file.
-    const proc = ctx.createScriptProcessor(4096, 1, 1);
-    const chunks: Float32Array[] = [];
-    proc.onaudioprocess = (e) => chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
-    source.connect(proc);
-    proc.connect(ctx.destination); // required for Chrome to run the processor; it outputs silence
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
+      } catch (e) {
+        starting.current = false;
+        const name = e instanceof DOMException ? e.name : "";
+        setError(name === "NotAllowedError" ? "Microphone permission denied" : "Couldn't open the microphone");
+        return;
+      }
 
-    rec.current = {
-      stream,
-      ctx,
-      proc,
-      chunks,
-      rate: ctx.sampleRate,
-      captions: startCaptions(),
-      timer: setTimeout(() => void stop(), MAX_SECONDS * 1000),
-    };
-    startedAt.current = Date.now();
-    setListening(true);
-  }, [stop]);
+      const w = window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext };
+      const Ctx = (w.AudioContext || w.webkitAudioContext)!;
+      const ctx = new Ctx();
+      const source = ctx.createMediaStreamSource(stream);
+      // ScriptProcessor is deprecated but works everywhere without a separate worklet file.
+      const proc = ctx.createScriptProcessor(4096, 1, 1);
+      const chunks: Float32Array[] = [];
+      const autoStop = options?.autoStop ?? false;
+
+      const recObj: Recording = {
+        stream,
+        ctx,
+        proc,
+        chunks,
+        rate: ctx.sampleRate,
+        captions: startCaptions(),
+        timer: setTimeout(() => void finish(true), MAX_SECONDS * 1000),
+        startedAt: Date.now(),
+        lastVoiceAt: Date.now(),
+        heardVoice: false,
+        autoStop,
+        monitor: null,
+      };
+
+      proc.onaudioprocess = (e) => {
+        const data = e.inputBuffer.getChannelData(0);
+        chunks.push(new Float32Array(data));
+        if (!recObj.autoStop) return;
+        let sum = 0;
+        for (let i = 0; i < data.length; i++) sum += data[i] * data[i];
+        if (Math.sqrt(sum / data.length) >= VOICE_RMS) {
+          recObj.lastVoiceAt = Date.now();
+          recObj.heardVoice = true;
+        }
+      };
+
+      source.connect(proc);
+      proc.connect(ctx.destination); // required for Chrome to run the processor; it outputs silence
+
+      if (autoStop) {
+        // End the turn after the student stops talking, so the conversation can flow.
+        recObj.monitor = setInterval(() => {
+          if (rec.current !== recObj) return;
+          const now = Date.now();
+          const elapsed = now - recObj.startedAt;
+          const quiet = now - recObj.lastVoiceAt;
+          if (elapsed >= 900 && recObj.heardVoice && quiet >= SILENCE_MS) {
+            void finish(true);
+          } else if (elapsed >= 12_000 && !recObj.heardVoice) {
+            setError("Didn't hear anything. Tap the mic when you're ready.");
+            void finish(false);
+          }
+        }, 150);
+      }
+
+      rec.current = recObj;
+      starting.current = false;
+      setListening(true);
+    },
+    [finish],
+  );
 
   // Release the mic if the page goes away mid-recording.
   useEffect(
@@ -221,11 +281,12 @@ export function useSpeech(onFinal: (text: string, seconds: number) => void) {
       const r = rec.current;
       if (!r) return;
       clearTimeout(r.timer);
+      if (r.monitor) clearInterval(r.monitor);
       r.stream.getTracks().forEach((t) => t.stop());
       void r.ctx.close();
     },
     [],
   );
 
-  return { supported, listening, transcribing, interim, error, start, stop };
+  return { supported, listening, transcribing, interim, error, start, stop, cancel };
 }

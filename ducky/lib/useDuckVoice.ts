@@ -38,11 +38,16 @@ export function useDuckVoice(messages: ChatMessage[]) {
   const level = useRef(-1);
   const voice = useRef<SpeechSynthesisVoice | null>(null);
   // Ids that existed before this mount, or were already queued.
-  const spoken = useRef<Set<string> | null>(null);
+  const spoken = useRef<Map<string, string> | null>(null);
   const queue = useRef<string[]>([]);
   const busy = useRef(false);
   // Bumped by stop() so in-flight fetches and loops know to give up.
   const generation = useRef(0);
+  // A message the student interrupted: never speak its later streaming chunks.
+  const ignored = useRef<Set<string>>(new Set());
+  const latestTutorId = useRef<string | null>(null);
+  // The next tutor reply belongs to a turn the student already took over.
+  const suppressNext = useRef(false);
   // Set once the server says ElevenLabs isn't configured; skip straight to the browser voice.
   const serverOff = useRef(false);
   const audio = useRef<{ ctx: AudioContext; el: HTMLAudioElement; raf: number } | null>(null);
@@ -144,25 +149,48 @@ export function useDuckVoice(messages: ChatMessage[]) {
     setSpeaking(false);
   }, []);
 
-  const stop = useCallback(() => {
+  const stop = useCallback((options?: { suppressNext?: boolean }) => {
     generation.current++;
     queue.current = [];
     busy.current = false;
     endAudio();
     if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    // If the student cuts Ducky off, don't queue the rest of that same reply.
+    if (latestTutorId.current) ignored.current.add(latestTutorId.current);
+    // ...or, if Ducky hasn't replied yet, swallow the reply that is still coming.
+    if (options?.suppressNext) suppressNext.current = true;
     setSpeaking(false);
   }, []);
 
   useEffect(() => {
+    const lastTutor = [...messages].reverse().find((m) => m.role === "tutor");
+    if (lastTutor) latestTutorId.current = lastTutor.id;
+
     if (spoken.current === null) {
-      spoken.current = new Set(messages.map((m) => m.id));
+      spoken.current = new Map(messages.map((m) => [m.id, m.text.trim()]));
       return;
     }
-    const fresh = messages.filter((m) => !spoken.current!.has(m.id));
-    fresh.forEach((m) => spoken.current!.add(m.id));
-    const say = fresh.filter((m) => m.role === "tutor" && m.text.trim());
+    const said = spoken.current;
+    const say: string[] = [];
+    for (const m of messages) {
+      if (m.role !== "tutor") continue;
+      const known = said.has(m.id);
+      const text = m.text.trim();
+      const prev = said.get(m.id) ?? "";
+      // A reply that arrived after the student took over the turn stays silent.
+      if (!known && suppressNext.current) {
+        suppressNext.current = false;
+        ignored.current.add(m.id);
+      }
+      if (text === prev) continue;
+      said.set(m.id, text);
+      if (ignored.current.has(m.id)) continue;
+      // Replies stream in sentence by sentence; speak only the new tail.
+      const delta = text.startsWith(prev) ? text.slice(prev.length).trim() : text;
+      if (delta) say.push(delta);
+    }
     if (!supported || muted || say.length === 0) return;
-    queue.current.push(...say.map((m) => m.text.trim()));
+    queue.current.push(...say);
     void drain();
   }, [messages, supported, muted, drain]);
 

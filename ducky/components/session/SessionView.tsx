@@ -56,6 +56,10 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [thinking, setThinking] = useState(false);
+  // True until Ducky's whole turn has streamed, so voice mode knows not to reopen the mic mid-reply.
+  const [responding, setResponding] = useState(false);
+  // Identifies the current turn; stale streams from an interrupted turn stop updating the UI.
+  const turnSeq = useRef(0);
   const [hintsUsed, setHintsUsed] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   // Reasoning steps the student has explained correctly, so the checklist fills in as they go.
@@ -241,33 +245,46 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   };
 
   const handleSend = async (text: string, via: "voice" | "text", seconds?: number) => {
+    const seq = ++turnSeq.current;
     push({ role: "student", text, via, durationSec: seconds });
     setThinking(true);
+    setResponding(true);
     const replyId = uid();
     let started = false;
-    await streamTurn(
-      {
-        sessionId,
-        message: text,
-        via,
-        history: messages.flatMap((m) => (m.role === "student" || m.role === "tutor" ? [{ role: m.role, text: m.text }] : [])).slice(-40),
-      },
-      {
-        say: (sentence) => {
-          setThinking(false);
-          // Decide outside the updater: React runs updaters twice in dev (Strict Mode), so they must be pure.
-          if (!started) {
-            started = true;
-            setMessages((ms) => [...ms, { id: replyId, role: "tutor", text: sentence }]);
-          } else {
-            setMessages((ms) => ms.map((msg) => (msg.id === replyId ? { ...msg, text: `${msg.text} ${sentence}` } : msg)));
-          }
+    try {
+      await streamTurn(
+        {
+          sessionId,
+          message: text,
+          via,
+          history: messages.flatMap((m) => (m.role === "student" || m.role === "tutor" ? [{ role: m.role, text: m.text }] : [])).slice(-40),
         },
-        meta: applyMeta,
-        error: (message) => push({ role: "system", text: message, flag: { kind: "guardrail", label: message } }),
-      },
-    );
-    setThinking(false);
+        {
+          say: (sentence) => {
+            if (seq !== turnSeq.current) return;
+            setThinking(false);
+            // Decide outside the updater: React runs updaters twice in dev (Strict Mode), so they must be pure.
+            if (!started) {
+              started = true;
+              setMessages((ms) => [...ms, { id: replyId, role: "tutor", text: sentence }]);
+            } else {
+              setMessages((ms) => ms.map((msg) => (msg.id === replyId ? { ...msg, text: `${msg.text} ${sentence}` } : msg)));
+            }
+          },
+          meta: (m) => {
+            if (seq === turnSeq.current) applyMeta(m);
+          },
+          error: (message) => {
+            if (seq === turnSeq.current) push({ role: "system", text: message, flag: { kind: "guardrail", label: message } });
+          },
+        },
+      );
+    } finally {
+      if (seq === turnSeq.current) {
+        setThinking(false);
+        setResponding(false);
+      }
+    }
   };
 
   const handleHint = async () => {
@@ -410,6 +427,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
         <Interview
           messages={messages}
           thinking={thinking}
+          responding={responding}
           hintsUsed={hintsUsed}
           hintLimit={info.hintLimit}
           voiceRequired={info.voiceRequired}
