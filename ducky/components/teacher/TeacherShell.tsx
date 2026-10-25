@@ -12,6 +12,7 @@ const NAV = [
   { href: "/teacher/agents", label: "Tutor agents" },
   { href: "/teacher/assignments", label: "Assignments" },
   { href: "/teacher/transcripts", label: "Transcripts" },
+  { href: "/teacher/help", label: "Help queue" },
 ];
 
 /** Header + left sidebar shared by the teacher's overview, Tutor agents, Assignments and Transcripts pages. */
@@ -46,9 +47,6 @@ export default function TeacherShell({ headerExtra, children }: { headerExtra?: 
           <Link href="/session/demo" className="mt-2 rounded-[10px] px-3 py-2.5 text-accent no-underline hover:bg-surface">
             Preview as student →
           </Link>
-          <div className="mt-4 rounded-[10px] bg-accent-tint p-3 text-[13px] text-accent-dark">
-            Student data is never used to train models. Row-level security: you see only your classes.
-          </div>
         </nav>
 
         <main className="flex min-w-0 flex-[999_1_560px] flex-col gap-5">{children}</main>
