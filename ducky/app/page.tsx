@@ -167,6 +167,38 @@ function ScaledScreen({ children }: { children: ReactNode }) {
   );
 }
 
+const MENU_H = 30;
+
+/** macOS menu bar, 30px tall at the 1280px screen size, so the notch sits exactly inside it. */
+function MacMenuBar() {
+  return (
+    <div className="absolute inset-x-0 top-0 z-10 flex items-center gap-5 bg-[#efe9da] px-5 text-[13px] text-ink" style={{ height: MENU_H }}>
+      <span className="font-display font-bold">ducky</span>
+      <span>File</span>
+      <span>Edit</span>
+      <span>View</span>
+      <span>Session</span>
+      <span>Window</span>
+      <div className="flex-1" />
+      <span className="font-mono text-[12px]">Sat Oct 24</span>
+      <span className="font-mono text-[12px]">9:41 AM</span>
+    </div>
+  );
+}
+
+/** The display cutout: flush with the top edge, bottom corners rounded, camera inside. */
+function MacNotch() {
+  return (
+    <div
+      aria-hidden
+      className="absolute left-1/2 top-0 z-20 flex -translate-x-1/2 items-center justify-center rounded-b-[14px] bg-black"
+      style={{ width: 184, height: MENU_H }}
+    >
+      <span className="h-[9px] w-[9px] rounded-full bg-[#10192b] ring-[1.5px] ring-[#1d2b45]" />
+    </div>
+  );
+}
+
 /** MacBook Air-style device: thin aluminium lid, notch, black glass bezel, hinge and front-lip thumb notch. */
 function MacBook({
   open,
@@ -192,15 +224,12 @@ function MacBook({
         }}
       >
         <div className="relative rounded-t-[2.1%/3.2%] bg-black p-[1%] pb-[1.15%]">
-          {/* camera notch */}
-          <div
-            aria-hidden
-            className="absolute left-1/2 top-0 z-20 flex h-[3.1%] min-h-[6px] w-[8.5%] -translate-x-1/2 items-center justify-center rounded-b-[40%_90%] bg-black"
-          >
-            <span className="h-[34%] w-[7%] rounded-full bg-[#14233a] ring-1 ring-[#1f3354]" />
-          </div>
           <ScaledScreen>
-            <div className="h-full overflow-hidden">{children}</div>
+            <div className="relative h-full overflow-hidden bg-ground">
+              <MacMenuBar />
+              <div className="absolute inset-x-0 bottom-0 top-[30px] overflow-hidden">{children}</div>
+              <MacNotch />
+            </div>
           </ScaledScreen>
           {sweep && (
             <div aria-hidden className="pointer-events-none absolute inset-[1%] z-10 overflow-hidden rounded-[3px]">
