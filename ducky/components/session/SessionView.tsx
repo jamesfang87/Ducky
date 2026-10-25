@@ -18,6 +18,7 @@ import {
   type SessionInfo,
   type TurnMeta,
   type VisualResult,
+  type VoiceNoteClip,
 } from "@/lib/api";
 import { AccountChip } from "@/components/ui/AccountChip";
 import { Can } from "@/components/ui/Can";
@@ -27,6 +28,8 @@ import Interview from "./Interview";
 import { DuckyRadioButton } from "./DuckyRadio";
 import { ProofOfThinkingCard } from "./ProofOfThinking";
 import RaiseHand from "./RaiseHand";
+import PassItOn from "./PassItOn";
+import VoiceNoteCard from "./VoiceNoteCard";
 import VisualPlayer from "./VisualPlayer";
 import ResizeHandle from "./ResizeHandle";
 import { usePersistedState } from "@/lib/usePersistedState";
@@ -82,6 +85,8 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   const [viz, setViz] = useState<Viz>({ status: "idle" });
   const [vizTopic, setVizTopic] = useState("");
   const [resources, setResources] = useState<ResourcesState>({ status: "idle" });
+  // The teacher's (or a classmate's) recorded explanation of where the student is stuck right now.
+  const [voiceNote, setVoiceNote] = useState<VoiceNoteClip | null>(null);
   const vizBusy = useRef(false);
   // Layout prefs: sidebar and visualization column widths on wide screens, as a percent of the
   // window so the panes scale with it (null = default), and whether the visual is minimized.
@@ -331,6 +336,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
       push({ role: "system", text: "Reasoning complete", flag: { kind: "correct", label: "Reasoning complete" } });
     }
 
+    if (m.voice_note) setVoiceNote(m.voice_note);
     if (m.visual_request && info.visualsEnabled) void showVisual(m.visual_request.intent);
     if (m.wants_web_example && info.resourcesEnabled) void searchResources(m.wants_web_example);
   };
@@ -394,6 +400,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
       await resetSession(sessionId);
       if (userId) clearLocalChat(userId, sessionId);
       setResetToken((n) => n + 1);
+      setVoiceNote(null);
       setReloadKey((k) => k + 1);
     } catch (e) {
       resettingRef.current = false;
@@ -539,6 +546,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
             resetting={resetting}
             resetError={resetError}
           />
+          {voiceNote && <VoiceNoteCard sessionId={sessionId} clip={voiceNote} onDismiss={() => setVoiceNote(null)} />}
           {info.resourcesEnabled && <ResourcesCard state={resources} onSearch={(t) => void searchResources(t)} />}
           {canReveal && (
             <div className="card p-5">
@@ -550,6 +558,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
             </div>
           )}
           {sessionId !== "demo" && <RaiseHand sessionId={sessionId} />}
+          {sessionId !== "demo" && completedSteps.size > 0 && <PassItOn sessionId={sessionId} />}
           <MisconceptionTracker
             counts={counts}
             items={sessionId === "demo" ? undefined : info.misconceptions}
