@@ -3,6 +3,7 @@ import "server-only";
 import path from "node:path";
 import { Resvg } from "@resvg/resvg-js";
 import type { ChatCompletionContentPart, ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import { flowchartFrames, parseFlowSpec } from "./flowchart";
 import { completeChat } from "./llm";
 import { wrap } from "./prompt";
 import { searchSnippets } from "./serp";
@@ -55,7 +56,14 @@ Return ONE JSON object and nothing else:
  "title": "<short title>",
  "frames": [{"svg": "<svg ...>...</svg>", "caption": "<what changes in this frame, max 25 words>"}]}
 
-Always return frames. Never refuse and never say you can't draw something.
+FLOWCHART OPTION: when the idea is a process, algorithm, decision or cause-and-effect chain, do not draw boxes yourself. Return a graph instead and the server draws it perfectly:
+{"in_scope": true|false, "title": "<short title>",
+ "flowchart": {"nodes": [{"id": "a", "label": "<max 8 words>"}, ...up to 8],
+               "edges": [{"from": "a", "to": "b", "label": "<optional, max 2 words, e.g. yes>"}, ...],
+               "walk": [{"node": "a", "caption": "<what happens here, max 25 words>"}, ...]}}
+"walk" visits nodes in the order a student should follow them, one entry per frame (3 to 8). Plain keyboard characters only.
+
+Always return frames (or a flowchart). Never refuse and never say you can't draw something.
 Scope: only visualize concepts needed for the PROBLEM below. If the request is about anything else, set in_scope to false and draw the part of the PROBLEM closest to what they asked for instead.
 
 Accuracy: before drawing, work out every state in "plan" (e.g. the exact array after each pass, the exact forces and values). Then draw each frame from its plan entry, nothing else.
@@ -348,13 +356,16 @@ export async function generateVisual(s: ServerSession, topic: string): Promise<V
       : base;
 
     const raw = await withTimeout(completeChat({ tier: "deep", messages, maxTokens: 12000, temperature: 0.2 }), timeLeft(), "");
-    const j = (firstJson(raw) as { in_scope?: unknown; frames?: unknown } | null) ?? salvageFrames(raw);
+    const j = (firstJson(raw) as { in_scope?: unknown; frames?: unknown; flowchart?: unknown } | null) ?? salvageFrames(raw);
     if (!j) {
       feedback = ["Your reply was not valid JSON with frames. Return exactly one JSON object with 3 to 6 compact frames; escape every \" inside svg strings."];
       log.push(`attempt ${attempt}: ${raw ? "invalid JSON" : "no reply"}`);
       continue;
     }
     if (j.in_scope === false) redirected = true;
+    // A flowchart spec is drawn here, then goes through the same checks and review as hand-drawn frames.
+    const flow = parseFlowSpec((j as { flowchart?: unknown }).flowchart);
+    if (flow) (j as { frames?: unknown }).frames = flowchartFrames(flow);
 
     const { draft, issues } = checkDraft(j, leakPatterns);
     if (!draft) {
