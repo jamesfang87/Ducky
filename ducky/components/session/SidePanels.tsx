@@ -53,8 +53,19 @@ export function ReasoningPath({ steps }: { steps: ReasoningStep[] }) {
   );
 }
 
-export function MisconceptionTracker({ counts }: { counts: Record<MisconceptionId, number> }) {
-  const rows = MISCONCEPTIONS.map((m) => ({ ...m, n: counts[m.id] ?? 0 }))
+export function MisconceptionTracker({
+  counts,
+  items,
+  stuckStep,
+}: {
+  counts: Partial<Record<MisconceptionId, number>> | Record<string, number>;
+  /** This problem's misconceptions; defaults to the physics demo list. */
+  items?: { id: string; label: string }[];
+  /** The reasoning step where the student ran out of hints and viewed the answer. */
+  stuckStep?: string | null;
+}) {
+  const byId = counts as Record<string, number>;
+  const rows = (items ?? MISCONCEPTIONS).map((m) => ({ ...m, n: byId[m.id] ?? 0 }))
     .filter((r) => r.n > 0)
     .sort((a, b) => b.n - a.n);
   const max = Math.max(4, ...rows.map((r) => r.n));
@@ -82,9 +93,19 @@ export function MisconceptionTracker({ counts }: { counts: Record<MisconceptionI
           </div>
         ))}
       </div>
+      {rows.length === 0 && !stuckStep && <p className="text-sm text-muted">Nothing flagged yet.</p>}
+      {stuckStep && (
+        <div className="mt-3 rounded-[10px] border border-warn/40 px-3 py-2.5 text-[13px]">
+          <p className="font-semibold text-warn-dark">Ran out of hints</p>
+          <p className="mt-0.5 text-sub">
+            Stuck at: <span className="text-ink">{stuckStep}</span>. You viewed the answer, so this problem earns no credit.
+          </p>
+        </div>
+      )}
       {top && top.n >= 3 && (
         <p className="mt-3.5 rounded-[10px] bg-warn-tint px-3 py-2.5 text-[13px] text-warn-dark">
-          You’ve hit “{top.label.toLowerCase()}” {top.n} times. Try explaining why the force grows but the acceleration doesn’t.
+          You’ve hit “{top.label.toLowerCase()}” {top.n} times.{" "}
+          {items ? "Try explaining that idea out loud in your own words." : "Try explaining why the force grows but the acceleration doesn’t."}
         </p>
       )}
     </div>

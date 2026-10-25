@@ -29,7 +29,10 @@ export default async function ClassPage({ params }: { params: Promise<{ id: stri
 
   return (
     <main className="mx-auto max-w-2xl space-y-8 p-6">
-      <h1 className="text-2xl font-bold">{cls.name}</h1>
+      <div>
+        {cls.course_number && <p className="font-mono text-sm font-semibold text-gray-500">{cls.course_number}</p>}
+        <h1 className="text-2xl font-bold">{cls.name}</h1>
+      </div>
       <section className="flex flex-wrap items-center gap-8 rounded-xl border p-6">
         <div className="w-60 bg-white p-2" dangerouslySetInnerHTML={{ __html: qrSvg }} />
         <div className="space-y-3">

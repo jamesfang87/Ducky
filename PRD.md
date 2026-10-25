@@ -174,7 +174,7 @@ Priority key: **P0** = MVP, required in the 24-hour build · **P1** = should hav
 |---|---|---|
 | VIS-1 | Library of parameterized visual primitives, starting with `falling_objects` and `flowchart` (Mermaid) | P0 |
 | VIS-2 | Pipeline: route to primitive → otherwise generate code → deterministic checks (parse, overlap, NaN, empty) → render in a sandbox → vision-model review → fix. At most 3 passes, then fall back to the nearest primitive or a text explanation | P0 (primitives + Mermaid); P1 (free-form) |
-| VIS-3 | **Visible review log** under each visual (generated → reviewer issue → fixed → approved) | P0 |
+| VIS-3 | The review loop runs in the background and is **never shown in the UI**: no drafts, reviewer critiques, or pass counts. Students see a "preparing your visual" state, then only the approved visual. The review log is kept server-side for monitoring | P0 |
 | VIS-4 | Visuals never block Ducky's voice (generated asynchronously) | P0 |
 | VIS-5 | Likely visuals are pre-generated and pre-reviewed when the teacher uploads | P1 |
 | VIS-6 | Additional primitives: `free_body`, `array_pointers`, `hash_map`, `function_graph`, `tree`, `number_line`, `supply_demand` | P1 |
@@ -343,7 +343,7 @@ How we hit these targets: stream the LLM output and start TTS on the first compl
 - Problem-set upload → split into problems with drafted solutions and rubrics, with document injection protection (ASG-5.1–5.4)
 - Voice and text interview loop with Socratic follow-ups
 - Ducky avatar that speaks (moving beak, captions)
-- Visualization pipeline (primitives + Mermaid) with a **visible review loop**
+- Visualization pipeline (primitives + Mermaid) with a background review loop (not shown in the UI)
 - Teacher policy enforced (hint limit, reveal answers, voice required); solutions stay server-side
 - Misconception tracker: seeded misconception lists, detections stored with evidence, student call-outs and stats, live class heatmap (MIS-1, MIS-2, MIS-4, MIS-5)
 

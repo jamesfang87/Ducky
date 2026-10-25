@@ -88,7 +88,7 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
         <div className="flex flex-wrap items-center gap-3.5">
           <button
             onClick={speech.listening ? speech.stop : speech.start}
-            disabled={!speech.supported || thinking}
+            disabled={!speech.supported || thinking || speech.transcribing}
             aria-label={speech.listening ? "Stop and send" : "Tap to talk"}
             className={`flex h-16 w-16 flex-none items-center justify-center rounded-full text-white transition disabled:opacity-40 ${
               speech.listening ? "bg-warn shadow-[0_0_0_8px_#FBF1E6]" : "bg-accent shadow-[0_0_0_8px_#E6F3EF] hover:bg-accent-dark"
@@ -99,10 +99,12 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
           <div className="min-w-0 flex-[1_1_200px]">
             <p className="font-semibold">
               {!speech.supported
-                ? "Voice isn’t supported in this browser. Type below (Chrome or Edge for voice)."
+                ? "Voice isn’t supported in this browser. Type below."
                 : speech.listening
                   ? "Listening… tap to send"
-                  : typingLocked
+                  : speech.transcribing
+                    ? "Transcribing…"
+                    : typingLocked
                     ? "Tap to talk through your reasoning"
                     : "Tap to talk, or type below"}
             </p>

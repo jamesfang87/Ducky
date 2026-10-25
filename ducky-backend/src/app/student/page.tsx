@@ -7,7 +7,7 @@ export default async function StudentHome() {
   if (profile?.role !== "student") redirect("/");
   const { data: enrollments } = await supabase
     .from("enrollments")
-    .select("joined_at, classes(id, name)")
+    .select("joined_at, classes(id, name, course_number)")
     .eq("student_id", profile.id)
     .order("joined_at", { ascending: false });
 
@@ -19,8 +19,13 @@ export default async function StudentHome() {
       </div>
       <ul className="divide-y rounded-lg border">
         {enrollments?.map((e) => {
-          const c = e.classes as unknown as { id: string; name: string };
-          return <li key={c.id} className="p-4">{c.name}</li>;
+          const c = e.classes as unknown as { id: string; name: string; course_number: string | null };
+          return (
+            <li key={c.id} className="p-4">
+              {c.course_number && <span className="mr-2 font-mono font-semibold">{c.course_number}</span>}
+              {c.name}
+            </li>
+          );
         })}
         {!enrollments?.length && <li className="p-4 text-gray-500">Not enrolled in any classes yet.</li>}
       </ul>
