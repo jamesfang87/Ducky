@@ -1,6 +1,7 @@
 import "server-only";
 
 import { checkInput } from "./inputGuard";
+import { TOOLS } from "./tools";
 import { completeChat } from "./llm";
 import { estimateTokens, recordTurnMetric } from "./monitor";
 import { analyzeTurn } from "./progress";
@@ -153,6 +154,11 @@ export async function buildBlueprint() {
       output: ["sentence-level final-answer check"],
       rateLimits: { perMinute: 20, perHour: 120 },
       untrustedInputWrapping: ["<document>", "<student>"],
+    },
+    tools: TOOLS.map(({ id, provider, needs, gatedBy }) => ({ id, provider, needs, ...(gatedBy ? { gatedBy } : {}) })),
+    memory: {
+      voiceNotes: "teacher recordings mapped to steps and misconceptions; segments that state the final answer are cut",
+      peerTips: "student recordings, live only after teacher approval",
     },
     evals: ["answer-hunter", "jailbreaker", "confused-carla"],
   };
