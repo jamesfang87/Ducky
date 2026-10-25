@@ -12,6 +12,7 @@ export default {
         line: "#E2E4DF",
         edge: "#C9CCC6",
         accent: { DEFAULT: "#0B7A62", dark: "#075A48", tint: "#E6F3EF", glow: "#6FD3B6" },
+        duck: { DEFAULT: "#F2B705", glow: "#FFD64D", deep: "#8A5C00" },
         warn: { DEFAULT: "#A3530A", dark: "#6B3A08", tint: "#FBF1E6", soft: "#EDC08F" },
         heat: { 0: "#F7F6F2", 1: "#F6E4CF", 2: "#EDC08F", 3: "#D58A3E", 4: "#8F4F12" },
       },

@@ -31,7 +31,7 @@ const STAT_GROUPS = [
   },
   {
     label: "What works",
-    tone: "text-accent-glow",
+    tone: "text-duck-glow",
     stats: [
       {
         figure: "+0.37 SD",
@@ -229,10 +229,10 @@ function MacBook({
 function Aura({ on }: { on: boolean }) {
   // Soft teal clouds that drift and bounce behind the laptop. One hue family only.
   const clouds = [
-    { cls: "right-[2%] top-[-8%] h-[62vmin] w-[62vmin] animate-cloud-a", bg: "rgba(111,211,182,0.85)" },
-    { cls: "right-[26%] bottom-[-16%] h-[56vmin] w-[56vmin] animate-cloud-b", bg: "rgba(16,160,128,0.8)" },
-    { cls: "right-[-6%] bottom-[6%] h-[48vmin] w-[48vmin] animate-cloud-c", bg: "rgba(160,235,214,0.6)" },
-    { cls: "right-[34%] top-[6%] h-[40vmin] w-[40vmin] animate-cloud-d", bg: "rgba(60,190,160,0.7)" },
+    { cls: "right-[2%] top-[-8%] h-[62vmin] w-[62vmin] animate-cloud-a", bg: "rgba(255,200,40,0.8)" },
+    { cls: "right-[26%] bottom-[-16%] h-[56vmin] w-[56vmin] animate-cloud-b", bg: "rgba(224,150,20,0.75)" },
+    { cls: "right-[-6%] bottom-[6%] h-[48vmin] w-[48vmin] animate-cloud-c", bg: "rgba(255,226,130,0.55)" },
+    { cls: "right-[34%] top-[6%] h-[40vmin] w-[40vmin] animate-cloud-d", bg: "rgba(240,170,40,0.65)" },
   ];
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -317,7 +317,7 @@ function Sparkles({ fire, ambient }: { fire: number; ambient: boolean }) {
         p.vy *= 0.992;
         const t = p.life / p.max;
         ctx.globalAlpha = Math.max(0, Math.sin(Math.PI * t) * (0.7 + 0.3 * Math.sin(p.phase + p.life * 9)));
-        ctx.fillStyle = p.white ? "#FFFFFF" : "#6FD3B6";
+        ctx.fillStyle = p.white ? "#FFFFFF" : "#FFD64D";
         star(p.x, p.y, p.size * (0.55 + 0.45 * Math.sin(Math.PI * t)));
       }
       ctx.globalAlpha = 1;
@@ -421,19 +421,19 @@ function Hero() {
   });
 
   return (
-    <section className="relative isolate overflow-hidden bg-[#05080c] text-white">
+    <section className="relative isolate overflow-hidden bg-[#0b0904] text-white">
       <Aura on={stage >= 1} />
       {!reduced && <Sparkles fire={stage} ambient={stage >= 1} />}
       {stage >= 2 && !reduced && (
         <div
           aria-hidden
           className="pointer-events-none absolute right-[8%] top-1/2 z-[5] h-[80vmin] w-[80vmin] -translate-y-1/2 rounded-full motion-safe:animate-bloom"
-          style={{ background: "radial-gradient(closest-side, rgba(255,255,255,0.85), rgba(111,211,182,0.45) 45%, transparent 100%)" }}
+          style={{ background: "radial-gradient(closest-side, rgba(255,255,255,0.85), rgba(255,205,60,0.5) 45%, transparent 100%)" }}
         />
       )}
       <div className="relative mx-auto grid min-h-[calc(100svh-3rem)] max-w-[1440px] items-center gap-8 px-6 pb-28 pt-14 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.45fr)] lg:pt-8">
         <div className="relative z-20" style={{ opacity: 1 - hs * 1.3, transform: `translateY(${-hs * 70}px)` }}>
-          <p {...rise(0, "text-[13px] font-semibold uppercase tracking-[0.14em] text-accent-glow")}>Built at HackTX 2026</p>
+          <p {...rise(0, "text-[13px] font-semibold uppercase tracking-[0.14em] text-duck-glow")}>Built at HackTX 2026</p>
           <div {...rise(120, "mt-4 flex items-center gap-4")}>
             <h1 className="font-display text-[56px] font-bold leading-[0.98] tracking-[-0.045em] md:text-[80px]">
               Talk it
@@ -451,7 +451,7 @@ function Hero() {
             <Link href="/login" className="rounded-full bg-white px-7 py-3.5 text-[16px] font-semibold text-ink no-underline transition-colors hover:bg-white/85">
               Try a session
             </Link>
-            <a href="#how" className="text-[16px] font-medium text-accent-glow no-underline hover:underline">
+            <a href="#how" className="text-[16px] font-medium text-duck-glow no-underline hover:underline">
               See how it works ›
             </a>
           </div>
@@ -486,7 +486,7 @@ function SiteHeader() {
   }, []);
   const link = dark ? "text-white/75 hover:text-white" : "text-sub hover:text-ink";
   return (
-    <header className={`sticky top-0 z-40 border-b transition-colors duration-500 ${dark ? "border-white/10 bg-gradient-to-r from-[#06100f] via-[#0c2a24] to-[#06100f]" : "border-line bg-ground"}`}>
+    <header className={`sticky top-0 z-40 border-b transition-colors duration-500 ${dark ? "border-white/10 bg-gradient-to-r from-[#0d0a04] via-[#2b2108] to-[#0d0a04]" : "border-line bg-ground"}`}>
       <nav className="mx-auto flex h-12 max-w-[1080px] items-center gap-6 px-6 text-[14px]">
         <div className={`origin-left scale-[0.8] ${dark ? "[&_*]:!text-white" : ""}`}>
           <Logo />
@@ -826,7 +826,7 @@ function Story() {
                 i === beat ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
               }`}
             >
-              <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-accent">{b.eyebrow}</p>
+              <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-duck-deep">{b.eyebrow}</p>
               <p className="mt-1 font-display text-[26px] font-bold leading-tight tracking-[-0.02em] md:text-[34px]">{b.title}</p>
               <p className="mt-1.5 text-[16px] text-sub md:text-[18px]">{b.body}</p>
             </div>
@@ -856,7 +856,7 @@ export default function Landing() {
         <section id="research" className="scroll-mt-12 bg-ink text-white">
           <div className="mx-auto max-w-[1080px] px-6 py-28 md:py-40">
             <Reveal>
-              <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-accent-glow">Why it works</p>
+              <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-duck-glow">Why it works</p>
               <h2 className="mt-3 font-display text-[44px] font-bold leading-[1.04] tracking-[-0.04em] md:text-[76px]">
                 Tutoring works.
                 <br />
@@ -920,10 +920,10 @@ export default function Landing() {
               Every student, heard.
             </h2>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <Link href="/login" className="rounded-full bg-accent px-6 py-3 text-[16px] font-semibold text-white no-underline hover:bg-accent-dark">
+              <Link href="/login" className="rounded-full bg-duck px-6 py-3 text-[16px] font-semibold text-ink no-underline hover:bg-duck-glow">
                 Try a session
               </Link>
-              <Link href="/privacy" className="text-[16px] font-medium text-accent no-underline hover:underline">
+              <Link href="/privacy" className="text-[16px] font-medium text-duck-deep no-underline hover:underline">
                 How we handle student data ›
               </Link>
             </div>
