@@ -32,9 +32,12 @@ export async function getAuthState(): Promise<AuthState> {
   if (role !== "student" && role !== "teacher") return { status: "needs_role" };
 
   // Class membership comes from the database under the user's own RLS, never from request input.
-  const table = role === "teacher" ? supabase.from("classes").select("id") : supabase.from("enrollments").select("class_id");
-  const { data: rows } = await table;
-  const classIds = (rows ?? []).map((r) => ("id" in r ? r.id : r.class_id) as string);
+  // Teachers can also be enrolled as students elsewhere, so both lists count.
+  const [taught, enrolled] = await Promise.all([
+    role === "teacher" ? supabase.from("classes").select("id") : Promise.resolve({ data: [] as { id: string }[] }),
+    supabase.from("enrollments").select("class_id"),
+  ]);
+  const classIds = [...(taught.data ?? []).map((r) => r.id), ...(enrolled.data ?? []).map((r) => r.class_id as string)];
 
   return {
     status: "ok",

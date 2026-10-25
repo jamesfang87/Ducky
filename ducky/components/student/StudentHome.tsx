@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Can } from "@/components/ui/Can";
 import { AccountChip } from "@/components/ui/AccountChip";
 import { Logo, Plus } from "@/components/ui/icons";
 import { useSession } from "@/lib/session";
@@ -54,6 +55,11 @@ export default function StudentHome() {
           <Link href="/classes/history" className="text-sm text-sub no-underline transition hover:text-ink">
             Past problem sets
           </Link>
+          <Can allow="class:view">
+            <Link href="/teacher" className="text-sm text-sub no-underline transition hover:text-ink">
+              Teacher view
+            </Link>
+          </Can>
           <AccountChip />
         </div>
       </header>

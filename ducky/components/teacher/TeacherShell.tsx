@@ -45,6 +45,9 @@ export default function TeacherShell({ headerExtra, children }: { headerExtra?: 
               {n.label}
             </Link>
           ))}
+          <Link href="/classes" className="mt-2 rounded-[10px] px-3 py-2.5 text-accent no-underline hover:bg-surface">
+            My classes as a student →
+          </Link>
           <Link href="/session/demo" className="mt-2 rounded-[10px] px-3 py-2.5 text-accent no-underline hover:bg-surface">
             Preview as student →
           </Link>

@@ -490,12 +490,12 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
                 Next problem →
               </Link>
             )}
-            {session?.role === "student" && (
+            {session && (
               <Link href="/classes" className="text-sm text-sub no-underline transition hover:text-ink">
                 My classes
               </Link>
             )}
-            {session?.role === "student" && (
+            {session && (
               <Link href="/classes/history" className="text-sm text-sub no-underline transition hover:text-ink">
                 Past sets
               </Link>
@@ -528,7 +528,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
             problem={problem}
             nextHref={nextSessionId ? `/session/${nextSessionId}` : undefined}
             backHref={problemSetHref}
-            onReset={session?.role === "student" ? handleReset : undefined}
+            onReset={session ? handleReset : undefined}
             resetting={resetting}
             resetError={resetError}
           />

@@ -230,7 +230,7 @@ export default function LoginCard() {
           <div className="mt-5">
             <p className="mb-2.5 text-sm font-semibold">I’m a…</p>
             <RoleToggle role={role} onChange={setRole} />
-            <p className="mt-2 text-[13px] text-muted">An account is either a student or a teacher, and this can’t be changed later.</p>
+            <p className="mt-2 text-[13px] text-muted">Pick what you’ll mostly be. Teachers can also join classes as a student. This can’t be changed later.</p>
           </div>
         )}
         <button
@@ -320,7 +320,7 @@ export default function LoginCard() {
         <div className="mt-5">
           <p className="mb-2.5 text-sm font-semibold">I’m a…</p>
           <RoleToggle role={role} onChange={setRole} />
-          <p className="mt-2 text-[13px] text-muted">An account is either a student or a teacher, and this can’t be changed later.</p>
+          <p className="mt-2 text-[13px] text-muted">Pick what you’ll mostly be. Teachers can also join classes as a student. This can’t be changed later.</p>
         </div>
       )}
 

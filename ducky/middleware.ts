@@ -7,7 +7,7 @@ import { mfaSatisfied } from "@/lib/mfa";
 /** Route gates. Runs before the page renders, so a student typing /teacher never sees a teacher screen. */
 const RULES: { pattern: RegExp; roles: Role[] }[] = [
   { pattern: /^\/teacher(?:\/|$)/, roles: ["teacher"] },
-  { pattern: /^\/classes(?:\/|$)/, roles: ["student"] },
+  { pattern: /^\/classes(?:\/|$)/, roles: ["student", "teacher"] }, // teachers can be students in other people's classes
   { pattern: /^\/session(?:\/|$)/, roles: ["student", "teacher"] },
 ];
 

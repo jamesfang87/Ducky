@@ -22,6 +22,10 @@ export const ROLE_PERMISSIONS = {
     "transcript:override",
     "audit:view",
     "review:view",
+    // A teacher can also be a student in someone else's class.
+    "sketch:send",
+    "hand:raise",
+    "class:join",
   ],
 } as const satisfies Record<Role, readonly string[]>;
 
