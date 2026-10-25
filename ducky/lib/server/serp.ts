@@ -80,6 +80,50 @@ export async function searchResources(query: string, blocked: RegExp[] = [], lim
     .map((r) => ({ title: r.title ?? host(r.link!), snippet: r.snippet!.slice(0, 300), source: host(r.link!), link: r.link! }));
 }
 
+export interface Video {
+  title: string;
+  link: string;
+  channel: string;
+  length: string;
+  description: string;
+  thumbnail: string | null;
+}
+
+const videoCache: Map<string, Video[]> = ((g as typeof g & { __duckySerpVideos?: Map<string, Video[]> }).__duckySerpVideos ??= new Map());
+
+/** YouTube results for a query (SerpApi's YouTube engine), cached by query. [] on no key or failure. */
+export async function searchVideos(query: string, limit = 6): Promise<Video[]> {
+  const key = process.env.SERPAPI_KEY;
+  if (!key) return [];
+  const q = query.trim().slice(0, 200);
+  const hit = videoCache.get(q);
+  if (hit) return hit.slice(0, limit);
+  const url = new URL("https://serpapi.com/search.json");
+  url.search = new URLSearchParams({ engine: "youtube", search_query: q, hl: "en", gl: "us", api_key: key }).toString();
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(8_000), cache: "no-store" });
+    if (!res.ok) throw new Error(`SerpApi ${res.status}`);
+    const json = (await res.json()) as {
+      video_results?: { title?: string; link?: string; channel?: { name?: string }; length?: string; description?: string; thumbnail?: { static?: string } }[];
+    };
+    const out = (json.video_results ?? [])
+      .filter((v) => v.title && v.link)
+      .map((v) => ({
+        title: v.title!,
+        link: v.link!,
+        channel: v.channel?.name ?? "",
+        length: v.length ?? "",
+        description: (v.description ?? "").slice(0, 300),
+        thumbnail: v.thumbnail?.static ?? null,
+      }));
+    videoCache.set(q, out);
+    return out.slice(0, limit);
+  } catch (e) {
+    console.warn("[serp] video search failed:", e instanceof Error ? e.message : e);
+    return [];
+  }
+}
+
 /** Lowercased word tokens; keeps decimals like "1.0" whole so numbers in a problem still match. */
 const tokens = (text: string) => text.toLowerCase().match(/[a-z0-9]+(?:\.[0-9]+)?/g) ?? [];
 
