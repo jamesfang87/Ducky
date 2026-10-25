@@ -11,7 +11,6 @@ import type {
 // All data in this file is demo placeholder data. Replace with Supabase queries.
 
 export const DEFAULT_POLICY: Policy = {
-  model: "Muse Spark",
   hintLimit: 2,
   revealAnswers: false,
   voiceRequired: false,

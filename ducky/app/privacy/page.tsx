@@ -41,7 +41,7 @@ const SECTIONS: { h: string; items: React.ReactNode[] }[] = [
     items: [
       "Supabase stores accounts and session data. Google handles sign-in.",
       "An AI model provider generates Ducky’s replies, under terms that don’t allow training on your data.",
-      "SerpApi searches the web for leaked copies of problems. It is sent problem text, not student work.",
+      "SerpApi searches the web for study resources and for leaked copies of problems. It is sent the problem’s topic and step, or the words a student types into the resource search, never the chat itself.",
       "In Chrome and Edge, voice input uses the browser’s built-in speech recognition, which may send audio to the browser maker to be transcribed.",
     ],
   },

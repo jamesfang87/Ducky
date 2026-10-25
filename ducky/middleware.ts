@@ -1,5 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
-import { AUTH_COOKIE_OPTIONS } from "@/lib/supabase/cookies";
+import { AUTH_COOKIE_OPTIONS, REMEMBER_COOKIE, withLifetime } from "@/lib/supabase/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 import { homePath, type Role } from "@/lib/users";
 
@@ -22,12 +22,15 @@ export async function middleware(req: NextRequest) {
   }
 
   const rule = RULES.find((r) => r.pattern.test(pathname));
-  if (!rule) return NextResponse.next(); // public page (landing, login, privacy)
+  // Already signed in? Skip the login page (unless it's showing an error) instead of making them sign in again.
+  const isLogin = pathname === "/login" && !searchParams.has("error");
+  if (!rule && !isLogin) return NextResponse.next(); // public page (landing, privacy)
 
   // Fail closed: without Supabase keys nobody gets into protected pages (and nothing crashes).
   const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supaKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supaUrl || !supaKey) {
+    if (isLogin) return NextResponse.next();
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.search = "";
@@ -43,7 +46,8 @@ export async function middleware(req: NextRequest) {
       setAll: (toSet) => {
         toSet.forEach(({ name, value }) => req.cookies.set(name, value));
         response = NextResponse.next({ request: req });
-        toSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+        const remember = req.cookies.get(REMEMBER_COOKIE)?.value;
+        toSet.forEach(({ name, value, options }) => response.cookies.set(name, value, withLifetime(options, remember)));
       },
     },
   });
@@ -59,22 +63,32 @@ export async function middleware(req: NextRequest) {
   };
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return redirectTo("/login");
+  if (!user) return isLogin ? response : redirectTo("/login");
 
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  if (aal?.currentLevel !== "aal2") return redirectTo("/mfa");
+  if (aal?.currentLevel !== "aal2") return isLogin ? response : redirectTo("/mfa");
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
   const role = profile?.role as Role | undefined;
-  if (role !== "student" && role !== "teacher") return redirectTo("/login", false);
+  if (role !== "student" && role !== "teacher") return isLogin ? response : redirectTo("/login", false);
 
-  if (!rule.roles.includes(role)) return redirectTo(homePath(role), false);
+  if (isLogin) {
+    const next = searchParams.get("next");
+    const url = req.nextUrl.clone();
+    url.pathname = next && next.startsWith("/") && !next.startsWith("//") ? next : homePath(role);
+    url.search = "";
+    const res = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((c) => res.cookies.set(c));
+    return res;
+  }
+
+  if (!rule!.roles.includes(role)) return redirectTo(homePath(role), false);
 
   return response;
 }
 
 // The login, MFA, callback and public pages deliberately stay outside the gate.
-// "/" and "/login" only need the stray-code forward, which is cheap, so they are matched too.
+// "/" only needs the stray-code forward; "/login" also skips ahead when already signed in.
 export const config = {
-  matcher: ["/teacher/:path*", "/classes/:path*", "/session/:path*", "/"],
+  matcher: ["/teacher/:path*", "/classes/:path*", "/session/:path*", "/", "/login"],
 };

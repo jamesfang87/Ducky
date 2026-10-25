@@ -23,6 +23,7 @@ export async function GET(req: Request) {
       hintLimit: policy.hintLimit,
       voiceRequired: policy.voiceRequired,
       visualsEnabled: policy.tools.visualizations,
+      resourcesEnabled: policy.tools.webExamples,
       canReveal: canReveal(s),
       revealed: s.revealed,
       completed: s.completed,

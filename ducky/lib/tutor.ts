@@ -1,6 +1,6 @@
 /**
  * Mock tutor + pipeline. These are the integration seams for the backend:
- *  - getTutorReply()  → POST /api/turn  (Muse Spark / Claude with the policy as system prompt)
+ *  - getTutorReply()  → POST /api/turn  (the policy as system prompt)
  *  - runVizPipeline() → POST /api/viz   (generate → render → checks → vision review loop)
  * The scripted logic below is deterministic so the demo never goes off the rails.
  */

@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { clearDraft } from "@/app/login/draft";
 import { createClient } from "@/lib/supabase/client";
 
 type Stage = "loading" | "enroll" | "challenge";
@@ -26,6 +27,7 @@ export default function MfaCard() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return router.replace("/login");
+      clearDraft(); // first step done; the login page shouldn't offer to restore it
 
       const { data: factors, error: listError } = await supabase.auth.mfa.listFactors();
       if (listError) return setError(listError.message);

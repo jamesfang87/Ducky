@@ -15,6 +15,7 @@ export interface SessionInfo {
   hintLimit: number;
   voiceRequired: boolean;
   visualsEnabled: boolean;
+  resourcesEnabled: boolean;
   canReveal: boolean;
   revealed: boolean;
   completed: boolean;
@@ -24,6 +25,8 @@ export interface SessionInfo {
 export interface TurnMeta {
   step_assessment: "correct" | "partial" | "incorrect" | "off_task" | null;
   misconception: { id: string; evidence: string; confidence: number } | null;
+  /** Misconceptions flagged earlier that the student has now corrected. */
+  resolved_misconceptions?: string[];
   visual_request: { primitive: string; params: Record<string, unknown>; intent: string } | null;
   hint_used: boolean;
   wants_web_example: string | null;
@@ -72,12 +75,22 @@ export const requestHint = (sessionId: string) => post("/api/hint", { sessionId 
 
 export const requestReveal = (sessionId: string) => post("/api/reveal", { sessionId }).then((r) => json<RevealResult>(r));
 
+export interface Resource {
+  title: string;
+  snippet: string;
+  source: string;
+  link: string;
+}
+
+export const findResources = (sessionId: string, topic?: string) =>
+  post("/api/resources", { sessionId, topic }).then((r) => json<{ query: string; resources: Resource[] }>(r));
+
 export const requestVisual = (sessionId: string, topic: string) =>
   post("/api/visual", { sessionId, topic }).then((r) => json<VisualResult>(r));
 
 /** POST /api/turn and dispatch its Server-Sent Events as they arrive. Resolves after `done`. */
 export async function streamTurn(
-  body: { sessionId: string; message: string; via: "voice" | "text" },
+  body: { sessionId: string; message: string; via: "voice" | "text"; history?: { role: "student" | "tutor"; text: string }[] },
   on: { say: (text: string) => void; meta: (m: TurnMeta) => void; error: (message: string) => void },
 ): Promise<void> {
   let res: Response;

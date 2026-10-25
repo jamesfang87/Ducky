@@ -1,7 +1,6 @@
 export type Tone = "Socratic" | "Encouraging" | "Exam-style";
 
 export interface Policy {
-  model: "Muse Spark" | "Claude";
   hintLimit: number;
   revealAnswers: boolean;
   voiceRequired: boolean;

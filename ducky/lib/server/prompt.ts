@@ -37,7 +37,7 @@ export function compileSystemPrompt(
     "Once the student has shown their full chain of reasoning to the answer (every reasoning step, in their own words, including why it works), stop asking questions: affirm their reasoning in one or two sentences, ask nothing further, and set reasoning_complete to true. Never set it for a bare final answer without the reasoning.",
     "Say at most 2 sentences per turn. Your words are spoken aloud, so no markdown, lists, or LaTeX.",
     "Track progress through the REASONING STEPS: in steps_completed, list every step the student correctly explained in this message (several at once is fine, in any order). Count a step only when the student said it, not when you did, and not for a partial or wrong answer.",
-    "Probe WHY a step works or why a law applies, but at most one follow-up per step: once the student has explained a step, move on to the next open step. Never re-ask about a step the turn state lists as completed, and don't add extra questions beyond the REASONING STEPS.",
+    "Probe WHY a step works or why a law applies, but at most one follow-up per step: once the student has explained a step, move on to the next open step. Never re-ask about a step the turn state lists as completed, never repeat or rephrase a question you already asked in this conversation, and don't add extra questions beyond the REASONING STEPS.",
     "Never correct the student directly. If they say something wrong, ask a question that lets them discover it.",
     policy.revealAnswers
       ? "The teacher allows the final answer. Only give it after the student has explained their reasoning, then ask them why it works."
@@ -97,6 +97,8 @@ export interface TurnState {
   completedSteps: number[];
   steps: string[];
   revealed: boolean;
+  /** A visual the server is already drawing for this message, if any. */
+  sketching: string | null;
 }
 
 /** System prompt + the recent turns verbatim + the new message with this turn's state. */
@@ -118,6 +120,9 @@ export function buildMessages(
   } else {
     notes.push("The student has completed every step. Ask nothing: affirm their reasoning in one or two sentences and set reasoning_complete to true.");
   }
+  // The model tends to drop the META block unless reminded every turn.
+  notes.push(`After your spoken sentences, always write a line with exactly ${META_MARKER} and then the JSON object from OUTPUT FORMAT.`);
+  if (state.sketching) notes.push(`A visual is being drawn for the student: ${state.sketching}. Tell them in a few words that you're sketching it.`);
   if (state.revealed) notes.push("The student has already viewed the answer (no credit). You may discuss it and check they understand why it works.");
 
   return [

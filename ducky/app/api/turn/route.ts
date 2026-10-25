@@ -2,7 +2,7 @@ import { HttpError } from "@/lib/auth";
 import { errorStatus, loadOwnSession, readJson } from "@/lib/server/guard";
 import { streamChat } from "@/lib/server/llm";
 import { EMPTY_META, parseMeta } from "@/lib/server/meta";
-import { gradeProgress } from "@/lib/server/progress";
+import { analyzeTurn } from "@/lib/server/progress";
 import { buildMessages, compileSystemPrompt, META_MARKER } from "@/lib/server/prompt";
 import { SSE_HEADERS, sseError, sseFrame } from "@/lib/server/sse";
 import {
@@ -37,7 +37,7 @@ const SENTENCE_END = /[.!?…]+["')\]]*\s+/g;
  * Policy, problem and solution are looked up here, never sent by the client (GRD-2).
  */
 export async function POST(req: Request) {
-  let session, message: string, via: "voice" | "text";
+  let session, message: string, via: "voice" | "text", history: { role: "student" | "tutor"; text: string }[];
   try {
     const body = await readJson(req);
     session = await loadOwnSession(body.sessionId);
@@ -45,6 +45,13 @@ export async function POST(req: Request) {
     if (body.via !== "voice" && body.via !== "text") throw new HttpError(400, 'via must be "voice" or "text".');
     message = body.message.trim().slice(0, MAX_MESSAGE);
     via = body.via;
+    // The page's copy of the chat, used only to restore context after a server restart.
+    history = (Array.isArray(body.history) ? body.history : []).slice(-40).flatMap((t: unknown) => {
+      const m = t as { role?: unknown; text?: unknown };
+      return (m.role === "student" || m.role === "tutor") && typeof m.text === "string" && m.text.trim()
+        ? [{ role: m.role, text: m.text.slice(0, MAX_MESSAGE) }]
+        : [];
+    });
     if (via === "text" && getPolicy(session).voiceRequired) {
       throw new HttpError(400, "Your teacher asked for spoken answers on this problem. Use the mic.");
     }
@@ -54,7 +61,7 @@ export async function POST(req: Request) {
   }
 
   const s = session;
-  await loadSavedTurns(s);
+  await loadSavedTurns(s, history);
 
   // The student already showed their full reasoning: the tutor stops asking (no model call).
   if (s.completed) {
@@ -76,7 +83,9 @@ export async function POST(req: Request) {
 
   const system = compileSystemPrompt(policy, getProblem(s), solution, getMisconceptions(s), steps);
   // Grade the whole conversation first, so the tutor knows what's done and doesn't circle back.
-  completeSteps(s, await gradeProgress(steps, solution, getRecentTurns(s, 40), message));
+  const analysis = await analyzeTurn(steps, solution, getMisconceptions(s), getRecentTurns(s, 40), message);
+  completeSteps(s, analysis.completed);
+  const sketching = policy.tools.visualizations ? analysis.visual : null;
   const allStepsDone = s.completedSteps.length === steps.length;
   const messages = buildMessages(system, getRecentTurns(s, 16), message, {
     hintsUsed: s.hintsUsed,
@@ -85,6 +94,7 @@ export async function POST(req: Request) {
     completedSteps: s.completedSteps,
     steps,
     revealed: s.revealed,
+    sketching,
   });
 
   const stream = new ReadableStream<Uint8Array>({
@@ -149,6 +159,13 @@ export async function POST(req: Request) {
 
         const meta = inMeta ? parseMeta(metaRaw, known, steps.length) : { ...EMPTY_META };
         if (allStepsDone) meta.reasoning_complete = true;
+        // The tutor usually drops its META block, so fill the gaps from the analysis pass.
+        meta.step_assessment ??= analysis.assessment;
+        meta.misconception ??= analysis.misconception;
+        // A misconception the student just corrected stays cleared, even if the tutor's META re-flags it.
+        if (meta.misconception && !analysis.misconception && analysis.resolved.includes(meta.misconception.id)) meta.misconception = null;
+        const resolved = analysis.resolved.filter((id) => id !== meta.misconception?.id);
+        if (!meta.visual_request && sketching) meta.visual_request = { primitive: "custom", params: {}, intent: sketching };
         if (meta.current_step !== null) setCurrentStep(s, meta.current_step);
         // Finishing the whole chain, or a correct answer on the last step, completes every step.
         const allDone = meta.reasoning_complete || (meta.step_assessment === "correct" && s.currentStep === steps.length - 1);
@@ -161,6 +178,7 @@ export async function POST(req: Request) {
 
         send("meta", {
           ...meta,
+          resolved_misconceptions: resolved,
           current_step: s.currentStep,
           completedSteps: s.completedSteps,
           hintsUsed: s.hintsUsed,

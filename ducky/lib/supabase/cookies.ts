@@ -1,13 +1,33 @@
+import type { CookieOptions } from "@supabase/ssr";
+
 /**
- * Auth cookies last 2 hours, so a returning visitor stays signed in for that long.
- * Supabase rewrites them whenever it refreshes the session, so the 2 hours restart
- * on each visit. Pure module: safe to import from middleware and the browser.
+ * "Stay signed in": the login page sets REMEMBER_COOKIE to the time (ms) the sign-in should
+ * end, 2 hours out. Auth cookies then live until that moment, even across browser restarts.
+ * Without it they are session cookies, cleared when the browser closes.
+ * Pure module: safe to import from middleware and the browser.
  */
-export const AUTH_COOKIE_MAX_AGE = 60 * 60 * 2;
+export const REMEMBER_COOKIE = "ducky-remember";
+export const REMEMBER_SECONDS = 60 * 60 * 2;
 
 export const AUTH_COOKIE_OPTIONS = {
-  maxAge: AUTH_COOKIE_MAX_AGE,
   path: "/",
   sameSite: "lax" as const,
   secure: process.env.NODE_ENV === "production",
 };
+
+/** Seconds left on a "stay signed in" choice, or 0 if there is none or it ran out. */
+export function rememberSecondsLeft(value: string | undefined): number {
+  const until = Number(value);
+  return Number.isFinite(until) ? Math.max(0, Math.floor((until - Date.now()) / 1000)) : 0;
+}
+
+/**
+ * Sets each auth cookie's lifetime. @supabase/ssr writes every cookie with a 400-day maxAge,
+ * whatever cookieOptions say, so this runs in each client's setAll instead.
+ */
+export function withLifetime(options: CookieOptions, remember: string | undefined): CookieOptions {
+  if (options.maxAge === 0) return options; // a delete; leave it alone
+  const { maxAge: _maxAge, expires: _expires, ...rest } = options;
+  const left = rememberSecondsLeft(remember);
+  return left > 0 ? { ...rest, maxAge: left } : rest;
+}

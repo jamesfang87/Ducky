@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import type { Resource } from "@/lib/api";
 import type { ChatMessage, MisconceptionId, Problem, ReasoningStep } from "@/lib/types";
 import { MISCONCEPTIONS } from "@/lib/mock";
 import { RUBRIC_MAX, type RubricRow } from "@/lib/rubric";
@@ -190,6 +191,59 @@ export function RubricCard({ rows, messages }: { rows: RubricRow[]; messages: Ch
           </ol>
         </div>
       </dialog>
+    </div>
+  );
+}
+
+export type ResourcesState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ok"; query: string; resources: Resource[] }
+  | { status: "error"; message: string };
+
+/** Where to learn the idea behind the current step: SerpApi results, answer sites filtered out. */
+export function ResourcesCard({ state, onSearch }: { state: ResourcesState; onSearch: (topic?: string) => void }) {
+  const [topic, setTopic] = useState("");
+  return (
+    <div className="card p-5">
+      <h2 className="h2 mb-1">Where to learn this</h2>
+      <p className="mb-3 text-[13px] text-muted">Explanations and notes on the idea you’re working on, not answers to this problem.</p>
+      <form
+        className="flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSearch(topic.trim() || undefined);
+        }}
+      >
+        <input
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          placeholder="Your current step"
+          aria-label="What to look up"
+          className="h-9 min-w-0 flex-1 rounded-[10px] border border-edge px-3 text-sm"
+        />
+        <button type="submit" className="btn h-9 px-3 text-sm" disabled={state.status === "loading"}>
+          {state.status === "loading" ? "Searching…" : "Find"}
+        </button>
+      </form>
+      {state.status === "error" && <p className="mt-3 text-sm text-warn">{state.message}</p>}
+      {state.status === "ok" && (
+        <>
+          <p className="mt-3 text-[13px] text-muted">For “{state.query}” · via SerpApi</p>
+          {state.resources.length === 0 && <p className="mt-1 text-sm text-muted">Nothing useful turned up. Try different words.</p>}
+          <ul className="mt-2 flex flex-col gap-3">
+            {state.resources.map((r) => (
+              <li key={r.link}>
+                <a href={r.link} target="_blank" rel="noreferrer" className="text-sm font-semibold text-accent no-underline hover:text-accent-dark">
+                  {r.title}
+                </a>
+                <p className="text-[13px] text-muted">{r.source}</p>
+                <p className="mt-0.5 text-[13px] text-sub">{r.snippet}</p>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 }

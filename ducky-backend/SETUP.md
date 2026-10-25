@@ -22,6 +22,12 @@ In https://console.cloud.google.com/auth/overview?project=dotted-memory-509806-u
    - Site URL: `http://localhost:3000`
    - Redirect URLs: add `http://localhost:3000/auth/callback` (plus your production URL + `/auth/callback` later)
 
+## 3b. Turn on email sign-in
+1. https://supabase.com/dashboard/project/lpckuttkravpguzqipar/auth/providers → **Email** → Enable. Keep **Confirm email** on. Set the minimum password length to 8 to match the form.
+2. Email links come back to `/auth/callback`, so the Redirect URLs from step 3 already cover them.
+3. Supabase's built-in mailer sends only a few emails an hour and is meant for testing. For a demo with real users, add your own SMTP under **Auth → Emails → SMTP Settings** (Resend, SendGrid, Postmark and similar all work).
+4. Optional: under **Auth → Emails → Templates**, rename "Confirm signup" and "Magic Link" to mention Ducky. Leave `{{ .ConfirmationURL }}` in the template.
+
 ## 4. Environment variables
 Fill in `.env.local`:
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`: from Project Settings → API Keys.

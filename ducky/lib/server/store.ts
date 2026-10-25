@@ -58,6 +58,8 @@ export interface ServerSession {
   /** Visual explanations generated so far, and whether one is being made now (rate limit). */
   visualsMade: number;
   visualBusy: boolean;
+  /** Study-resource searches so far (each costs a SerpApi credit unless cached). */
+  resourceSearches: number;
 }
 
 export interface StoredTurn {
@@ -196,6 +198,7 @@ export function getSession(sessionId: string, user: { userId: string; name: stri
       creditEligible: true,
       visualsMade: 0,
       visualBusy: false,
+      resourceSearches: 0,
     };
     db.sessions.set(key, s);
   }
@@ -219,11 +222,15 @@ export function getRecentTurns(s: ServerSession, n = 6): StoredTurn[] {
  * After a cold start the in-memory turns are empty even though the student's chat was
  * saved (lib/chatHistory.ts). Reload it once so the tutor keeps the conversation's context.
  */
-export async function loadSavedTurns(s: ServerSession): Promise<void> {
+export async function loadSavedTurns(s: ServerSession, fromClient: Omit<StoredTurn, "at">[] = []): Promise<void> {
   const key = keyOf(s);
   if (db.hydrated.has(key)) return;
   db.hydrated.add(key);
   if (db.turns.get(key)?.length) return;
+  // Until the chat_histories table exists the chat lives only in the browser, so fall back to the page's copy.
+  const seedFromClient = () => {
+    if (!db.turns.get(key)?.length && fromClient.length) db.turns.set(key, fromClient.map((t) => ({ ...t, at: Date.now() })));
+  };
   try {
     const supabase = await createClient();
     const { data } = await supabase
@@ -243,6 +250,7 @@ export async function loadSavedTurns(s: ServerSession): Promise<void> {
   } catch (e) {
     console.error("[loadSavedTurns]", e); // no saved context; the session still works
   }
+  seedFromClient();
 }
 
 export function saveTurn(s: ServerSession, turn: Omit<StoredTurn, "at">): void {

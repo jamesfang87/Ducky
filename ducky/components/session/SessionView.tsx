@@ -7,6 +7,7 @@ import { useStore } from "@/lib/store";
 import { loadChat, saveChat } from "@/lib/chatHistory";
 import type { ChatMessage, MisconceptionId, ReasoningStep } from "@/lib/types";
 import {
+  findResources,
   getSessionInfo,
   requestHint,
   requestReveal,
@@ -25,12 +26,13 @@ import VisualPlayer from "./VisualPlayer";
 import ResizeHandle from "./ResizeHandle";
 import { usePersistedState } from "@/lib/usePersistedState";
 import { scoreRubric } from "@/lib/rubric";
-import { ExampleCard, MisconceptionTracker, ProblemCard, ReasoningPath, RubricCard } from "./SidePanels";
+import { ExampleCard, MisconceptionTracker, ProblemCard, ReasoningPath, ResourcesCard, RubricCard, type ResourcesState } from "./SidePanels";
 
 const uid = () => crypto.randomUUID();
 const PHYSICS_IDS = new Set<string>(MISCONCEPTIONS.map((m) => m.id));
 /** Prefix of the chat flag for a finished step; the label after it restores the checklist on reload. */
 const STEP_DONE = "Step complete: ";
+const CORRECTED = "Misconception corrected: ";
 
 type Viz =
   | { status: "idle" }
@@ -49,7 +51,10 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   const [currentStep, setCurrentStep] = useState(0);
   // Reasoning steps the student has explained correctly, so the checklist fills in as they go.
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
-  const [brokeAt, setBrokeAt] = useState<Set<number>>(new Set());
+  // Misconceptions still open, by id, with the step they broke; a later correction clears them.
+  const [openFlags, setOpenFlags] = useState<Record<string, number>>({});
+  const [correctedAt, setCorrectedAt] = useState<Set<number>>(new Set());
+  const brokeAt = useMemo(() => new Set(Object.values(openFlags)), [openFlags]);
   const [solved, setSolved] = useState(false);
   // The student showed their full reasoning, so the tutor stops asking and the input closes.
   const [finished, setFinished] = useState(false);
@@ -58,6 +63,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [viz, setViz] = useState<Viz>({ status: "idle" });
   const [vizTopic, setVizTopic] = useState("");
+  const [resources, setResources] = useState<ResourcesState>({ status: "idle" });
   const vizBusy = useRef(false);
   // Layout prefs: visualization column width on wide screens (null = default) and whether it's minimized.
   const [vizWidth, setVizWidth] = usePersistedState<number | null>("ducky:vizWidth", null);
@@ -97,6 +103,10 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
             const id = i.misconceptions.find((x) => m.flag!.label === `Misconception flagged: ${x.label}`)?.id;
             if (id) base[id] = (base[id] ?? 0) + 1;
           }
+          if (m.flag?.kind === "correct" && m.text.startsWith(CORRECTED)) {
+            const id = i.misconceptions.find((x) => m.text === `${CORRECTED}${x.label}`)?.id;
+            if (id && base[id]) base[id] -= 1;
+          }
           if (m.flag?.label === "Problem solved") setSolved(true);
           if (m.flag?.label === "Reasoning complete") {
             setSolved(true);
@@ -126,14 +136,15 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
     return info.steps.map((label, i) => {
       const notes: string[] = [];
       const done = solved || completedSteps.has(i);
-      if (brokeAt.has(i)) notes.push(done ? "Broke here, then self-corrected" : "Broke here");
+      if (correctedAt.has(i) || (done && brokeAt.has(i))) notes.push("Broke here, then self-corrected");
+      else if (brokeAt.has(i)) notes.push("Broke here");
       if (revealedStep === i) notes.push("Ran out of hints here; viewed the answer (no credit)");
       const note = notes.join(" · ") || undefined;
       if (done) return { label, status: "done", note };
       if (i === currentStep) return { label, status: brokeAt.has(i) || revealedStep === i ? "broke" : "current", note };
       return { label, status: "todo", note };
     });
-  }, [info, currentStep, completedSteps, brokeAt, solved, revealedStep]);
+  }, [info, currentStep, completedSteps, brokeAt, correctedAt, solved, revealedStep]);
 
   const showVisual = useCallback(
     async (topic: string) => {
@@ -153,6 +164,19 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
     [sessionId],
   );
 
+  const searchResources = useCallback(
+    async (topic?: string) => {
+      setResources({ status: "loading" });
+      try {
+        const r = await findResources(sessionId, topic);
+        setResources({ status: "ok", ...r });
+      } catch (e) {
+        setResources({ status: "error", message: e instanceof Error ? e.message : "Couldn't search right now." });
+      }
+    },
+    [sessionId],
+  );
+
   const applyMeta = (m: TurnMeta) => {
     if (!info) return;
     setHintsUsed(m.hintsUsed);
@@ -163,16 +187,32 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
       const label = info.misconceptions.find((x) => x.id === id)?.label ?? id;
       push({ role: "system", text: `Misconception flagged: ${label}`, flag: { kind: "misconception", label: `Misconception flagged: ${label}` } });
       setCounts((c) => ({ ...c, [id]: (c[id] ?? 0) + 1 }));
-      setBrokeAt((b) => new Set(b).add(m.current_step ?? currentStep));
+      setOpenFlags((f) => ({ ...f, [id]: m.current_step ?? currentStep }));
       // The teacher heatmap only knows the physics demo's misconceptions so far.
       if (PHYSICS_IDS.has(id)) addEvent({ misconception: id as MisconceptionId, problem: info.problem.index, student: session?.name ?? "Student" });
     }
 
+    // Corrected later on (or the step it broke is now done): un-flag it, so it neither counts
+    // against them nor leaves the step broken.
     const nowDone = new Set(m.completedSteps);
+    const resolved = new Set(m.resolved_misconceptions ?? []);
+    const fixed = Object.entries(openFlags)
+      .filter(([id, step]) => id !== m.misconception?.id && (resolved.has(id) || (nowDone.has(step) && !completedSteps.has(step))))
+      .map(([id]) => id);
+    if (fixed.length) {
+      setOpenFlags((f) => Object.fromEntries(Object.entries(f).filter(([id]) => !fixed.includes(id))));
+      setCorrectedAt((c) => new Set([...c, ...fixed.map((id) => openFlags[id])]));
+      setCounts((c) => ({ ...c, ...Object.fromEntries(fixed.map((id) => [id, Math.max(0, (c[id] ?? 0) - 1)])) }));
+      for (const id of fixed) {
+        const label = info.misconceptions.find((x) => x.id === id)?.label ?? id;
+        push({ role: "system", text: `${CORRECTED}${label}`, flag: { kind: "correct", label: `${CORRECTED}${label}` } });
+      }
+    }
+
     for (const i of m.completedSteps) {
       if (completedSteps.has(i)) continue;
       const label = info.steps[i];
-      push({ role: "system", text: `${STEP_DONE}${label}`, flag: { kind: "correct", label: brokeAt.has(i) ? `Self-corrected: ${label}` : `${STEP_DONE}${label}` } });
+      push({ role: "system", text: `${STEP_DONE}${label}`, flag: { kind: "correct", label: brokeAt.has(i) || correctedAt.has(i) ? `Self-corrected: ${label}` : `${STEP_DONE}${label}` } });
     }
     setCompletedSteps(nowDone);
     if (m.current_step !== null) setCurrentStep(m.current_step);
@@ -188,6 +228,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
     }
 
     if (m.visual_request && info.visualsEnabled) void showVisual(m.visual_request.intent);
+    if (m.wants_web_example && info.resourcesEnabled) void searchResources(m.wants_web_example);
   };
 
   const handleSend = async (text: string, via: "voice" | "text", seconds?: number) => {
@@ -196,7 +237,12 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
     const replyId = uid();
     let started = false;
     await streamTurn(
-      { sessionId, message: text, via },
+      {
+        sessionId,
+        message: text,
+        via,
+        history: messages.flatMap((m) => (m.role === "student" || m.role === "tutor" ? [{ role: m.role, text: m.text }] : [])).slice(-40),
+      },
       {
         say: (sentence) => {
           setThinking(false);
@@ -311,6 +357,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
         <section aria-label="Problem and progress" className="flex min-w-0 flex-[1_1_280px] flex-col gap-4">
           <ProblemCard problem={problem} />
           <ReasoningPath steps={steps} />
+          {info.resourcesEnabled && <ResourcesCard state={resources} onSearch={(t) => void searchResources(t)} />}
           {canReveal && (
             <div className="card p-5">
               <p className="font-semibold">Out of hints?</p>

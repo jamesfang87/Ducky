@@ -28,19 +28,6 @@ export default function PolicyPanel() {
       <p className="mb-4 text-[13px] text-muted">Applies live to every student on this assignment. No code.</p>
 
       <div className="flex flex-col gap-3.5">
-        <label htmlFor="model" className="flex items-center justify-between gap-3">
-          Model
-          <select
-            id="model"
-            value={policy.model}
-            onChange={(e) => setPolicy({ model: e.target.value as Policy["model"] })}
-            className="h-10 rounded-lg border border-edge bg-white px-2.5"
-          >
-            <option>Muse Spark</option>
-            <option>Claude</option>
-          </select>
-        </label>
-
         <div className="flex items-center justify-between gap-3">
           <span id="hint-label">Hint limit</span>
           <span className="flex items-center overflow-hidden rounded-lg border border-edge" role="group" aria-labelledby="hint-label">
