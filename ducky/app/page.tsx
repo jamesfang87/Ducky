@@ -466,17 +466,18 @@ function Hero() {
         <div className="relative z-20" style={{ opacity: 1 - hs * 1.3, transform: `translateY(${-hs * 70}px)` }}>
           <p {...rise(0, "text-[13px] font-semibold uppercase tracking-[0.14em] text-duck-glow")}>Built at HackTX 2026</p>
           <div {...rise(120, "mt-4 flex items-center gap-4")}>
-            <h1 className="font-display text-[56px] font-bold leading-[0.98] tracking-[-0.045em] md:text-[80px]">
-              Talk it
-              <br />
-              through.
+            <h1 className="font-display text-[72px] font-bold leading-[0.98] tracking-[-0.045em] md:text-[104px]">
+              Ducky
             </h1>
             <div className="hidden flex-none sm:block">
-              <DuckMark size={104} />
+              <DuckMark size={112} />
             </div>
           </div>
-          <p {...rise(300, "mt-6 max-w-[460px] text-[18px] leading-relaxed text-white/75 md:text-[20px]")}>
-            Explain your work out loud, in writing, or with a sketch. Ducky hears exactly where it broke.
+          <p {...rise(240, "mt-5 font-display text-[28px] font-semibold leading-tight tracking-[-0.02em] text-duck-glow md:text-[36px]")}>
+            Talk it through.
+          </p>
+          <p {...rise(320, "mt-4 max-w-[440px] text-[18px] leading-relaxed text-white/75 md:text-[20px]")}>
+            Explain your work out loud, in writing, or with a sketch. Ducky helps you find where it broke.
           </p>
           <div {...rise(460, "mt-9 flex flex-wrap items-center gap-5")}>
             <Link href="/login" className="rounded-full bg-white px-7 py-3.5 text-[16px] font-semibold text-ink no-underline transition-colors hover:bg-white/85">
