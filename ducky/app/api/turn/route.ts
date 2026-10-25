@@ -2,6 +2,7 @@ import { HttpError } from "@/lib/auth";
 import { recordAttempt } from "@/lib/server/attempts";
 import { errorStatus, loadOwnSession, readJson } from "@/lib/server/guard";
 import { checkInput, checkRate } from "@/lib/server/inputGuard";
+import { estimateTokens, recordTurnMetric } from "@/lib/server/monitor";
 import { streamChat } from "@/lib/server/llm";
 import { EMPTY_META, parseMeta } from "@/lib/server/meta";
 import { analyzeTurn } from "@/lib/server/progress";
@@ -73,6 +74,7 @@ export async function POST(req: Request) {
 
   // Jailbreak and answer-hunting attempts get an in-character reply with no model call, and are logged for the teacher.
   const flagged = checkInput(message, getPolicy(s).revealAnswers || s.revealed);
+  if (flagged) recordTurnMetric({ ms: 0, promptTokens: 0, replyTokens: 0, outcome: "blocked" });
   if (flagged) {
     saveGuardEvent(s, { kind: flagged.kind, excerpt: message.slice(0, 200) });
     saveTurn(s, { role: "student", text: message, via });
@@ -126,6 +128,7 @@ export async function POST(req: Request) {
     async start(controller) {
       const send = (event: Parameters<typeof sseFrame>[0], data: unknown) => controller.enqueue(sseFrame(event, data));
       const spoken: string[] = [];
+      const t0 = Date.now();
 
       // Answer-leak check runs on whole sentences before they are sent (GRD-4).
       const emit = (raw: string) => {
@@ -217,7 +220,10 @@ export async function POST(req: Request) {
         if (meta.misconception) saveMisconceptionEvent(s, meta.misconception.id);
         for (const id of resolved) saveResolvedEvent(s, id);
         recordAttempt(s, { misconception: meta.misconception?.id, evidence: message });
+        recordTurnMetric({ ms: Date.now() - t0, promptTokens: estimateTokens(JSON.stringify(messages).length), replyTokens: estimateTokens(spoken.join(" ").length), outcome: "ok" });
       } catch (e) {
+        recordTurnMetric({ ms: Date.now() - t0, promptTokens: 0, replyTokens: 0, outcome: "error" });
+        recordTurnMetric({ ms: Date.now() - t0, promptTokens: 0, replyTokens: 0, outcome: "error" });
         console.error("[/api/turn]", e);
         const detail = e instanceof Error ? e.message : "";
         send("error", {
