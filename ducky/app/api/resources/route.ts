@@ -1,7 +1,8 @@
 import { HttpError } from "@/lib/auth";
 import { errorStatus, loadOwnSession, readJson } from "@/lib/server/guard";
 import { searchResources } from "@/lib/server/serp";
-import { getPolicy, getProblem, getSolution, getSteps } from "@/lib/server/store";
+import { getPolicy, getProblem, getSolution, getSteps, noteScopeOf } from "@/lib/server/store";
+import { listNotes } from "@/lib/server/voiceNotes";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,7 +34,14 @@ export async function POST(req: Request) {
 
     s.resourceSearches = (s.resourceSearches ?? 0) + 1;
     const hideAnswer = !policy.revealAnswers && !s.revealed;
-    const resources = await searchResources(query, hideAnswer ? getSolution(s).finalAnswerPatterns : []);
+    const [found, notes] = await Promise.all([searchResources(query, hideAnswer ? getSolution(s).finalAnswerPatterns : []), listNotes().catch(() => [])]);
+    // Links Muse matched to the teacher's own voice notes on this problem come first.
+    const scope = noteScopeOf(s);
+    const matched = notes
+      .filter((n) => n.status === "live" && n.problemId === s.id && n.scope === scope && n.author.role === "teacher")
+      .flatMap((n) => n.resources.filter((r) => r.on).map((r) => ({ title: r.title, snippet: r.why, source: r.kind === "video" ? `${r.source} · video` : r.source, link: r.link, matched: `Matches how ${n.author.name} explained it` })));
+    const seen = new Set(matched.map((r) => r.link));
+    const resources = [...matched.slice(0, 3), ...found.filter((r) => !seen.has(r.link))].slice(0, 6);
     return Response.json({ query: typed || `${subject}: ${step}`, resources });
   } catch (e) {
     const { status, message } = errorStatus(e);

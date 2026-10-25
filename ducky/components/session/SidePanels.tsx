@@ -294,6 +294,7 @@ export function ResourcesCard({ state, onSearch }: { state: ResourcesState; onSe
                   {r.title}
                 </a>
                 <p className="text-[13px] text-muted">{r.source}</p>
+                {r.matched && <p className="mt-0.5 text-[12px] font-semibold text-accent">{r.matched}</p>}
                 <p className="mt-0.5 text-[13px] text-sub">{r.snippet}</p>
               </li>
             ))}
