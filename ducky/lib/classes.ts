@@ -3,6 +3,8 @@
  * (and the `join_class(code)` RPC) once the frontend talks to the backend.
  */
 
+import { getClassProgress, getProblemSets, type ProblemSetRecord } from "./problemSets";
+
 export type ClassTone = "accent" | "amber" | "blue";
 
 export interface ClassRecord {
@@ -13,10 +15,6 @@ export interface ClassRecord {
   term: string;
   /** 6 characters, no ambiguous 0/O/1/I/L, matching the backend generator. */
   joinCode: string;
-  assignments: number;
-  completed: number;
-  nextDue: string | null;
-  activeAssignment: { label: string; href: string } | null;
   tone: ClassTone;
 }
 
@@ -28,10 +26,6 @@ export const CLASSES: ClassRecord[] = [
     teacher: "D. Rivera",
     term: "Fall 2026",
     joinCode: "PHY4K2",
-    assignments: 6,
-    completed: 2,
-    nextDue: "Fri, Oct 30",
-    activeAssignment: { label: "Problem Set 3 · Free fall", href: "/session/demo" },
     tone: "accent",
   },
   {
@@ -41,10 +35,6 @@ export const CLASSES: ClassRecord[] = [
     teacher: "A. Patel",
     term: "Fall 2026",
     joinCode: "CHM7Q3",
-    assignments: 0,
-    completed: 0,
-    nextDue: null,
-    activeAssignment: null,
     tone: "amber",
   },
   {
@@ -54,10 +44,6 @@ export const CLASSES: ClassRecord[] = [
     teacher: "M. Ortiz",
     term: "Fall 2026",
     joinCode: "CSC9X2",
-    assignments: 4,
-    completed: 0,
-    nextDue: "Mon, Nov 2",
-    activeAssignment: { label: "Problem Set 1 · Insertion sort", href: "/session/demo-cs" },
     tone: "blue",
   },
 ];
@@ -87,4 +73,26 @@ export function findClassByCode(input: string): ClassRecord | undefined {
   const code = normalizeJoinCode(input);
   if (code.length !== 6) return undefined;
   return CLASSES.find((record) => record.joinCode === code);
+}
+
+export interface ClassSummary {
+  sets: ProblemSetRecord[];
+  problems: number;
+  completed: number;
+  pct: number;
+  due: string | null;
+  activeSet: ProblemSetRecord | null;
+}
+
+/** Everything the class card and class page need, derived from the posted sets. */
+export function getClassSummary(record: ClassRecord): ClassSummary {
+  const { problems, completed, due, activeSet } = getClassProgress(record.id);
+  return {
+    sets: getProblemSets(record.id),
+    problems,
+    completed,
+    pct: problems > 0 ? Math.round((completed / problems) * 100) : 0,
+    due,
+    activeSet,
+  };
 }

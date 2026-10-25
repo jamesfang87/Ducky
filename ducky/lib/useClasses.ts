@@ -76,5 +76,5 @@ export function useEnrolledClasses() {
     [ids],
   );
 
-  return { classes, join };
+  return { classes, join, ready: hydrated };
 }

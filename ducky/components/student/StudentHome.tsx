@@ -50,7 +50,7 @@ export default function StudentHome() {
             <p className="eyebrow">{session?.name ?? "Student"} · Fall 2026</p>
             <h1 className="mt-1 font-display text-[32px] font-bold tracking-[-0.02em] md:text-[38px]">Your classes</h1>
             <p className="mt-1.5 text-sub">
-              Pick up where you left off, or join a class with a code from your teacher.
+              Open a class to see its problem sets, or join a new one with a code from your teacher.
             </p>
           </div>
           <button type="button" onClick={openJoin} className="btn-primary">

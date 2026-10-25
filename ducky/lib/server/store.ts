@@ -110,6 +110,45 @@ const TEMPLATES: Record<string, Template> = {
     startStep: Math.max(0, INITIAL_STEPS.findIndex((s) => s.status === "current")),
     opening: "Before we calculate anything: if you drop both balls at the same moment, what do you expect to happen?",
   },
+  "demo-phys-2": {
+    problem: {
+      index: 1,
+      total: 5,
+      course: "PHYS 1401",
+      set: "Problem Set 2 · Projectile motion",
+      prompt:
+        "A ball is launched from level ground at 20 m/s at 30° above the horizontal. Ignoring air resistance, find the maximum height it reaches and how far from the launch point it lands. Explain why the horizontal and vertical motions can be treated separately.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "Split the launch velocity: v₀ₓ = 20 cos 30° ≈ 17.3 m/s and v₀ᵧ = 20 sin 30° = 10 m/s. " +
+        "At the top vᵧ = 0, so t_up = v₀ᵧ/g ≈ 1.02 s and h = v₀ᵧ²/(2g) ≈ 5.1 m. " +
+        "The flight lasts 2 t_up ≈ 2.04 s, so the range is v₀ₓ × 2.04 ≈ 35 m. " +
+        "Gravity acts only vertically, so vₓ stays constant while vᵧ changes at 9.8 m/s²; that is why the two directions are independent.",
+      finalAnswerPatterns: [/35(\.\d+)?\s*m/i, /5\.1(?:0)?\s*m/i, /17\.3\s*m\/s/i],
+    },
+    misconceptions: [
+      { id: "pm-uses-speed-not-components", label: "Uses 20 m/s as one velocity instead of splitting it into components" },
+      { id: "pm-gravity-slows-horizontal", label: "Thinks gravity also slows the horizontal motion" },
+      { id: "pm-top-velocity-zero", label: "Says the whole velocity is zero at the top, not just the vertical part" },
+      { id: "pm-path-length-as-range", label: "Uses the path length instead of the horizontal distance for range" },
+      { id: "pm-forgets-full-flight", label: "Uses the time to the top as the total flight time" },
+    ],
+    hints: [
+      "Start by drawing the launch velocity at 30°. What are its horizontal and vertical components?",
+      "At the highest point, what is the vertical velocity? Use vᵧ = v₀ᵧ − gt to find how long that takes.",
+    ],
+    steps: [
+      "Split the launch velocity into x and y components",
+      "Find the time to reach the highest point",
+      "Use the vertical motion to get the maximum height",
+      "Double the time and multiply by vₓ for the range",
+      "Explain why the two directions are independent",
+    ],
+    startStep: 0,
+    opening: "Before any equations: at the highest point of the flight, what is happening to the ball's velocity?",
+  },
   "demo-cs": {
     problem: {
       index: 1,
@@ -150,6 +189,48 @@ const TEMPLATES: Record<string, Template> = {
     ],
     startStep: 0,
     opening: "Before we trace anything: when insertion sort looks at a new element, what's true about everything to its left?",
+  },
+  "demo-cs-2": {
+    problem: {
+      index: 1,
+      total: 4,
+      course: "CS 314",
+      set: "Problem Set 2 · Hash maps",
+      prompt:
+        "A hash table has 8 buckets and uses h(k) = k mod 8 with separate chaining. Insert 12, 20, 5, 29, and 17 in that order, and show the table. Then explain why a lookup is O(1) on average but O(n) in the worst case.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "Buckets: 1 → [17]; 4 → [12, 20]; 5 → [5, 29]; every other bucket is empty. " +
+        "12 mod 8 = 4 and 20 mod 8 = 4 collide, and so do 5 and 29 (both 5). " +
+        "With a good hash and a bounded load factor each chain stays short, so a lookup is O(1) on average. " +
+        "In the worst case every key hashes to one bucket, so the chain holds all n keys and a lookup walks O(n) nodes.",
+      finalAnswerPatterns: [
+        /bucket\s*4[^.]*12[^.]*20/i,
+        /12[^.]*20[^.]*bucket\s*4/i,
+        /worst[^.]*O\s*\(\s*n\s*\)/i,
+      ],
+    },
+    misconceptions: [
+      { id: "hm-drops-collision", label: "Drops one of the keys that collide in a bucket" },
+      { id: "hm-mod-error", label: "Computes a bucket with the wrong modulus" },
+      { id: "hm-worst-case-constant", label: "Says the worst case is also O(1) because the hash is O(1)" },
+      { id: "hm-no-collisions", label: "Claims there are no collisions" },
+      { id: "hm-load-factor-bigo", label: "Thinks the load factor changes the big-O of a single lookup" },
+    ],
+    hints: [
+      "Take each key mod 8. Which two keys land in the same bucket?",
+      "If every key landed in one bucket, how many nodes would you walk to find the last one?",
+    ],
+    steps: [
+      "Compute h(k) = k mod 8 for each key",
+      "Place each key in its bucket with separate chaining",
+      "Explain why the average lookup is O(1)",
+      "Describe the worst case and its complexity",
+    ],
+    startStep: 0,
+    opening: "Start with the hash function: which bucket does 12 land in, and why?",
   },
 };
 

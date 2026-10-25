@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ClassRecord, ClassTone } from "@/lib/classes";
+import { getClassSummary, type ClassRecord, type ClassTone } from "@/lib/classes";
 import { Send } from "@/components/ui/icons";
 
 const DOT: Record<ClassTone, string> = {
@@ -9,24 +9,32 @@ const DOT: Record<ClassTone, string> = {
 };
 
 export function ClassCard({ record }: { record: ClassRecord }) {
-  const pct = record.assignments > 0 ? Math.round((record.completed / record.assignments) * 100) : 0;
+  const { problems, completed, pct, due, activeSet } = getClassSummary(record);
 
   return (
-    <article className="card flex flex-col p-5">
+    <article className="card relative flex flex-col p-5 transition hover:border-accent hover:shadow-sm">
       <div className="min-w-0">
         <p className="eyebrow flex items-center gap-1.5">
           <span className={`h-1.5 w-1.5 flex-none rounded-full ${DOT[record.tone]}`} aria-hidden="true" />
           {record.course} · {record.term}
         </p>
-        <h2 className="mt-1 font-display text-[20px] font-semibold leading-snug">{record.name}</h2>
+        <h2 className="mt-1 font-display text-[20px] font-semibold leading-snug">
+          {/* Stretches over the card so the whole card opens the class. */}
+          <Link
+            href={`/classes/${record.id}`}
+            className="text-ink no-underline after:absolute after:inset-0 after:rounded-[14px] after:content-[''] hover:text-accent-dark focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-accent focus-visible:after:ring-offset-2"
+          >
+            {record.name}
+          </Link>
+        </h2>
         <p className="mt-0.5 text-sm text-sub">{record.teacher}</p>
       </div>
 
-      {record.assignments > 0 ? (
+      {problems > 0 ? (
         <div className="mt-5">
           <div className="flex items-center justify-between text-[13px]">
             <span className="text-sub">
-              {record.completed} of {record.assignments} problems
+              {completed} of {problems} problems
             </span>
             <span className="font-mono text-muted">{pct}%</span>
           </div>
@@ -40,7 +48,7 @@ export function ClassCard({ record }: { record: ClassRecord }) {
           >
             <div className="h-full rounded-full bg-accent transition-[width]" style={{ width: `${pct}%` }} />
           </div>
-          {record.nextDue && <p className="mt-2 text-[13px] text-muted">Next due {record.nextDue}</p>}
+          {due && <p className="mt-2 text-[13px] text-muted">Next due {due}</p>}
         </div>
       ) : (
         <p className="mt-5 text-[13px] text-muted">No assignments posted yet.</p>
@@ -48,12 +56,16 @@ export function ClassCard({ record }: { record: ClassRecord }) {
 
       <div className="mt-auto flex items-center justify-between gap-3 pt-5">
         <span className="min-w-0 truncate text-[12.5px] text-muted">
-          {record.activeAssignment?.label ?? "Nothing to do right now"}
+          {activeSet
+            ? `Problem Set ${activeSet.number} · ${activeSet.title}`
+            : problems > 0
+              ? "All caught up"
+              : "Nothing to do right now"}
         </span>
-        {record.activeAssignment ? (
-          <Link href={record.activeAssignment.href} className="btn-primary h-9 flex-none px-3 text-sm">
-            Continue <Send size={13} />
-          </Link>
+        {problems > 0 ? (
+          <span className="btn-primary h-9 flex-none px-3 text-sm">
+            View problem sets <Send size={13} />
+          </span>
         ) : (
           <span className="chip flex-none">No assignments</span>
         )}
