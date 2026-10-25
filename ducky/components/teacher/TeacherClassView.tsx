@@ -1,5 +1,6 @@
 "use client";
 
+import { QrCode } from "@/components/ui/QrCode";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -52,6 +53,10 @@ export default function TeacherClassView({ detail }: { detail: TeacherClassDetai
             <div>
               <p className="eyebrow">Join code</p>
               <p className="mt-0.5 font-mono text-[26px] font-semibold tracking-[0.18em]">{detail.joinCode}</p>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <QrCode value={`${typeof window === "undefined" ? "" : window.location.origin}/classes?join=${detail.joinCode}`} size={84} label={`QR code to join ${detail.name}`} />
+              <span className="text-[11px] text-muted">Scan to join</span>
             </div>
             <button type="button" onClick={copyCode} className="btn h-9 px-3 text-sm" aria-live="polite">
               {copied ? (

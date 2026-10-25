@@ -7,11 +7,13 @@ import type { JoinResult } from "@/lib/useClasses";
 export function JoinClassDialog({
   onClose,
   join,
+  initialCode = "",
 }: {
+  initialCode?: string;
   onClose: () => void;
   join: (code: string) => Promise<JoinResult>;
 }) {
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(initialCode);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);

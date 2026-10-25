@@ -13,6 +13,16 @@ export default function StudentHome() {
   const session = useSession();
   const { classes, join } = useEnrolledClasses();
   const [joining, setJoining] = useState(false);
+  // A scanned class QR code lands here as /classes?join=ABC123 and opens the dialog with the code filled in.
+  const [prefill, setPrefill] = useState("");
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("join");
+    if (code) {
+      setPrefill(code.toUpperCase().slice(0, 12));
+      setJoining(true);
+      window.history.replaceState(null, "", "/classes");
+    }
+  }, []);
   const [notice, setNotice] = useState<string | null>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -101,7 +111,7 @@ export default function StudentHome() {
         )}
       </main>
 
-      {joining && <JoinClassDialog onClose={closeJoin} join={handleJoin} />}
+      {joining && <JoinClassDialog onClose={closeJoin} join={handleJoin} initialCode={prefill} />}
     </div>
   );
 }
