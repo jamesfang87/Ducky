@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/auth";
 import { buildBlueprint, lastCiReport, runAgentCi } from "@/lib/server/agentCi";
 import { errorStatus } from "@/lib/server/guard";
 import { monitorSummary } from "@/lib/server/monitor";
+import { toolStatus } from "@/lib/server/tools";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ export const maxDuration = 60;
 export async function GET() {
   try {
     await requirePermission("class:manage");
-    return Response.json({ blueprint: await buildBlueprint(), monitor: monitorSummary(), report: lastCiReport() });
+    return Response.json({ blueprint: await buildBlueprint(), monitor: monitorSummary(), report: lastCiReport(), tools: toolStatus() });
   } catch (e) {
     const { status, message } = errorStatus(e);
     return Response.json({ error: message }, { status });
@@ -23,7 +24,7 @@ export async function POST() {
   try {
     await requirePermission("class:manage");
     const report = await runAgentCi();
-    return Response.json({ blueprint: await buildBlueprint(), monitor: monitorSummary(), report });
+    return Response.json({ blueprint: await buildBlueprint(), monitor: monitorSummary(), report, tools: toolStatus() });
   } catch (e) {
     const { status, message } = errorStatus(e);
     return Response.json({ error: message }, { status });

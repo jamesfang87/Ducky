@@ -6,7 +6,8 @@ interface Turn { student: string; outcome: string; reply: string; ms: number; to
 interface Persona { id: string; name: string; tries: string; passed: boolean; checks: { label: string; pass: boolean }[]; turns: Turn[] }
 interface Report { ranAt: number; passed: number; total: number; personas: Persona[] }
 interface Monitor { turns: number; blocked: number; errors: number; p50Ms: number; p95Ms: number; promptTokens: number; replyTokens: number }
-interface Payload { blueprint: { hash: string } & Record<string, unknown>; monitor: Monitor; report: Report | null }
+interface Tool { id: string; name: string; provider: string; usedFor: string; needs: string[]; gatedBy?: string; connected: boolean }
+interface Payload { blueprint: { hash: string } & Record<string, unknown>; monitor: Monitor; report: Report | null; tools?: Tool[] }
 
 export default function AgentCi() {
   const [data, setData] = useState<Payload | null>(null);
@@ -121,6 +122,30 @@ export default function AgentCi() {
           <p className="text-sm text-sub">Nothing yet. Numbers appear as students talk to Ducky, and when you run CI.</p>
         )}
       </section>
+
+      {data?.tools && (
+        <section className="card flex flex-col gap-3 p-5" aria-label="Connected tools">
+          <h2 className="font-semibold">Connected tools</h2>
+          <p className="text-sm text-sub">Set up once for the whole deployment. Every agent reuses these; a policy only switches them on or off.</p>
+          <ul className="divide-y divide-line">
+            {data.tools.map((t) => (
+              <li key={t.id} className="flex flex-wrap items-start gap-3 py-2.5 text-sm">
+                <span className={`mt-1.5 h-2 w-2 flex-none rounded-full ${t.connected ? "bg-accent" : "bg-warn"}`} aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">
+                    {t.name} <span className="font-normal text-muted">· {t.provider}</span>
+                  </p>
+                  <p className="text-sub">{t.usedFor}</p>
+                  {t.gatedBy && <p className="text-[12px] text-muted">Teachers can turn this off per assignment ({t.gatedBy}).</p>}
+                </div>
+                <span className={`text-[13px] font-semibold ${t.connected ? "text-accent-dark" : "text-warn"}`}>
+                  {t.connected ? "Connected" : `Missing ${t.needs.filter(Boolean).join(", ")}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="card flex flex-col gap-2 p-5" aria-label="Blueprint">
         <h2 className="font-semibold">Agent blueprint</h2>
