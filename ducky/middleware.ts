@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { AUTH_COOKIE_OPTIONS, REMEMBER_COOKIE, withLifetime } from "@/lib/supabase/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 import { homePath, type Role } from "@/lib/users";
-import { mfaIsFresh } from "@/lib/mfa";
+import { mfaSatisfied } from "@/lib/mfa";
 
 /** Route gates. Runs before the page renders, so a student typing /teacher never sees a teacher screen. */
 const RULES: { pattern: RegExp; roles: Role[] }[] = [
@@ -67,7 +67,7 @@ export async function middleware(req: NextRequest) {
   if (!user) return isLogin ? response : redirectTo("/login");
 
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  if (!mfaIsFresh(aal)) return isLogin ? response : redirectTo("/mfa");
+  if (!mfaSatisfied(aal)) return isLogin ? response : redirectTo("/mfa");
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
   const role = profile?.role as Role | undefined;

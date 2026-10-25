@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSession } from "@/lib/session";
 import { SignOutButton } from "./SignOutButton";
 import { ThemePicker } from "./ThemePicker";
@@ -26,6 +27,9 @@ export function AccountChip() {
       >
         {initials}
       </span>
+      <Link href="/mfa" className="hidden text-sm text-sub no-underline hover:text-ink sm:inline" title="Optional extra security">
+        2-step
+      </Link>
       <SignOutButton />
     </div>
   );

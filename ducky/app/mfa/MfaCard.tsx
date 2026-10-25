@@ -84,15 +84,15 @@ export default function MfaCard() {
 
       {stage === "challenge" && (
         <p className="mt-3 text-sm text-sub">
-          Enter the 6-digit code from your authenticator app. You will only be asked again after about 3 hours, and you stay signed in between.
+          You turned on two-step sign-in, so enter the 6-digit code from your authenticator app. You stay verified until you sign out.
         </p>
       )}
 
       {stage === "enroll" && (
         <div className="mt-4 text-sm text-sub">
           <p>
-            Ducky protects student work with a second step. Scan this with an authenticator app (Google Authenticator,
-            1Password, Authy), then enter the code it shows.
+            Two-step sign-in is optional. If you turn it on, signing in will also ask for a code from an authenticator app (Google Authenticator,
+            1Password, Authy). Scan this, then enter the code it shows.
           </p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={qr} alt="QR code for your authenticator app" className="mx-auto my-4 h-44 w-44 rounded-lg bg-surface p-2" />
@@ -135,9 +135,16 @@ export default function MfaCard() {
         </p>
       )}
 
-      <button type="button" onClick={signOut} className="mt-4 text-sm text-sub transition hover:text-ink">
-        Sign out
-      </button>
+      <div className="mt-4 flex gap-5 text-sm">
+        {stage === "enroll" && (
+          <button type="button" onClick={() => router.replace("/")} className="text-sub transition hover:text-ink">
+            Not now
+          </button>
+        )}
+        <button type="button" onClick={signOut} className="text-sub transition hover:text-ink">
+          Sign out
+        </button>
+      </div>
     </div>
   );
 }
