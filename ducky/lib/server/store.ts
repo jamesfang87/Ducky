@@ -47,6 +47,8 @@ export interface ServerSession {
   problemIndex: number;
   hintsUsed: number;
   currentStep: number;
+  /** Reasoning steps the student has explained correctly (0-based, sorted). */
+  completedSteps: number[];
   /** The step the student was on when their last hint was used. */
   stepWhenHintsRanOut: number | null;
   revealed: boolean;
@@ -187,6 +189,7 @@ export function getSession(sessionId: string, user: { userId: string; name: stri
       problemIndex: t.problem.index,
       hintsUsed: 0,
       currentStep: t.startStep,
+      completedSteps: Array.from({ length: t.startStep }, (_, i) => i),
       stepWhenHintsRanOut: null,
       revealed: false,
       completed: false,
@@ -261,6 +264,20 @@ export function incrementHints(s: ServerSession): number {
 export function setCurrentStep(s: ServerSession, step: number): void {
   const last = getSteps(s).length - 1;
   s.currentStep = Math.min(last, Math.max(0, Math.round(step)));
+}
+
+/** Marks steps done and moves the current step off any completed one, to the first step still open. */
+export function completeSteps(s: ServerSession, steps: number[]): number[] {
+  const count = getSteps(s).length;
+  const done = new Set(s.completedSteps);
+  const added = steps.filter((i) => Number.isInteger(i) && i >= 0 && i < count && !done.has(i));
+  for (const i of added) done.add(i);
+  s.completedSteps = [...done].sort((a, b) => a - b);
+  if (done.has(s.currentStep)) {
+    const open = Array.from({ length: count }, (_, i) => i).find((i) => !done.has(i));
+    s.currentStep = open ?? count - 1;
+  }
+  return added;
 }
 
 export function canReveal(s: ServerSession): boolean {

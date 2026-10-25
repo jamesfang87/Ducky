@@ -17,6 +17,7 @@ export async function GET(req: Request) {
       opening: getOpening(s),
       steps: getSteps(s),
       currentStep: s.currentStep,
+      completedSteps: s.completedSteps,
       misconceptions: getMisconceptions(s),
       hintsUsed: s.hintsUsed,
       hintLimit: policy.hintLimit,

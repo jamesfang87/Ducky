@@ -6,6 +6,7 @@ import { buildMessages, compileSystemPrompt, META_MARKER } from "@/lib/server/pr
 import { SSE_HEADERS, sseError, sseFrame } from "@/lib/server/sse";
 import {
   canReveal,
+  completeSteps,
   getMisconceptions,
   getPolicy,
   getProblem,
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
         controller.enqueue(sseFrame("say", { text: DONE_REPLY }));
-        controller.enqueue(sseFrame("meta", { ...EMPTY_META, reasoning_complete: true, hintsUsed: s.hintsUsed, hintLimit: getPolicy(s).hintLimit, canReveal: false }));
+        controller.enqueue(sseFrame("meta", { ...EMPTY_META, reasoning_complete: true, completedSteps: s.completedSteps, hintsUsed: s.hintsUsed, hintLimit: getPolicy(s).hintLimit, canReveal: false }));
         controller.enqueue(sseFrame("done", {}));
         controller.close();
       },
@@ -77,6 +78,7 @@ export async function POST(req: Request) {
     hintsUsed: s.hintsUsed,
     hintLimit: policy.hintLimit,
     currentStep: s.currentStep,
+    completedSteps: s.completedSteps,
     revealed: s.revealed,
   });
 
@@ -142,13 +144,23 @@ export async function POST(req: Request) {
 
         const meta = inMeta ? parseMeta(metaRaw, known, steps.length) : { ...EMPTY_META };
         if (meta.current_step !== null) setCurrentStep(s, meta.current_step);
+        // Finishing the whole chain, or a correct answer on the last step, completes every step.
+        const allDone = meta.reasoning_complete || (meta.step_assessment === "correct" && s.currentStep === steps.length - 1);
+        completeSteps(s, allDone ? steps.map((_, i) => i) : meta.steps_completed);
         if (meta.reasoning_complete) s.completed = true;
         if (meta.hint_used) {
           if (s.hintsUsed < policy.hintLimit) incrementHints(s);
           else saveGuardEvent(s, { kind: "hint_limit", excerpt: spoken.join(" ").slice(0, 200) });
         }
 
-        send("meta", { ...meta, hintsUsed: s.hintsUsed, hintLimit: policy.hintLimit, canReveal: canReveal(s) });
+        send("meta", {
+          ...meta,
+          current_step: s.currentStep,
+          completedSteps: s.completedSteps,
+          hintsUsed: s.hintsUsed,
+          hintLimit: policy.hintLimit,
+          canReveal: canReveal(s),
+        });
         send("done", {});
 
         saveTurn(s, { role: "student", text: message, via });

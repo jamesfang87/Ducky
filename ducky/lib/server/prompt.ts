@@ -36,6 +36,7 @@ export function compileSystemPrompt(
     "Ask exactly one question per turn, until the student has finished (see the next rule).",
     "Once the student has shown their full chain of reasoning to the answer (every reasoning step, in their own words, including why it works), stop asking questions: affirm their reasoning in one or two sentences, ask nothing further, and set reasoning_complete to true. Never set it for a bare final answer without the reasoning.",
     "Say at most 2 sentences per turn. Your words are spoken aloud, so no markdown, lists, or LaTeX.",
+    "Track progress through the REASONING STEPS: in steps_completed, list every step the student correctly explained in this message (several at once is fine, in any order). Count a step only when the student said it, not when you did, and not for a partial or wrong answer.",
     "Always probe WHY a step works or why a law applies, not just what the next step is.",
     "Never correct the student directly. If they say something wrong, ask a question that lets them discover it.",
     policy.revealAnswers
@@ -84,6 +85,7 @@ export function compileSystemPrompt(
     ' "hint_used": true | false,',
     ' "wants_web_example": "<search query>" | null,',
     ' "current_step": <0-based index of the step the student is working on now>,',
+    ' "steps_completed": [<0-based indices of steps the student correctly explained in this message>],',
     ' "reasoning_complete": true | false}',
   ].join("\n");
 }
@@ -92,6 +94,7 @@ export interface TurnState {
   hintsUsed: number;
   hintLimit: number;
   currentStep: number;
+  completedSteps: number[];
   revealed: boolean;
 }
 
@@ -106,6 +109,7 @@ export function buildMessages(
   const notes = [
     `Hints remaining: ${left}.${left === 0 ? " Do not give hints." : ""}`,
     `Current step: ${state.currentStep}.`,
+    `Steps already completed: ${state.completedSteps.length ? state.completedSteps.join(", ") : "none"}.`,
   ];
   if (state.revealed) notes.push("The student has already viewed the answer (no credit). You may discuss it and check they understand why it works.");
 

@@ -9,6 +9,7 @@ export interface SessionInfo {
   opening: string;
   steps: string[];
   currentStep: number;
+  completedSteps: number[];
   misconceptions: { id: string; label: string }[];
   hintsUsed: number;
   hintLimit: number;
@@ -27,7 +28,10 @@ export interface TurnMeta {
   hint_used: boolean;
   wants_web_example: string | null;
   current_step: number | null;
+  steps_completed: number[];
   reasoning_complete: boolean;
+  /** Every step done so far, after this turn (server's record). */
+  completedSteps: number[];
   hintsUsed: number;
   hintLimit: number;
   canReveal: boolean;

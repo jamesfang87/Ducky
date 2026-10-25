@@ -8,6 +8,8 @@ export interface TurnMeta {
   hint_used: boolean;
   wants_web_example: string | null;
   current_step: number | null;
+  /** Steps the student explained correctly in this message (0-based). */
+  steps_completed: number[];
   /** The student has explained the whole chain of reasoning to the answer; the tutor stops asking. */
   reasoning_complete: boolean;
 }
@@ -19,6 +21,7 @@ export const EMPTY_META: TurnMeta = {
   hint_used: false,
   wants_web_example: null,
   current_step: null,
+  steps_completed: [],
   reasoning_complete: false,
 };
 
@@ -63,6 +66,9 @@ export function parseMeta(raw: string, knownMisconceptions: ReadonlySet<string>,
     hint_used: j.hint_used === true,
     wants_web_example: str(j.wants_web_example, 120),
     current_step: typeof step === "number" && Number.isInteger(step) && step >= 0 && step < stepCount ? step : null,
+    steps_completed: Array.isArray(j.steps_completed)
+      ? [...new Set(j.steps_completed.filter((i): i is number => typeof i === "number" && Number.isInteger(i) && i >= 0 && i < stepCount))]
+      : [],
     reasoning_complete: j.reasoning_complete === true,
   };
 }

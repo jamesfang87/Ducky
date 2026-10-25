@@ -29,6 +29,8 @@ import { ExampleCard, MisconceptionTracker, ProblemCard, ReasoningPath, RubricCa
 
 const uid = () => crypto.randomUUID();
 const PHYSICS_IDS = new Set<string>(MISCONCEPTIONS.map((m) => m.id));
+/** Prefix of the chat flag for a finished step; the label after it restores the checklist on reload. */
+const STEP_DONE = "Step complete: ";
 
 type Viz =
   | { status: "idle" }
@@ -45,6 +47,8 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   const [thinking, setThinking] = useState(false);
   const [hintsUsed, setHintsUsed] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
+  // Reasoning steps the student has explained correctly, so the checklist fills in as they go.
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [brokeAt, setBrokeAt] = useState<Set<number>>(new Set());
   const [solved, setSolved] = useState(false);
   // The student showed their full reasoning, so the tutor stops asking and the input closes.
@@ -76,6 +80,14 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
         setMessages(saved ?? [{ id: "m0", role: "tutor", text: i.opening }]);
         setHintsUsed(i.hintsUsed);
         setCurrentStep(i.currentStep);
+        // The server forgets progress on restart; the saved chat's step flags fill it back in.
+        const done = new Set(i.completedSteps);
+        for (const m of saved ?? []) {
+          const label = m.flag?.kind === "correct" && m.text.startsWith(STEP_DONE) ? m.text.slice(STEP_DONE.length) : null;
+          const idx = label === null ? -1 : i.steps.indexOf(label);
+          if (idx >= 0) done.add(idx);
+        }
+        setCompletedSteps(done);
         setCanReveal(i.canReveal);
         if (i.revealed) setRevealedStep(i.stepWhenHintsRanOut ?? i.currentStep);
         setFinished(i.completed);
@@ -114,14 +126,15 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
     if (!info) return [];
     return info.steps.map((label, i) => {
       const notes: string[] = [];
-      if (brokeAt.has(i)) notes.push(i < currentStep || solved ? "Broke here, then self-corrected" : "Broke here");
+      const done = solved || completedSteps.has(i);
+      if (brokeAt.has(i)) notes.push(done ? "Broke here, then self-corrected" : "Broke here");
       if (revealedStep === i) notes.push("Ran out of hints here; viewed the answer (no credit)");
       const note = notes.join(" · ") || undefined;
-      if (solved || i < currentStep) return { label, status: "done", note };
+      if (done) return { label, status: "done", note };
       if (i === currentStep) return { label, status: brokeAt.has(i) || revealedStep === i ? "broke" : "current", note };
       return { label, status: "todo", note };
     });
-  }, [info, currentStep, brokeAt, solved, revealedStep]);
+  }, [info, currentStep, completedSteps, brokeAt, solved, revealedStep]);
 
   const showVisual = useCallback(
     async (topic: string) => {
@@ -156,11 +169,15 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
       if (PHYSICS_IDS.has(id)) addEvent({ misconception: id as MisconceptionId, problem: info.problem.index, student: session?.name ?? "Student" });
     }
 
-    if (m.current_step !== null && m.current_step > currentStep) {
-      push({ role: "system", text: "Step complete", flag: { kind: "correct", label: brokeAt.has(currentStep) ? "Self-corrected" : "Step complete" } });
+    const nowDone = new Set(m.completedSteps);
+    for (const i of m.completedSteps) {
+      if (completedSteps.has(i)) continue;
+      const label = info.steps[i];
+      push({ role: "system", text: `${STEP_DONE}${label}`, flag: { kind: "correct", label: brokeAt.has(i) ? `Self-corrected: ${label}` : `${STEP_DONE}${label}` } });
     }
+    setCompletedSteps(nowDone);
     if (m.current_step !== null) setCurrentStep(m.current_step);
-    if (m.step_assessment === "correct" && (m.current_step ?? currentStep) === info.steps.length - 1) {
+    if (!solved && info.steps.every((_, i) => nowDone.has(i))) {
       setSolved(true);
       push({ role: "system", text: "Problem solved", flag: { kind: "correct", label: "Problem solved" } });
     }
