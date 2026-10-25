@@ -15,6 +15,8 @@ interface Props {
   thinking: boolean;
   /** Ducky's turn is still streaming; don't reopen the mic yet. */
   responding: boolean;
+  /** Changes when the student clears this question; stops voice and hands-free. */
+  resetToken: number;
   hintsUsed: number;
   hintLimit: number;
   voiceRequired: boolean;
@@ -26,7 +28,7 @@ interface Props {
   onHint: () => void;
 }
 
-export default function Interview({ messages, thinking, responding, hintsUsed, hintLimit, voiceRequired, finished, wrong = false, onSend, onHint }: Props) {
+export default function Interview({ messages, thinking, responding, resetToken, hintsUsed, hintLimit, voiceRequired, finished, wrong = false, onSend, onHint }: Props) {
   const [draft, setDraft] = useState("");
   const [sketching, setSketching] = useState(false);
   const [handsFree, setHandsFree] = usePersistedState("ducky:handsFree", true);
@@ -54,6 +56,18 @@ export default function Interview({ messages, thinking, responding, hintsUsed, h
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
   }, [messages, thinking]);
+
+  // Clearing the question stops Ducky, drops the mic, and leaves hands-free off
+  // until the student chooses to talk again.
+  const resetSeen = useRef(resetToken);
+  useEffect(() => {
+    if (resetSeen.current === resetToken) return;
+    resetSeen.current = resetToken;
+    voice.stop();
+    if (speech.listening) speech.cancel();
+    engaged.current = false;
+    lastInputVia.current = null;
+  }, [resetToken]);
 
   // After Ducky finishes a spoken reply, reopen the mic so the student can just
   // keep talking. A pause then sends the turn automatically. Waiting for

@@ -55,3 +55,12 @@ export async function saveChat(userId: string, sessionId: string, messages: Chat
     .upsert({ user_id: userId, session_id: sessionId, messages: trimmed, updated_at: new Date().toISOString() });
   if (error) writeLocal(userId, sessionId, trimmed);
 }
+
+/** Remove the browser's fallback copy after a progress reset. */
+export function clearLocalChat(userId: string, sessionId: string): void {
+  try {
+    localStorage.removeItem(localKey(userId, sessionId));
+  } catch {
+    // Storage blocked; the Supabase row is already gone.
+  }
+}

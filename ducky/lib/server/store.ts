@@ -983,6 +983,26 @@ export function cacheTemplate(sessionId: string, template: Template): void {
 
 const keyOf = (s: Pick<ServerSession, "id" | "userId">) => `${s.id}:${s.userId}`;
 
+/** A fresh copy of a template's session state for one student. */
+function initialState(t: Template, sessionId: string, userId: string, student: string): ServerSession {
+  return {
+    id: sessionId,
+    userId,
+    student,
+    problemIndex: t.problem.index,
+    hintsUsed: 0,
+    currentStep: t.startStep,
+    completedSteps: Array.from({ length: t.startStep }, (_, i) => i),
+    stepWhenHintsRanOut: null,
+    revealed: false,
+    completed: false,
+    creditEligible: true,
+    visualsMade: 0,
+    visualBusy: false,
+    resourceSearches: 0,
+  };
+}
+
 /** Returns the caller's own copy of the session, creating it on first use. Null if no such session. */
 export function getSession(sessionId: string, user: { userId: string; name: string }): ServerSession | null {
   const t = templateOf(sessionId);
@@ -990,25 +1010,25 @@ export function getSession(sessionId: string, user: { userId: string; name: stri
   const key = `${sessionId}:${user.userId}`;
   let s = db.sessions.get(key);
   if (!s) {
-    s = {
-      id: sessionId,
-      userId: user.userId,
-      student: user.name,
-      problemIndex: t.problem.index,
-      hintsUsed: 0,
-      currentStep: t.startStep,
-      completedSteps: Array.from({ length: t.startStep }, (_, i) => i),
-      stepWhenHintsRanOut: null,
-      revealed: false,
-      completed: false,
-      creditEligible: true,
-      visualsMade: 0,
-      visualBusy: false,
-      resourceSearches: 0,
-    };
+    s = initialState(t, sessionId, user.userId, user.name);
     db.sessions.set(key, s);
   }
   return s;
+}
+
+/**
+ * Wipe this student's progress and transcript for one question, leaving every
+ * other session alone. The caller deletes the saved chat before calling this.
+ */
+export function resetSession(s: ServerSession): ServerSession {
+  const t = tpl(s);
+  const key = keyOf(s);
+  const fresh = initialState(t, s.id, s.userId, s.student);
+  db.sessions.set(key, fresh);
+  db.turns.delete(key);
+  // The saved chat was deleted, so don't rehydrate it from Supabase on the next turn.
+  db.hydrated.add(key);
+  return fresh;
 }
 
 const tpl = (s: ServerSession): Template => templateOf(s.id)!;

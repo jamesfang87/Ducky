@@ -92,6 +92,10 @@ export const findResources = (sessionId: string, topic?: string) =>
 export const requestVisual = (sessionId: string, topic: string) =>
   post("/api/visual", { sessionId, topic }).then((r) => json<VisualResult>(r));
 
+/** Clear this student's progress and saved chat for one question. */
+export const resetSession = (sessionId: string) =>
+  post("/api/session/reset", { sessionId }).then((r) => json<{ ok: true }>(r));
+
 /** POST /api/turn and dispatch its Server-Sent Events as they arrive. Resolves after `done`. */
 export async function streamTurn(
   body: { sessionId: string; message: string; via: "voice" | "text"; history?: { role: "student" | "tutor"; text: string }[] },

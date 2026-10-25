@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MISCONCEPTIONS, STUDENT_HISTORY } from "@/lib/mock";
 import { findProblemSetBySession } from "@/lib/problemSets";
 import { useStore } from "@/lib/store";
-import { loadChat, saveChat } from "@/lib/chatHistory";
+import { clearLocalChat, loadChat, saveChat } from "@/lib/chatHistory";
 import type { ChatMessage, MisconceptionId, ReasoningStep } from "@/lib/types";
 import {
   findResources,
@@ -13,6 +13,7 @@ import {
   requestHint,
   requestReveal,
   requestVisual,
+  resetSession,
   streamTurn,
   type SessionInfo,
   type TurnMeta,
@@ -91,11 +92,43 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   const userId = session?.userId;
   // Saving starts only once the saved chat (if any) has been loaded, so the opening line never overwrites it.
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  // Bumped to re-run the session loader after a reset.
+  const [reloadKey, setReloadKey] = useState(0);
+  const [resetting, setResetting] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+  // Tells the voice panel to stop talking and leave hands-free mode.
+  const [resetToken, setResetToken] = useState(0);
+  // Suppress chat saves while a reset is deleting the old transcript.
+  const resettingRef = useRef(false);
 
   useEffect(() => {
     let live = true;
+    turnSeq.current += 1;
     setHistoryLoaded(false);
-    Promise.all([getSessionInfo(sessionId), userId ? loadChat(userId, sessionId).catch(() => null) : null])
+    setLoadError(null);
+    setInfo(null);
+    setMessages([]);
+    setThinking(false);
+    setResponding(false);
+    setHintsUsed(0);
+    setCurrentStep(0);
+    setCompletedSteps(new Set());
+    setOpenFlags({});
+    setCorrectedAt(new Set());
+    setSolved(false);
+    setFinished(false);
+    setWrong(false);
+    setCanReveal(false);
+    setRevealedStep(null);
+    setCounts({});
+    setViz({ status: "idle" });
+    setVizTopic("");
+    setResources({ status: "idle" });
+    vizBusy.current = false;
+    Promise.all([
+      getSessionInfo(sessionId),
+      userId && !resettingRef.current ? loadChat(userId, sessionId).catch(() => null) : null,
+    ])
       .then(([i, saved]) => {
         if (!live) return;
         setInfo(i);
@@ -133,16 +166,22 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
         setCounts(base);
         setHistoryLoaded(true);
       })
-      .catch((e: Error) => live && setLoadError(e.message));
+      .catch((e: Error) => live && setLoadError(e.message))
+      .finally(() => {
+        resettingRef.current = false;
+      });
     return () => {
       live = false;
     };
-  }, [sessionId, userId]);
+  }, [sessionId, userId, reloadKey]);
 
   // Persist the chat (debounced, since tutor replies stream in a sentence at a time).
   useEffect(() => {
-    if (!historyLoaded || !userId || messages.length <= 1) return;
-    const t = setTimeout(() => void saveChat(userId, sessionId, messages).catch(() => {}), 400);
+    if (!historyLoaded || !userId || messages.length <= 1 || resettingRef.current) return;
+    const t = setTimeout(() => {
+      if (resettingRef.current) return;
+      void saveChat(userId, sessionId, messages).catch(() => {});
+    }, 400);
     return () => clearTimeout(t);
   }, [messages, historyLoaded, userId, sessionId]);
 
@@ -293,6 +332,31 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
     }
   };
 
+  /** Clear this one question; other questions and their chats stay untouched. */
+  const handleReset = async () => {
+    if (resetting) return;
+    const ok = window.confirm(
+      "Clear your progress on this question? Your chat, hints, and completed steps for this question will be removed. Other questions are not affected.",
+    );
+    if (!ok) return;
+
+    setResetting(true);
+    setResetError(null);
+    resettingRef.current = true;
+    turnSeq.current += 1; // drop any reply that is still streaming
+    try {
+      await resetSession(sessionId);
+      if (userId) clearLocalChat(userId, sessionId);
+      setResetToken((n) => n + 1);
+      setReloadKey((k) => k + 1);
+    } catch (e) {
+      resettingRef.current = false;
+      setResetError(e instanceof Error ? e.message : "Couldn't clear progress.");
+    } finally {
+      setResetting(false);
+    }
+  };
+
   const handleHint = async () => {
     try {
       const r = await requestHint(sessionId);
@@ -418,6 +482,9 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
             problem={problem}
             nextHref={nextSessionId ? `/session/${nextSessionId}` : undefined}
             backHref={problemSetHref}
+            onReset={session?.role === "student" ? handleReset : undefined}
+            resetting={resetting}
+            resetError={resetError}
           />
           <ReasoningPath steps={steps} />
           {info.resourcesEnabled && <ResourcesCard state={resources} onSearch={(t) => void searchResources(t)} />}
@@ -456,6 +523,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
           messages={messages}
           thinking={thinking}
           responding={responding}
+          resetToken={resetToken}
           hintsUsed={hintsUsed}
           hintLimit={info.hintLimit}
           voiceRequired={info.voiceRequired}

@@ -12,12 +12,19 @@ export function ProblemCard({
   problem,
   nextHref,
   backHref,
+  onReset,
+  resetting,
+  resetError,
 }: {
   problem: Problem;
   /** The next problem in this set, if there is one. */
   nextHref?: string;
   /** Where to go after the last problem. */
   backHref?: string;
+  /** Clear this student's progress on just this problem. */
+  onReset?: () => void;
+  resetting?: boolean;
+  resetError?: string | null;
 }) {
   return (
     <div className="card p-5">
@@ -36,19 +43,38 @@ export function ProblemCard({
         <p className="text-base leading-relaxed">{problem.prompt}</p>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
-        <span className="text-[13px] text-muted">
-          Problem {problem.index} of {problem.total}
-        </span>
-        {nextHref ? (
-          <Link href={nextHref} className="btn-primary h-9 px-3 text-sm no-underline">
-            Next problem <Send size={13} />
-          </Link>
-        ) : backHref ? (
-          <Link href={backHref} className="btn h-9 px-3 text-sm no-underline">
-            Back to problem sets
-          </Link>
-        ) : null}
+      <div className="mt-4 border-t border-line pt-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-[13px] text-muted">
+              Problem {problem.index} of {problem.total}
+            </span>
+            {onReset && (
+              <button
+                type="button"
+                onClick={onReset}
+                disabled={resetting}
+                className="rounded-md border border-line px-2 py-1 text-[12px] font-medium text-sub transition hover:border-warn hover:text-warn disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {resetting ? "Clearing…" : "Clear progress"}
+              </button>
+            )}
+          </div>
+          {nextHref ? (
+            <Link href={nextHref} className="btn-primary h-9 px-3 text-sm no-underline">
+              Next problem <Send size={13} />
+            </Link>
+          ) : backHref ? (
+            <Link href={backHref} className="btn h-9 px-3 text-sm no-underline">
+              Back to problem sets
+            </Link>
+          ) : null}
+        </div>
+        {resetError && (
+          <p role="alert" className="mt-2 text-[12.5px] text-warn">
+            {resetError}
+          </p>
+        )}
       </div>
     </div>
   );
