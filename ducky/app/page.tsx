@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Check, DuckMark, Logo, Mic, Pencil, Search, Send, Warn } from "@/components/ui/icons";
 
-const BEATS = [
-  { eyebrow: "Explain", title: "Say it out loud.", body: "Talk, type, or sketch. Your own words, one step at a time." },
-  { eyebrow: "Catch", title: "It hears where you slipped.", body: "A misconception gets named the moment it shows up." },
-  { eyebrow: "Fix", title: "You fix it yourself.", body: "A nudge, never the answer. The correction is yours." },
-  { eyebrow: "Check", title: "Every diagram gets double-checked.", body: "A second model reviews each visual before you see it." },
-  { eyebrow: "Ask", title: "Then it asks one more.", body: "Until the idea actually holds." },
+// The landing demo cycles through this many steps of the sample conversation.
+const DEMO_BEATS = 5;
+
+// Real screens from the app, shown as you scroll.
+const SNAPS = [
+  { eyebrow: "Students", title: "Explain it your way.", body: "Ducky listens, then asks the next question.", src: "/screens/student.jpg", alt: "Ducky student view: the problem, a reasoning path and a conversation with the tutor" },
+  { eyebrow: "Teachers", title: "See the whole class.", body: "Misconceptions, mapped by problem.", src: "/screens/teacher.jpg", alt: "Ducky teacher dashboard: class overview, misconception heatmap and tutor settings" },
 ] as const;
 
 const STAT_GROUPS = [
@@ -419,7 +420,7 @@ function Hero() {
 
   useEffect(() => {
     if (stage < 2 || reduced) return;
-    const id = setInterval(() => setBeat((b) => (b + 1) % BEATS.length), 3000);
+    const id = setInterval(() => setBeat((b) => (b + 1) % DEMO_BEATS), 3000);
     return () => clearInterval(id);
   }, [stage, reduced]);
 
@@ -829,42 +830,53 @@ function Story() {
   const reduced = useReducedMotion();
   const { enter, progress } = useSectionScroll(ref);
 
-  // 1) the laptop grows and opens as it arrives, 2) the beats play, 3) it zooms until the screen fills the view.
+  // 1) the laptop grows and opens as it arrives, 2) the screens change, 3) it zooms until the screen fills the view.
   const open = reduced ? 1 : easeOut(clamp((enter - 0.2) / 0.6));
-  const beat = Math.min(BEATS.length - 1, Math.floor(clamp(progress / 0.78) * BEATS.length));
+  const beat = Math.min(SNAPS.length - 1, Math.floor(clamp(progress / 0.78) * SNAPS.length));
   const zoom = reduced ? 0 : easeOut(clamp((progress - 0.8) / 0.2));
   const arrive = reduced ? 1 : 0.78 + 0.22 * easeOut(clamp(enter / 0.9));
   const scale = arrive * (1 + 0.9 * zoom);
   const captionOpacity = open * clamp(1 - zoom * 3);
 
   return (
-    <section id="how" ref={ref} aria-label="How Ducky works" style={{ height: `${BEATS.length * 80 + 190}vh` }} className="relative">
+    <section id="how" ref={ref} aria-label="Inside Ducky" style={{ height: `${SNAPS.length * 90 + 190}vh` }} className="relative">
       <div className="sticky top-12 flex h-[calc(100svh-3rem)] flex-col items-center justify-center gap-8 overflow-hidden px-4">
         <div style={{ transform: `scale(${scale})`, transformOrigin: "50% 40%" }}>
           <MacBook open={open} width="min(94vw, 1180px, calc((100svh - 15rem) * 1.55))">
-            <DemoScreen beat={beat} />
+            <div className="relative h-full w-full bg-ground">
+              {SNAPS.map((sn, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={sn.src}
+                  src={sn.src}
+                  alt={sn.alt}
+                  className="absolute inset-0 h-full w-full object-cover object-top transition-opacity duration-700"
+                  style={{ opacity: i === beat ? 1 : 0 }}
+                />
+              ))}
+            </div>
           </MacBook>
         </div>
 
-        <div className="relative h-[112px] w-full max-w-[640px] text-center" style={{ opacity: captionOpacity }}>
-          {BEATS.map((b, i) => (
+        <div className="relative h-[104px] w-full max-w-[640px] text-center" style={{ opacity: captionOpacity }}>
+          {SNAPS.map((sn, i) => (
             <div
-              key={b.title}
+              key={sn.title}
               aria-hidden={i !== beat}
               className={`absolute inset-0 motion-safe:transition motion-safe:duration-500 ${
                 i === beat ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
               }`}
             >
-              <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-duck-deep">{b.eyebrow}</p>
-              <p className="mt-1 font-display text-[26px] font-bold leading-tight tracking-[-0.02em] md:text-[34px]">{b.title}</p>
-              <p className="mt-1.5 text-[16px] text-sub md:text-[18px]">{b.body}</p>
+              <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-duck-deep">{sn.eyebrow}</p>
+              <p className="mt-1 font-display text-[28px] font-bold leading-tight tracking-[-0.02em] md:text-[36px]">{sn.title}</p>
+              <p className="mt-1.5 text-[16px] text-sub md:text-[18px]">{sn.body}</p>
             </div>
           ))}
         </div>
 
         <div className="flex gap-1.5" aria-hidden style={{ opacity: captionOpacity }}>
-          {BEATS.map((b, i) => (
-            <span key={b.title} className={`h-1.5 rounded-full motion-safe:transition-all ${i === beat ? "w-6 bg-ink" : "w-1.5 bg-edge"}`} />
+          {SNAPS.map((sn, i) => (
+            <span key={sn.title} className={`h-1.5 rounded-full motion-safe:transition-all ${i === beat ? "w-6 bg-ink" : "w-1.5 bg-edge"}`} />
           ))}
         </div>
       </div>
