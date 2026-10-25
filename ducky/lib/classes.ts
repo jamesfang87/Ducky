@@ -29,15 +29,6 @@ export const CLASSES: ClassRecord[] = [
     tone: "accent",
   },
   {
-    id: "chem-1101",
-    course: "CHEM 1101",
-    name: "General Chemistry I",
-    teacher: "A. Patel",
-    term: "Fall 2026",
-    joinCode: "CHM7Q3",
-    tone: "amber",
-  },
-  {
     id: "cs-314",
     course: "CS 314",
     name: "Data Structures",

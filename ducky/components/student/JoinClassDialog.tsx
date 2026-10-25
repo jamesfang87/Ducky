@@ -96,7 +96,7 @@ export function JoinClassDialog({
           </button>
         </form>
 
-        <p className="mt-4 text-center text-[12.5px] text-muted">Demo codes: CHM7Q3 · CSC9X2 · MTH4D2</p>
+        <p className="mt-4 text-center text-[12.5px] text-muted">Demo codes: CSC9X2 · MTH4D2</p>
       </div>
     </div>
   );
