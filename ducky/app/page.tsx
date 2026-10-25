@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { Check, DuckMark, Logo, Mic, Pencil, Search, Send, Warn } from "@/components/ui/icons";
+import { SiteHeader } from "@/components/SiteHeader";
+import { Check, DuckMark, Mic, Pencil, Search, Send, Warn } from "@/components/ui/icons";
 
 // The landing demo cycles through this many steps of the sample conversation.
 const DEMO_BEATS = 5;
@@ -506,36 +507,6 @@ function Hero() {
   );
 }
 
-function SiteHeader() {
-  const [dark, setDark] = useState(true);
-  useEffect(() => {
-    const onScroll = () => setDark(window.scrollY < window.innerHeight * 0.75);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-  const link = dark ? "text-white/75 hover:text-white" : "text-sub hover:text-ink";
-  return (
-    <header className={`sticky top-0 z-40 border-b transition-colors duration-500 ${dark ? "border-white/10 bg-gradient-to-r from-[#0d0a04] via-[#2b2108] to-[#0d0a04]" : "border-line bg-ground"}`}>
-      <nav className="mx-auto flex h-12 max-w-[1080px] items-center gap-6 px-6 text-[14px]">
-        <div className={`origin-left scale-[0.8] ${dark ? "[&_*]:!text-white" : ""}`}>
-          <Logo />
-        </div>
-        <div className="flex-1" />
-        <a href="#how" className={`hidden no-underline sm:inline ${link}`}>How it works</a>
-        <a href="#research" className={`hidden no-underline sm:inline ${link}`}>Research</a>
-        <Link href="/privacy" className={`no-underline ${link}`}>Privacy</Link>
-        <Link
-          href="/login"
-          className={`rounded-full px-3.5 py-1 text-[13px] font-medium no-underline transition-colors ${dark ? "bg-white text-ink hover:bg-white/85" : "bg-ink text-white hover:bg-sub"}`}
-        >
-          Log in
-        </Link>
-      </nav>
-    </header>
-  );
-}
-
 const PATH_STEPS = ["Set up knowns: h, m₁, m₂, v₀ = 0", "Predict what happens", "Relate F = ma to each ball", "Solve for t"];
 // How many reasoning steps are done at each beat.
 const PATH_DONE = [1, 1, 3, 3, 4];
@@ -887,7 +858,7 @@ function Story() {
 export default function Landing() {
   return (
     <div className="min-h-screen text-base">
-      <SiteHeader />
+      <SiteHeader tone="hero" />
 
       <main>
         <Hero />
