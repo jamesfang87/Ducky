@@ -30,9 +30,12 @@ const C = {
 };
 
 export type DuckState = "idle" | "listening" | "thinking" | "speaking";
+/** Expression layered on top of the state: sad after the student gets a step wrong. */
+export type DuckMood = "neutral" | "sad";
 
 interface Props {
   state: DuckState;
+  mood?: DuckMood;
   /** Increments on each spoken word, when the voice reports word boundaries. */
   wordTick?: number;
   /** Live loudness of Ducky's audio, 0–1, or -1 when no measurable audio is playing. */
@@ -40,7 +43,7 @@ interface Props {
   size?: number;
 }
 
-export default function DuckAvatar({ state, wordTick = 0, level, size = 156 }: Props) {
+export default function DuckAvatar({ state, mood = "neutral", wordTick = 0, level, size = 156 }: Props) {
   const body = useRef<SVGGElement>(null);
   const jaw = useRef<SVGGElement>(null);
   const mouth = useRef<SVGPathElement>(null);
@@ -95,10 +98,13 @@ export default function DuckAvatar({ state, wordTick = 0, level, size = 156 }: P
     return () => cancelAnimationFrame(frame);
   }, [state, level]);
 
-  const label = { idle: "Ducky", listening: "Ducky is listening", thinking: "Ducky is thinking", speaking: "Ducky is speaking" }[state];
+  const sad = mood === "sad";
+  const label =
+    { idle: "Ducky", listening: "Ducky is listening", thinking: "Ducky is thinking", speaking: "Ducky is speaking" }[state] + (sad ? ", looking sad" : "");
   const tilt = state === "thinking" ? -4 : state === "listening" ? 3 : 0;
-  // Eyes glance up while thinking, at the student while listening.
-  const look = state === "thinking" ? { x: 4, y: -7 } : state === "listening" ? { x: -3, y: 2 } : { x: 3, y: -3 };
+  // Eyes glance up while thinking, at the student while listening, down when sad.
+  const look = sad && state !== "listening" ? { x: 0, y: 8 } : state === "thinking" ? { x: 4, y: -7 } : state === "listening" ? { x: -3, y: 2 } : { x: 3, y: -3 };
+  const ease = "transform 0.45s ease-out";
 
   return (
     <div className="relative flex-none select-none overflow-hidden rounded-2xl" style={{ width: size, height: size, background: "rgb(var(--accent-tint))" }}>
@@ -123,7 +129,7 @@ export default function DuckAvatar({ state, wordTick = 0, level, size = 156 }: P
         {/* ground shadow */}
         <ellipse cx="256" cy="492" rx="120" ry="12" fill="#000" opacity="0.08" />
 
-        <g style={{ transform: `rotate(${tilt}deg)`, transformOrigin: "256px 470px", transition: "transform 0.5s ease-out" }}>
+        <g style={{ transform: `translateY(${sad ? 6 : 0}px) rotate(${tilt}deg)`, transformOrigin: "256px 470px", transition: "transform 0.5s ease-out" }}>
           <g ref={body}>
             {/* feet */}
             <ellipse cx="212" cy="482" rx="34" ry="13" fill={C.bill} />
@@ -147,10 +153,12 @@ export default function DuckAvatar({ state, wordTick = 0, level, size = 156 }: P
 
             {/* head */}
             <g>
-              {/* tuft */}
-              <path d="M256 92 Q236 52 250 40 Q262 56 260 88 Z" fill={C.yellow} />
-              <path d="M262 92 Q272 52 292 50 Q290 74 268 96 Z" fill={C.yellow} />
-              <path d="M248 94 Q218 66 222 56 Q240 62 254 92 Z" fill={C.yellow} />
+              {/* tuft (wilts to one side when sad) */}
+              <g style={{ transform: `rotate(${sad ? 28 : 0}deg)`, transformOrigin: "256px 96px", transition: ease }}>
+                <path d="M256 92 Q236 52 250 40 Q262 56 260 88 Z" fill={C.yellow} />
+                <path d="M262 92 Q272 52 292 50 Q290 74 268 96 Z" fill={C.yellow} />
+                <path d="M248 94 Q218 66 222 56 Q240 62 254 92 Z" fill={C.yellow} />
+              </g>
               <ellipse cx="256" cy="200" rx="128" ry="122" fill={C.yellow} />
               <path d="M138 230 Q160 316 256 322 Q352 316 374 230 Q350 296 256 302 Q162 296 138 230 Z" fill={C.yellowShade} opacity="0.6" />
 
@@ -158,21 +166,55 @@ export default function DuckAvatar({ state, wordTick = 0, level, size = 156 }: P
               <ellipse cx="166" cy="240" rx="20" ry="12" fill={C.blush} opacity="0.35" />
               <ellipse cx="346" cy="240" rx="20" ry="12" fill={C.blush} opacity="0.35" />
 
-              {/* brows, raised in the middle: curious */}
-              <path d="M178 150 Q200 136 226 146" stroke={C.brow} strokeWidth="9" strokeLinecap="round" fill="none" />
-              <path d="M286 146 Q312 136 334 150" stroke={C.brow} strokeWidth="9" strokeLinecap="round" fill="none" />
+              {/* brows: raised in the middle (curious); sad tips the inner ends up and the outer ends down */}
+              <path
+                d="M178 150 Q200 136 226 146"
+                stroke={C.brow}
+                strokeWidth="9"
+                strokeLinecap="round"
+                fill="none"
+                style={{ transform: sad ? "translate(0, -2px) rotate(-24deg)" : "none", transformOrigin: "202px 145px", transition: ease }}
+              />
+              <path
+                d="M286 146 Q312 136 334 150"
+                stroke={C.brow}
+                strokeWidth="9"
+                strokeLinecap="round"
+                fill="none"
+                style={{ transform: sad ? "translate(0, -2px) rotate(24deg)" : "none", transformOrigin: "310px 145px", transition: ease }}
+              />
 
               {/* eyes */}
               {[202, 310].map((cx) => (
                 <g key={cx} className="duck-blink">
+                  <clipPath id={`duck-eye-${cx}`}>
+                    <ellipse cx={cx} cy="198" rx="34" ry="37" />
+                  </clipPath>
                   <ellipse cx={cx} cy="198" rx="34" ry="37" fill="#fff" />
                   <g style={{ transform: `translate(${look.x}px, ${look.y}px)`, transition: "transform 0.4s ease-out" }}>
                     <circle cx={cx} cy="198" r="21" fill={C.iris} />
                     <circle cx={cx} cy="198" r="12" fill={C.ink} />
                     <circle cx={cx + 7} cy="190" r="6" fill="#fff" />
                   </g>
+                  {/* heavy upper lid when sad, slanted down toward the outer corner */}
+                  <g clipPath={`url(#duck-eye-${cx})`}>
+                    <path
+                      d={cx < 256 ? "M164 158 H240 V170 Q200 172 164 192 Z" : "M272 158 H348 V192 Q312 172 272 170 Z"}
+                      fill={C.yellowShade}
+                      style={{ transform: `scaleY(${sad ? 1 : 0})`, transformOrigin: `${cx}px 158px`, transition: ease }}
+                    />
+                  </g>
                 </g>
               ))}
+
+              {/* a small tear when sad */}
+              <path
+                d="M172 226 Q164 240 166 246 Q170 254 178 250 Q182 244 172 226 Z"
+                fill="#8CC8F0"
+                stroke="#5FA8DC"
+                strokeWidth="2"
+                style={{ opacity: sad ? 1 : 0, transform: `translateY(${sad ? 0 : -10}px)`, transition: "opacity 0.4s ease-out, transform 0.6s ease-out" }}
+              />
 
               {/* mouth interior, drawn per frame */}
               <path ref={mouth} d="" fill={C.mouth} />

@@ -73,6 +73,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   const [solved, setSolved] = useState(false);
   // The student showed their full reasoning, so the tutor stops asking and the input closes.
   const [finished, setFinished] = useState(false);
+  const [wrong, setWrong] = useState(false);
   const [canReveal, setCanReveal] = useState(false);
   const [revealedStep, setRevealedStep] = useState<number | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -194,6 +195,8 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
 
   const applyMeta = (m: TurnMeta) => {
     if (!info) return;
+    // Ducky looks sad after a wrong step, until a later turn gets it right.
+    setWrong(Boolean(m.misconception) || m.step_assessment === "incorrect");
     setHintsUsed(m.hintsUsed);
     setCanReveal(m.canReveal);
 
@@ -455,6 +458,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
           hintLimit={info.hintLimit}
           voiceRequired={info.voiceRequired}
           finished={finished}
+          wrong={wrong && !finished}
           onSend={handleSend}
           onHint={handleHint}
         />

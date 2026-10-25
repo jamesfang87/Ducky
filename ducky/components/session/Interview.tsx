@@ -20,11 +20,13 @@ interface Props {
   voiceRequired: boolean;
   /** The student explained their full reasoning; no more questions or input. */
   finished: boolean;
+  /** The student's last step was wrong (a misconception or an incorrect step); Ducky looks sad. */
+  wrong?: boolean;
   onSend: (text: string, via: "voice" | "text", seconds?: number) => void;
   onHint: () => void;
 }
 
-export default function Interview({ messages, thinking, responding, hintsUsed, hintLimit, voiceRequired, finished, onSend, onHint }: Props) {
+export default function Interview({ messages, thinking, responding, hintsUsed, hintLimit, voiceRequired, finished, wrong = false, onSend, onHint }: Props) {
   const [draft, setDraft] = useState("");
   const [sketching, setSketching] = useState(false);
   const [handsFree, setHandsFree] = usePersistedState("ducky:handsFree", true);
@@ -137,7 +139,7 @@ export default function Interview({ messages, thinking, responding, hintsUsed, h
       </div>
 
       <div className="flex items-center gap-4 border-b border-line bg-surface px-5 py-3">
-        <DuckAvatar state={duckState} wordTick={voice.wordTick} level={voice.level} />
+        <DuckAvatar state={duckState} mood={wrong ? "sad" : "neutral"} wordTick={voice.wordTick} level={voice.level} />
         <div className="min-w-0">
           <p className="font-display text-lg font-bold">Ducky</p>
           <p className="text-[13px] text-sub" aria-live="polite">
@@ -151,7 +153,9 @@ export default function Interview({ messages, thinking, responding, hintsUsed, h
                     : "Listening to you…"
                   : finished
                     ? "Nice work. That's the whole explanation."
-                    : "Explain your reasoning. I'll keep asking why."}
+                    : wrong
+                      ? "Hmm, not quite. Let's look at that step again."
+                      : "Explain your reasoning. I'll keep asking why."}
           </p>
         </div>
       </div>
