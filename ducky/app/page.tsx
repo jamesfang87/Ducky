@@ -33,7 +33,7 @@ const STAT_GROUPS = [
   },
   {
     label: "What works",
-    tone: "text-duck-glow",
+    tone: "text-accent-glow",
     stats: [
       {
         figure: "+0.37 SD",
@@ -873,12 +873,12 @@ export default function Landing() {
               <h2 className="mt-3 font-display text-[44px] font-bold leading-[1.04] tracking-[-0.04em] md:text-[76px]">
                 Tutoring works.
                 <br />
-                <span className="text-white/55">It just doesn’t scale.</span>
+                <span className="text-white/55">It just can’t scale.</span>
               </h2>
             </Reveal>
             <ScrollWords
               className="mt-8 max-w-[640px] text-[18px] leading-relaxed text-white md:text-[21px]"
-              text="Lecture halls seat hundreds. High school teachers see 150 students a day. No one can listen to every student think. Ducky can, and your teacher sees what it heard."
+              text="Lecture halls seat hundreds. High school teachers see more than 150 students a day. The result: nobody can listen to every student think. Ducky can, and your teacher sees what it heard."
             />
 
             {STAT_GROUPS.map((g) => (
