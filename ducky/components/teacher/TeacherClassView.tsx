@@ -19,7 +19,10 @@ const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 const toDateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 
 export default function TeacherClassView({ detail }: { detail: TeacherClassDetail }) {
+  const router = useRouter();
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const closeUpload = useCallback(() => setUploading(false), []);
   const total = detail.assignments.length;
@@ -31,6 +34,24 @@ export default function TeacherClassView({ detail }: { detail: TeacherClassDetai
       setTimeout(() => setCopied(false), 2000);
     } catch {
       /* clipboard blocked: the code is on screen anyway */
+    }
+  };
+
+  const removeClass = async () => {
+    if (deleting) return;
+    const ok = window.confirm(
+      `Delete “${detail.name}” permanently?\n\nThis removes the class, its roster, and every problem set for everyone. Students lose access immediately. This cannot be undone.`,
+    );
+    if (!ok) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await sendJson(`/api/teacher/classes/${detail.id}`, "DELETE");
+      router.push("/teacher");
+      router.refresh();
+    } catch (e) {
+      setDeleteError((e as Error).message);
+      setDeleting(false);
     }
   };
 
@@ -122,6 +143,34 @@ export default function TeacherClassView({ detail }: { detail: TeacherClassDetai
             )}
           </aside>
         </div>
+
+        <section aria-labelledby="delete-class-title" className="mt-10 rounded-[14px] border border-warn/30 bg-warn-tint/60 p-5">
+          <h2 id="delete-class-title" className="flex items-center gap-2 font-display text-[18px] font-semibold text-warn-dark">
+            <Warn /> Delete this class
+          </h2>
+          <p className="mt-1.5 max-w-[620px] text-sm text-sub">
+            This removes the class, its roster, and every problem set for everyone. Students lose access immediately. This cannot be undone.
+          </p>
+          <button
+            type="button"
+            onClick={removeClass}
+            disabled={deleting}
+            className="btn mt-4 h-10 border-warn/40 text-warn hover:bg-warn-tint disabled:opacity-50"
+          >
+            {deleting ? (
+              <>
+                <Spinner /> Deleting…
+              </>
+            ) : (
+              "Delete class"
+            )}
+          </button>
+          {deleteError && (
+            <p role="alert" className="mt-2 text-sm text-warn">
+              {deleteError}
+            </p>
+          )}
+        </section>
       </div>
 
       {uploading && <UploadDialog classId={detail.id} onClose={closeUpload} />}
