@@ -38,6 +38,17 @@ export const Mic = ({ className, size = 26 }: P) => (
   </svg>
 );
 
+export const Speaker = ({ className, size = 16, off }: P & { off?: boolean }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
+    <path d="M4 9h4l5-4v14l-5-4H4z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    {off ? (
+      <path d="M17 9l5 6M22 9l-5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    ) : (
+      <path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    )}
+  </svg>
+);
+
 export const Stop = ({ className, size = 22 }: P) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
     <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" />

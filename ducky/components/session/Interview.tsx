@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChatMessage } from "@/lib/types";
 import { useSpeech } from "@/lib/useSpeech";
-import { Check, Mic, Pencil, Send, Shield, Stop, Warn } from "@/components/ui/icons";
+import { useDuckVoice } from "@/lib/useDuckVoice";
+import { Check, Mic, Pencil, Send, Shield, Speaker, Stop, Warn } from "@/components/ui/icons";
 import { usePersistedState } from "@/lib/usePersistedState";
+import DuckAvatar, { type DuckState } from "./DuckAvatar";
 import ResizeHandle from "./ResizeHandle";
 import SketchPad from "./SketchPad";
 
@@ -24,6 +26,14 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
   const [draft, setDraft] = useState("");
   const [sketching, setSketching] = useState(false);
   const speech = useSpeech((text, secs) => onSend(text, "voice", secs));
+  const voice = useDuckVoice(messages);
+  const duckState: DuckState = voice.speaking
+    ? "speaking"
+    : thinking || speech.transcribing
+      ? "thinking"
+      : speech.listening
+        ? "listening"
+        : "idle";
   const scroller = useRef<HTMLDivElement>(null);
   // Height of the message list in px; null keeps the default size.
   const [chatHeight, setChatHeight] = usePersistedState<number | null>("ducky:chatHeight", null);
@@ -58,9 +68,41 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
         <span className="h-2.5 w-2.5 rounded-full bg-accent" />
         <h2 className="h2">Talk it through</h2>
         <div className="flex-1" />
+        {voice.supported && (
+          <button
+            type="button"
+            onClick={() => voice.setMuted((m) => !m)}
+            aria-pressed={!voice.muted}
+            aria-label={voice.muted ? "Unmute Ducky's voice" : "Mute Ducky's voice"}
+            title={voice.muted ? "Ducky is muted" : "Ducky speaks aloud"}
+            className={`flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-ground ${
+              voice.muted ? "text-muted" : voice.speaking ? "text-accent" : "text-sub"
+            }`}
+          >
+            <Speaker off={voice.muted} className={voice.speaking ? "animate-pulse" : undefined} />
+          </button>
+        )}
         <span className="text-[13px] text-sub">
           Hints <span className="font-mono font-medium">{hintsUsed} / {hintLimit}</span>
         </span>
+      </div>
+
+      <div className="flex items-center gap-4 border-b border-line bg-[#EEF5F9] px-5 py-3">
+        <DuckAvatar state={duckState} wordTick={voice.wordTick} level={voice.level} />
+        <div className="min-w-0">
+          <p className="font-display text-lg font-bold">Ducky</p>
+          <p className="text-[13px] text-sub" aria-live="polite">
+            {duckState === "speaking"
+              ? "Talking…"
+              : duckState === "thinking"
+                ? "Thinking it over…"
+                : duckState === "listening"
+                  ? "Listening to you…"
+                  : finished
+                    ? "Nice work. That's the whole explanation."
+                    : "Explain your reasoning. I'll keep asking why."}
+          </p>
+        </div>
       </div>
 
       <div
@@ -114,7 +156,11 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
 
         <div className="flex flex-wrap items-center gap-3.5">
           <button
-            onClick={speech.listening ? speech.stop : speech.start}
+            onClick={() => {
+              if (speech.listening) return speech.stop();
+              voice.stop(); // the student is talking; Ducky goes quiet
+              return speech.start();
+            }}
             disabled={!speech.supported || thinking || speech.transcribing}
             aria-label={speech.listening ? "Stop and send" : "Tap to talk"}
             className={`flex h-16 w-16 flex-none items-center justify-center rounded-full text-white transition disabled:opacity-40 ${
