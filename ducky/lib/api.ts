@@ -42,6 +42,21 @@ export interface TurnMeta {
   hintsUsed: number;
   hintLimit: number;
   canReveal: boolean;
+  /** A recorded explanation of exactly where the student is, from their teacher or a classmate. */
+  voice_note?: VoiceNoteClip | null;
+}
+
+export interface VoiceNoteClip {
+  id: string;
+  author: string;
+  role: "teacher" | "student";
+  title: string;
+  label: string;
+  text: string;
+  start: number;
+  end: number;
+  checkQuestion: string;
+  resources: { kind: "video" | "page"; title: string; link: string; source: string; length?: string; why: string }[];
 }
 
 export interface HintResult {
@@ -84,6 +99,8 @@ export interface Resource {
   snippet: string;
   source: string;
   link: string;
+  /** Set when a teacher's voice note matched this one: why it fits how they explained it. */
+  matched?: string;
 }
 
 export const findResources = (sessionId: string, topic?: string) =>
@@ -141,3 +158,11 @@ export const raiseHand = (sessionId: string, note: string) =>
 
 export const setPeerOptIn = (sessionId: string, peerOptIn: boolean) =>
   post("/api/raise-hand", { sessionId, peerOptIn }).then((r) => json<{ ok: true; peerOptIn: boolean }>(r));
+
+export const recordNotePlay = (sessionId: string, id: string) => post("/api/voice-notes/play", { sessionId, id }).then((r) => json<{ ok: true }>(r));
+
+/** "Pass it on": a student's short spoken tip, reviewed by the teacher before classmates hear it. */
+export const sendTip = (sessionId: string, wav: Blob) =>
+  fetch(`/api/voice-notes/tip?sessionId=${encodeURIComponent(sessionId)}`, { method: "POST", headers: { "content-type": "audio/wav" }, body: wav }).then((r) =>
+    json<{ id: string; title: string; summary: string }>(r),
+  );
