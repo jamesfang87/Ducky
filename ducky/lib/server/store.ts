@@ -81,6 +81,35 @@ export interface RevealEvent {
   at: number;
 }
 
+/** A student raised their hand. The packet is what the teacher needs to step in without asking "what's wrong?". */
+export interface Escalation {
+  id: string;
+  sessionId: string;
+  userId: string;
+  student: string;
+  problem: number;
+  problemText: string;
+  note: string;
+  stepLabel: string;
+  completedSteps: number;
+  totalSteps: number;
+  hintsUsed: number;
+  hintLimit: number;
+  openMisconceptions: string[];
+  lastTurns: { role: "student" | "tutor"; text: string }[];
+  at: number;
+  status: "open" | "resolved";
+  teacherNote?: string;
+}
+
+export interface ResolvedEvent {
+  userId: string;
+  student: string;
+  misconception: string;
+  problem: number;
+  at: number;
+}
+
 export interface Template {
   problem: Problem;
   policy: ServerPolicy;
@@ -912,6 +941,11 @@ interface Db {
   misconceptionEvents: ServerMisconceptionEvent[];
   guardEvents: (GuardEvent & { sessionKey: string })[];
   revealEvents: RevealEvent[];
+  escalations: Escalation[];
+  /** Misconceptions a student worked through, with who, so a teacher can pair them with someone stuck (HUM-2). */
+  resolvedEvents: ResolvedEvent[];
+  /** Students who said teachers may suggest them as a peer helper. */
+  peerOptIn: Set<string>;
   /** Session keys whose saved chat has already been read from Supabase this process. */
   hydrated: Set<string>;
   /** Templates for teacher-uploaded problems, loaded from Supabase (lib/server/assignments.ts). */
@@ -926,10 +960,16 @@ const db: Db = (g.__duckyDb ??= {
   misconceptionEvents: [],
   guardEvents: [],
   revealEvents: [],
+  escalations: [],
+  resolvedEvents: [],
+  peerOptIn: new Set(),
   hydrated: new Set(),
   uploaded: new Map(),
 });
 db.hydrated ??= new Set();
+db.escalations ??= [];
+db.resolvedEvents ??= [];
+db.peerOptIn ??= new Set();
 db.uploaded ??= new Map();
 
 /** Built-in demo template, or an uploaded problem's (cached by `cacheTemplate`). */
@@ -1092,4 +1132,81 @@ export function saveRevealEvent(s: ServerSession, stepIndex: number): RevealEven
   };
   db.revealEvents.push(e);
   return e;
+}
+
+// ---- Human help: raise hand and peer match (HUM-1, HUM-2) ----
+
+export function setPeerOptIn(s: ServerSession, on: boolean): void {
+  if (on) db.peerOptIn.add(s.userId);
+  else db.peerOptIn.delete(s.userId);
+}
+export const isPeerOptedIn = (userId: string): boolean => db.peerOptIn.has(userId);
+
+export function saveResolvedEvent(s: ServerSession, misconception: string): void {
+  if (db.resolvedEvents.some((e) => e.userId === s.userId && e.misconception === misconception)) return;
+  db.resolvedEvents.push({ userId: s.userId, student: s.student, misconception, problem: s.problemIndex, at: Date.now() });
+}
+
+/** Misconceptions this student is stuck on right now: seen and not resolved since. */
+export function openMisconceptionsOf(s: ServerSession): string[] {
+  const seen = new Set(db.misconceptionEvents.filter((e) => e.student === s.student && e.problem === s.problemIndex).map((e) => e.misconception));
+  for (const r of db.resolvedEvents) if (r.userId === s.userId) seen.delete(r.misconception);
+  return [...seen];
+}
+
+export function raiseHand(s: ServerSession, note: string): Escalation {
+  const existing = db.escalations.find((e) => e.status === "open" && e.userId === s.userId && e.sessionId === s.id);
+  const steps = getSteps(s);
+  const base = {
+    sessionId: s.id,
+    userId: s.userId,
+    student: s.student,
+    problem: s.problemIndex,
+    problemText: getProblem(s).prompt,
+    note: note.slice(0, 400),
+    stepLabel: steps[s.currentStep] ?? "",
+    completedSteps: s.completedSteps.length,
+    totalSteps: steps.length,
+    hintsUsed: s.hintsUsed,
+    hintLimit: getPolicy(s).hintLimit,
+    openMisconceptions: openMisconceptionsOf(s),
+    lastTurns: getRecentTurns(s, 6).map((t) => ({ role: t.role, text: t.text.slice(0, 500) })),
+  };
+  if (existing) return Object.assign(existing, base, { at: Date.now() });
+  const e: Escalation = { id: crypto.randomUUID(), ...base, at: Date.now(), status: "open" };
+  db.escalations.push(e);
+  return e;
+}
+
+export function resolveEscalation(id: string, teacherNote: string): boolean {
+  const e = db.escalations.find((x) => x.id === id);
+  if (!e) return false;
+  e.status = "resolved";
+  e.teacherNote = teacherNote.slice(0, 400);
+  return true;
+}
+
+/** Opted-in students who worked through this misconception, newest first. First names only. */
+export function peersFor(misconception: string, exceptUserId: string): { name: string; at: number }[] {
+  return db.resolvedEvents
+    .filter((r) => r.misconception === misconception && r.userId !== exceptUserId && db.peerOptIn.has(r.userId))
+    .sort((a, b) => b.at - a.at)
+    .map((r) => ({ name: r.student.split(" ")[0], at: r.at }));
+}
+
+export function listEscalations(): (Escalation & { peers: Record<string, { name: string; at: number }[]> })[] {
+  return [...db.escalations]
+    .sort((a, b) => (a.status === b.status ? b.at - a.at : a.status === "open" ? -1 : 1))
+    .map((e) => ({ ...e, peers: Object.fromEntries(e.openMisconceptions.map((m) => [m, peersFor(m, e.userId)])) }));
+}
+
+export function listGuardEvents(): { student: string; problem: number; kind: GuardEvent["kind"]; excerpt: string; at: number }[] {
+  return db.guardEvents
+    .map((g) => {
+      const [sid, uid] = g.sessionKey.split(":");
+      const s = db.sessions.get(`${sid}:${uid}`);
+      return { student: s?.student ?? "Student", problem: s?.problemIndex ?? 0, kind: g.kind, excerpt: g.excerpt, at: g.at };
+    })
+    .sort((a, b) => b.at - a.at)
+    .slice(0, 100);
 }

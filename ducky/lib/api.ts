@@ -131,3 +131,9 @@ export async function streamTurn(
     }
   }
 }
+
+export const raiseHand = (sessionId: string, note: string) =>
+  post("/api/raise-hand", { sessionId, raise: true, note }).then((r) => json<{ ok: true; id: string; peerOptIn: boolean }>(r));
+
+export const setPeerOptIn = (sessionId: string, peerOptIn: boolean) =>
+  post("/api/raise-hand", { sessionId, peerOptIn }).then((r) => json<{ ok: true; peerOptIn: boolean }>(r));

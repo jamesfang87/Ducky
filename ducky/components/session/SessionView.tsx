@@ -25,6 +25,7 @@ import { useSession } from "@/lib/session";
 import Interview from "./Interview";
 import { DuckyRadioButton } from "./DuckyRadio";
 import { ProofOfThinkingCard } from "./ProofOfThinking";
+import RaiseHand from "./RaiseHand";
 import VisualPlayer from "./VisualPlayer";
 import ResizeHandle from "./ResizeHandle";
 import { usePersistedState } from "@/lib/usePersistedState";
@@ -429,6 +430,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
               </button>
             </div>
           )}
+          {sessionId !== "demo" && <RaiseHand sessionId={sessionId} />}
           <MisconceptionTracker
             counts={counts}
             items={sessionId === "demo" ? undefined : info.misconceptions}

@@ -20,6 +20,7 @@ import {
   loadSavedTurns,
   saveGuardEvent,
   saveMisconceptionEvent,
+  saveResolvedEvent,
   saveTurn,
   setCurrentStep,
 } from "@/lib/server/store";
@@ -214,6 +215,7 @@ export async function POST(req: Request) {
         saveTurn(s, { role: "student", text: message, via });
         saveTurn(s, { role: "tutor", text: spoken.join(" ") });
         if (meta.misconception) saveMisconceptionEvent(s, meta.misconception.id);
+        for (const id of resolved) saveResolvedEvent(s, id);
         recordAttempt(s, { misconception: meta.misconception?.id, evidence: message });
       } catch (e) {
         console.error("[/api/turn]", e);
