@@ -1,6 +1,7 @@
 import "server-only";
 
 import { redirect } from "next/navigation";
+import { mfaIsFresh } from "./mfa";
 import { can, ROLE_PERMISSIONS, type Permission } from "./permissions";
 import { createClient } from "./supabase/server";
 import { homePath, type Role, type Session } from "./users";
@@ -24,7 +25,7 @@ export async function getAuthState(): Promise<AuthState> {
   if (!user) return { status: "anon" };
 
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  if (aal?.currentLevel !== "aal2") return { status: "needs_mfa" };
+  if (!mfaIsFresh(aal)) return { status: "needs_mfa" };
 
   const { data: profile } = await supabase.from("profiles").select("role, full_name, email").eq("id", user.id).maybeSingle();
   const role = profile?.role as Role | null | undefined;

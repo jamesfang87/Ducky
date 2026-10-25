@@ -77,10 +77,16 @@ export default function MfaCard() {
   return (
     <div className="card rounded-2xl p-6">
       <h1 className="font-display text-[28px] font-bold leading-tight tracking-[-0.02em]">
-        {stage === "enroll" ? "Set up two-step sign-in" : "Enter your 6-digit code"}
+        {stage === "enroll" ? "Set up two-step sign-in" : "Quick security check"}
       </h1>
 
       {stage === "loading" && !error && <p className="mt-4 text-sub">Loading…</p>}
+
+      {stage === "challenge" && (
+        <p className="mt-3 text-sm text-sub">
+          Enter the 6-digit code from your authenticator app. You will only be asked again after about 3 hours, and you stay signed in between.
+        </p>
+      )}
 
       {stage === "enroll" && (
         <div className="mt-4 text-sm text-sub">

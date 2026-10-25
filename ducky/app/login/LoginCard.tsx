@@ -28,7 +28,7 @@ export default function LoginCard() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [stay, setStay] = useState(false);
+  const [stay, setStay] = useState(true);
   const [next, setNext] = useState(safePath(params.get("next")));
   const [awaiting, setAwaiting] = useState<LoginDraft["awaiting"]>(null);
   const [resume, setResume] = useState<Resume | null>(null);
@@ -47,7 +47,7 @@ export default function LoginCard() {
       if (!params.get("next") && d.next) setNext(safePath(d.next));
       setName(d.name ?? "");
       setEmail(d.email ?? "");
-      setStay(!!d.stay);
+      setStay(d.stay ?? true);
       setAwaiting(d.awaiting ?? null);
     }
     setRestored(true);
@@ -376,7 +376,7 @@ export default function LoginCard() {
       <label className="mt-4 flex cursor-pointer items-start gap-2.5 text-sm">
         <input type="checkbox" checked={stay} onChange={(e) => setStay(e.target.checked)} className="mt-0.5 h-4 w-4 accent-accent" />
         <span>
-          Stay signed in for 2 hours
+          Stay signed in on this device (security code every 3 hours)
           <span className="block text-[13px] text-muted">Skip signing in again when you come back. Leave unchecked on a shared computer.</span>
         </span>
       </label>

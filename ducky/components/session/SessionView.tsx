@@ -364,6 +364,11 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
                 My classes
               </Link>
             )}
+            {session?.role === "student" && (
+              <Link href="/classes/history" className="text-sm text-sub no-underline transition hover:text-ink">
+                Past sets
+              </Link>
+            )}
             <Can allow="class:view">
               <Link href="/teacher" className="text-sm text-sub no-underline transition hover:text-ink">
                 Teacher view

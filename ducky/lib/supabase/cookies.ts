@@ -2,12 +2,12 @@ import type { CookieOptions } from "@supabase/ssr";
 
 /**
  * "Stay signed in": the login page sets REMEMBER_COOKIE to the time (ms) the sign-in should
- * end, 2 hours out. Auth cookies then live until that moment, even across browser restarts.
+ * end, 30 days out. Auth cookies then live until that moment, even across browser restarts.
  * Without it they are session cookies, cleared when the browser closes.
  * Pure module: safe to import from middleware and the browser.
  */
 export const REMEMBER_COOKIE = "ducky-remember";
-export const REMEMBER_SECONDS = 60 * 60 * 2;
+export const REMEMBER_SECONDS = 60 * 60 * 24 * 30;
 
 export const AUTH_COOKIE_OPTIONS = {
   path: "/",

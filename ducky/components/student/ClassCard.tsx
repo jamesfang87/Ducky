@@ -70,6 +70,11 @@ export function ClassCard({ record }: { record: ClassRecord }) {
           <span className="chip flex-none">No assignments</span>
         )}
       </div>
+      <div className="pt-3">
+        <Link href="/classes/history" className="relative z-10 text-[12.5px] text-sub no-underline hover:text-ink">
+          Past problem sets →
+        </Link>
+      </div>
     </article>
   );
 }

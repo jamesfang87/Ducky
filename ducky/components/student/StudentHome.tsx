@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { AccountChip } from "@/components/ui/AccountChip";
 import { Logo, Plus } from "@/components/ui/icons";
 import { useSession } from "@/lib/session";
@@ -40,6 +41,9 @@ export default function StudentHome() {
         <div className="mx-auto flex max-w-[1120px] items-center gap-4 px-6 py-3.5">
           <Logo />
           <div className="flex-1" />
+          <Link href="/classes/history" className="text-sm text-sub no-underline transition hover:text-ink">
+            Past problem sets
+          </Link>
           <AccountChip />
         </div>
       </header>
