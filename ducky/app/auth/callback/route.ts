@@ -32,7 +32,8 @@ export async function GET(request: Request) {
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
   let role = profile?.role as "student" | "teacher" | null | undefined;
   if (!role) {
-    if (wanted !== "student" && wanted !== "teacher") return fail("Pick student or teacher, then sign in.");
+    // A brand-new account that arrived without a role (first Google sign-in from "Log in"): the login page asks once.
+    if (wanted !== "student" && wanted !== "teacher") return NextResponse.redirect(`${origin}/login`);
     const { error: roleError } = await supabase.rpc("set_my_role", { new_role: wanted });
     if (roleError) return fail(`Could not save your role: ${roleError.message}`);
     role = wanted;

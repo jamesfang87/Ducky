@@ -57,8 +57,11 @@ export default function LoginCard() {
     if (restored) saveDraft({ mode, role, name, email, stay, next, awaiting });
   }, [restored, mode, role, name, email, stay, next, awaiting]);
 
-  const callbackUrl = (r: Role) =>
-    `${window.location.origin}/auth/callback?role=${r}${next ? `&next=${encodeURIComponent(next)}` : ""}`;
+  // The role only travels when creating an account. Logging in never picks or changes it.
+  const callbackUrl = (r?: Role) => {
+    const q = [r ? `role=${r}` : "", next ? `next=${encodeURIComponent(next)}` : ""].filter(Boolean).join("&");
+    return `${window.location.origin}/auth/callback${q ? `?${q}` : ""}`;
+  };
 
   /** Already signed in but not finished? Offer to pick up where they left off instead of starting over. */
   const checkSignedIn = useCallback(async (): Promise<boolean> => {
@@ -89,13 +92,20 @@ export default function LoginCard() {
   }, [awaiting, checkSignedIn]);
 
   /** Lock in the role (first sign-in only), then head on. The middleware sends them through /mfa first. */
-  const finish = async (fallbackRole: Role) => {
+  const finish = async (fallbackRole: Role | null) => {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Signed in, but no session was saved. Check that cookies are allowed.");
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
     let r = profile?.role as Role | null | undefined;
     if (!r) {
+      // An account with no role yet (first Google sign-in, say): ask once, here, instead of guessing.
+      if (!fallbackRole) {
+        setAwaiting(null);
+        setResume({ email: user.email ?? "your account", role: null });
+        setPending(null);
+        return;
+      }
       const { error: roleError } = await supabase.rpc("set_my_role", { new_role: fallbackRole });
       if (roleError) throw new Error(`Could not save your role: ${roleError.message}`);
       r = fallbackRole;
@@ -123,7 +133,7 @@ export default function LoginCard() {
       setStaySignedIn(stay); // read when the callback saves the session
       const { error } = await createClient().auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: callbackUrl(role), queryParams: { prompt: "select_account" } },
+        options: { redirectTo: callbackUrl(isSignup ? role : undefined), queryParams: { prompt: "select_account" } },
       });
       if (error) throw error;
     }); // on success the browser is already heading to Google
@@ -162,7 +172,7 @@ export default function LoginCard() {
         throw new Error(error.code === "invalid_credentials" ? "Wrong email or password." : error.message);
       }
       setPassword("");
-      await finish(role);
+      await finish(null);
     });
 
   /** Passwordless: one-time sign-in link. Doubles as "forgot password". */
@@ -172,7 +182,11 @@ export default function LoginCard() {
       setStaySignedIn(stay);
       const { error } = await createClient().auth.signInWithOtp({
         email: addr,
-        options: { emailRedirectTo: callbackUrl(role), shouldCreateUser: isSignup, data: { full_name: name.trim() || undefined, role } },
+        options: {
+          emailRedirectTo: callbackUrl(isSignup ? role : undefined),
+          shouldCreateUser: isSignup,
+          ...(isSignup ? { data: { full_name: name.trim() || undefined, role } } : {}),
+        },
       });
       if (error) throw new Error(error.code === "otp_disabled" || error.status === 422 ? "No account with that email yet. Create one first." : error.message);
       setAwaiting({ email: addr, kind: "link" });
@@ -185,8 +199,8 @@ export default function LoginCard() {
       const supabase = createClient();
       const { error } =
         awaiting.kind === "confirm"
-          ? await supabase.auth.resend({ type: "signup", email: awaiting.email, options: { emailRedirectTo: callbackUrl(role) } })
-          : await supabase.auth.signInWithOtp({ email: awaiting.email, options: { emailRedirectTo: callbackUrl(role), shouldCreateUser: false } });
+          ? await supabase.auth.resend({ type: "signup", email: awaiting.email, options: { emailRedirectTo: callbackUrl(isSignup ? role : undefined) } })
+          : await supabase.auth.signInWithOtp({ email: awaiting.email, options: { emailRedirectTo: callbackUrl(isSignup ? role : undefined), shouldCreateUser: false } });
       if (error) throw error;
       setNotice("Sent again. It can take a minute; check spam too.");
       setPending(null);
@@ -209,12 +223,14 @@ export default function LoginCard() {
       <div className="card rounded-2xl p-6">
         <h1 className="font-display text-[28px] font-bold leading-tight tracking-[-0.02em]">Pick up where you left off</h1>
         <p className="mt-2 text-sm text-sub">
-          You’re signed in as <span className="font-semibold text-ink">{resume.email}</span> but didn’t finish setting up.
+          You’re signed in as <span className="font-semibold text-ink">{resume.email}</span>
+          {resume.role ? " but didn’t finish setting up." : ". One last thing before you start."}
         </p>
         {!resume.role && (
           <div className="mt-5">
             <p className="mb-2.5 text-sm font-semibold">I’m a…</p>
             <RoleToggle role={role} onChange={setRole} />
+            <p className="mt-2 text-[13px] text-muted">An account is either a student or a teacher, and this can’t be changed later.</p>
           </div>
         )}
         <button
@@ -300,10 +316,13 @@ export default function LoginCard() {
         {isSignup ? "Create your account" : "Log in to Ducky"}
       </h1>
 
-      <div className="mt-5">
-        <p className="mb-2.5 text-sm font-semibold">I’m a…</p>
-        <RoleToggle role={role} onChange={setRole} />
-      </div>
+      {isSignup && (
+        <div className="mt-5">
+          <p className="mb-2.5 text-sm font-semibold">I’m a…</p>
+          <RoleToggle role={role} onChange={setRole} />
+          <p className="mt-2 text-[13px] text-muted">An account is either a student or a teacher, and this can’t be changed later.</p>
+        </div>
+      )}
 
       <button
         onClick={google}
