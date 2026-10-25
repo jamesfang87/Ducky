@@ -14,12 +14,16 @@ export interface SessionInfo {
   hintsUsed: number;
   hintLimit: number;
   voiceRequired: boolean;
+  revealAfterHints: boolean;
+  stayOnAssignment: boolean;
   visualsEnabled: boolean;
   resourcesEnabled: boolean;
   canReveal: boolean;
   revealed: boolean;
   completed: boolean;
   stepWhenHintsRanOut: number | null;
+  /** The next problem in the same set, if there is one. */
+  nextSessionId: string | null;
 }
 
 export interface TurnMeta {

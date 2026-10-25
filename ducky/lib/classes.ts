@@ -1,9 +1,9 @@
 /**
- * Demo class catalog. Replace with Supabase `classes` + `enrollments` queries
- * (and the `join_class(code)` RPC) once the frontend talks to the backend.
+ * Demo class catalog, shown alongside the student's real Supabase classes
+ * (lib/server/classroom.ts, joined with the `join_class(code)` RPC).
  */
 
-import { getClassProgress, getProblemSets, type ProblemSetRecord } from "./problemSets";
+import { getClassProgress, getProblemSets, summarizeProgress, type ProblemSetRecord } from "./problemSets";
 
 export type ClassTone = "accent" | "amber" | "blue" | "violet";
 
@@ -16,6 +16,8 @@ export interface ClassRecord {
   /** 6 characters, no ambiguous 0/O/1/I/L, matching the backend generator. */
   joinCode: string;
   tone: ClassTone;
+  /** Posted sets for a real class. Demo classes leave this out and use the demo catalog. */
+  sets?: ProblemSetRecord[];
 }
 
 export const CLASSES: ClassRecord[] = [
@@ -86,9 +88,10 @@ export interface ClassSummary {
 
 /** Everything the class card and class page need, derived from the posted sets. */
 export function getClassSummary(record: ClassRecord): ClassSummary {
-  const { problems, completed, due, activeSet } = getClassProgress(record.id);
+  const sets = record.sets ? [...record.sets].sort((a, b) => b.number - a.number) : getProblemSets(record.id);
+  const { problems, completed, due, activeSet } = record.sets ? summarizeProgress(sets) : getClassProgress(record.id);
   return {
-    sets: getProblemSets(record.id),
+    sets,
     problems,
     completed,
     pct: problems > 0 ? Math.round((completed / problems) * 100) : 0,

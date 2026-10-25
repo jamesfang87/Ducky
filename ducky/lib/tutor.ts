@@ -30,7 +30,8 @@ export async function getTutorReply(input: string, policy: Policy, turn: number)
   await sleep(700 + Math.random() * 400);
   const t = input.trim();
 
-  if (policy.guardrails.jailbreakShield && JAILBREAK.some((r) => r.test(t))) {
+  // The jailbreak shield is always on; teachers can't turn it off.
+  if (JAILBREAK.some((r) => r.test(t))) {
     if (policy.revealAnswers && /answer/i.test(t)) {
       return { text: "Your teacher allows answers on this one: both balls land at t = √(2h/g) ≈ 2.02 s. Before we move on, can you tell me why mass dropped out?" };
     }

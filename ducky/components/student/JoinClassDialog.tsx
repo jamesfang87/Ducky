@@ -9,10 +9,11 @@ export function JoinClassDialog({
   join,
 }: {
   onClose: () => void;
-  join: (code: string) => JoinResult;
+  join: (code: string) => Promise<JoinResult>;
 }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -24,9 +25,11 @@ export function JoinClassDialog({
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const submit = (event: React.FormEvent) => {
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const result = join(code);
+    setBusy(true);
+    const result = await join(code);
+    setBusy(false);
     if (result.ok) onClose();
     else setError(result.error);
   };
@@ -91,8 +94,8 @@ export function JoinClassDialog({
             </p>
           )}
 
-          <button type="submit" disabled={code.length !== 6} className="btn-primary mt-4 w-full">
-            Join class
+          <button type="submit" disabled={code.length !== 6 || busy} className="btn-primary mt-4 w-full">
+            {busy ? "Joining…" : "Join class"}
           </button>
         </form>
 

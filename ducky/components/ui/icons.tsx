@@ -2,9 +2,9 @@ import Link from "next/link";
 
 type P = { className?: string; size?: number };
 
-export function Logo({ badge }: { badge?: string }) {
+export function Logo({ badge, href = "/" }: { badge?: string; href?: string }) {
   return (
-    <Link href="/" className="flex items-center gap-2.5 text-ink no-underline">
+    <Link href={href} className="flex items-center gap-2.5 text-ink no-underline">
       <DuckMark />
       <span className="font-display text-[22px] font-bold tracking-tight">ducky</span>
       {badge && <span className="rounded-md bg-ink px-2 py-0.5 text-xs font-semibold text-ground">{badge}</span>}

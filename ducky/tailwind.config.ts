@@ -36,6 +36,13 @@ export default {
           3: "rgb(var(--heat-3) / <alpha-value>)",
           4: "rgb(var(--heat-4) / <alpha-value>)",
         },
+        // Mastery bands (lib/insights.ts): 90+ green, 80–89 yellow, 70–79 orange, below 70 red.
+        grade: {
+          a: { DEFAULT: "#D9F0E6", ink: "#075A48" },
+          b: { DEFAULT: "#FBF0C2", ink: "#6B5300" },
+          c: { DEFAULT: "#FBDDBF", ink: "#8A3D00" },
+          d: { DEFAULT: "#F8D3D0", ink: "#9B1C14" },
+        },
       },
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],

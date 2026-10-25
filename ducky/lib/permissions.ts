@@ -11,9 +11,10 @@ export const COOKIE_NAME = "ducky_session";
 
 /** Capability sets per role. Add a permission here before checking it anywhere. */
 export const ROLE_PERMISSIONS = {
-  student: ["session:join", "sketch:send", "hand:raise"],
+  student: ["session:join", "sketch:send", "hand:raise", "class:join"],
   teacher: [
     "class:view",
+    "class:manage",
     "session:join",
     "policy:edit",
     "heatmap:view",

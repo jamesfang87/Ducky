@@ -1,3 +1,4 @@
+import { recordAttempt } from "@/lib/server/attempts";
 import { errorStatus, loadOwnSession, readJson } from "@/lib/server/guard";
 import { canReveal, getHints, getPolicy, incrementHints, saveTurn } from "@/lib/server/store";
 
@@ -21,6 +22,7 @@ export async function POST(req: Request) {
     const hints = getHints(s);
     const hint = hints[Math.min(s.hintsUsed, hints.length - 1)];
     incrementHints(s);
+    recordAttempt(s);
     saveTurn(s, { role: "tutor", text: `Hint: ${hint}` }); // so the tutor sees it in context
     return Response.json({ hint, hintsUsed: s.hintsUsed, hintLimit, canReveal: canReveal(s) });
   } catch (e) {

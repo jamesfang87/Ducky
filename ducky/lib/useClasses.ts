@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CLASS_BY_ID, DEMO_ENROLLMENT_IDS, findClassByCode, type ClassRecord } from "./classes";
+import { CLASS_BY_ID, DEMO_ENROLLMENT_IDS, findClassByCode, normalizeJoinCode, type ClassRecord } from "./classes";
 import { useSession } from "./session";
 
 const KEY_PREFIX = "ducky-classes-v1:";
@@ -11,9 +11,10 @@ export type JoinResult = { ok: true; record: ClassRecord } | { ok: false; error:
 /**
  * Enrolled classes for the signed-in student.
  *
- * Seeded from `session.classIds`, then extended with joins stored in
- * localStorage per user id. Mock only: a join does not reach the server, so it
- * lives in this browser. Replace with `enrollments` + `join_class()` later.
+ * Real classes (and their published sets) come from Supabase via /api/classes.
+ * Demo classes are seeded from `session.classIds` and extended with demo-code
+ * joins stored in localStorage per user id. Any other code goes to the server's
+ * `join_class()` RPC.
  */
 export function useEnrolledClasses() {
   const session = useSession();
@@ -29,6 +30,26 @@ export function useEnrolledClasses() {
 
   const [ids, setIds] = useState<string[]>(seed);
   const [hydrated, setHydrated] = useState(false);
+  const [real, setReal] = useState<ClassRecord[]>([]);
+  const [realLoaded, setRealLoaded] = useState(false);
+
+  const loadReal = useCallback(async (): Promise<ClassRecord[]> => {
+    try {
+      const res = await fetch("/api/classes", { cache: "no-store" });
+      const body = (await res.json().catch(() => ({}))) as { classes?: ClassRecord[] };
+      const list = res.ok && Array.isArray(body.classes) ? body.classes : [];
+      setReal(list);
+      return list;
+    } catch {
+      return [];
+    } finally {
+      setRealLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadReal();
+  }, [loadReal]);
 
   // Read the per-user list once after hydration, merging in any classes the
   // session already says we are enrolled in.
@@ -57,24 +78,35 @@ export function useEnrolledClasses() {
   }, [ids, hydrated, userId]);
 
   const join = useCallback(
-    (code: string): JoinResult => {
+    async (code: string): Promise<JoinResult> => {
       const record = findClassByCode(code);
-      if (!record) {
-        return { ok: false, error: "No class matches that code. Ask your teacher for the current one." };
+      if (record) {
+        if (ids.includes(record.id)) return { ok: false, error: "You're already in that class." };
+        setIds((prev) => [record.id, ...prev]);
+        return { ok: true, record };
       }
-      if (ids.includes(record.id)) {
-        return { ok: false, error: "You're already in that class." };
+      if (real.some((c) => c.joinCode === normalizeJoinCode(code))) return { ok: false, error: "You're already in that class." };
+      try {
+        const res = await fetch("/api/classes/join", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ code }),
+        });
+        const body = (await res.json().catch(() => ({}))) as { classId?: string; error?: string };
+        if (!res.ok || !body.classId) return { ok: false, error: body.error ?? "Couldn't join that class. Try again." };
+        const joined = (await loadReal()).find((c) => c.id === body.classId);
+        return joined ? { ok: true, record: joined } : { ok: false, error: "Joined, but the class didn't load. Refresh the page." };
+      } catch {
+        return { ok: false, error: "Couldn't reach the server. Check your connection and try again." };
       }
-      setIds((prev) => [record.id, ...prev]);
-      return { ok: true, record };
     },
-    [ids],
+    [ids, real, loadReal],
   );
 
   const classes = useMemo(
-    () => ids.map((id) => CLASS_BY_ID[id]).filter((record): record is ClassRecord => Boolean(record)),
-    [ids],
+    () => [...real, ...ids.map((id) => CLASS_BY_ID[id]).filter((record): record is ClassRecord => Boolean(record))],
+    [ids, real],
   );
 
-  return { classes, join, ready: hydrated };
+  return { classes, join, ready: hydrated && realLoaded };
 }

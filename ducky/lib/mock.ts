@@ -5,18 +5,19 @@ import type {
   Problem,
   ReasoningStep,
   TranscriptRow,
-  LeakHit,
 } from "./types";
 
 // All data in this file is demo placeholder data. Replace with Supabase queries.
 
 export const DEFAULT_POLICY: Policy = {
   hintLimit: 2,
+  hintPenalty: 10,
   revealAnswers: false,
+  revealAfterHints: true,
   voiceRequired: false,
   tone: "Socratic",
   tools: { visualizations: true, webExamples: true, calculator: false },
-  guardrails: { jailbreakShield: true, stayOnAssignment: true },
+  guardrails: { stayOnAssignment: true },
 };
 
 export const MISCONCEPTIONS: Misconception[] = [
@@ -65,11 +66,6 @@ export const STUDENT_HISTORY: Record<MisconceptionId, number> = {
   units: 0,
   "g-varies-height": 0,
 };
-
-export const LEAK_HITS: LeakHit[] = [
-  { domain: "quizlet.com", title: "Flashcard set: “two balls dropped 20 m”", match: 94, url: "#" },
-  { domain: "chegg.com", title: "Q&A post with worked solution", match: 88, url: "#" },
-];
 
 export const TRANSCRIPTS: TranscriptRow[] = [
   { id: "t1", student: "M. Ortiz", flag: { kind: "good", label: "Self-corrected" }, at: "2:14", aiScore: 88, override: null },

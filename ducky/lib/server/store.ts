@@ -28,11 +28,8 @@ export interface ServerMisconceptionEvent {
   at: number;
 }
 
-/** Teacher policy plus server-only settings that aren't in the shared UI type yet. */
-export type ServerPolicy = Policy & {
-  /** Once every hint is used, the student may view the answer for no credit. */
-  revealAfterHints: boolean;
-};
+/** The teacher's policy as the server enforces it. */
+export type ServerPolicy = Policy;
 
 export interface Solution {
   text: string;
@@ -84,7 +81,7 @@ export interface RevealEvent {
   at: number;
 }
 
-interface Template {
+export interface Template {
   problem: Problem;
   policy: ServerPolicy;
   solution: Solution;
@@ -94,6 +91,8 @@ interface Template {
   startStep: number;
   /** Ducky's first line, shown before the student says anything. */
   opening: string;
+  /** Session id of the next problem in the same set, if any. */
+  next?: string | null;
 }
 
 const TEMPLATES: Record<string, Template> = {
@@ -169,7 +168,7 @@ const TEMPLATES: Record<string, Template> = {
   },
   demo: {
     problem: PROBLEM,
-    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    policy: DEFAULT_POLICY,
     solution: {
       text: "t = √(2h/g) ≈ 2.02 s for both balls. Mass cancels because a = F/m = mg/m = g, so both accelerate at g.",
       finalAnswerPatterns: [/2\.02/, /√\s*\(?\s*2\s*h\s*\/\s*g/i, /sqrt\s*\(?\s*2\s*h\s*\/\s*g/i],
@@ -189,7 +188,7 @@ const TEMPLATES: Record<string, Template> = {
       prompt:
         "A ball is launched from level ground at 20 m/s at 30° above the horizontal. Ignoring air resistance, find the maximum height it reaches and how far from the launch point it lands. Explain why the horizontal and vertical motions can be treated separately.",
     },
-    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    policy: DEFAULT_POLICY,
     solution: {
       text:
         "Split the launch velocity: v₀ₓ = 20 cos 30° ≈ 17.3 m/s and v₀ᵧ = 20 sin 30° = 10 m/s. " +
@@ -228,7 +227,7 @@ const TEMPLATES: Record<string, Template> = {
       prompt:
         "A ball is kicked from level ground at 15 m/s at 45°. Ignoring air resistance, find the maximum height and the horizontal range.",
     },
-    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    policy: DEFAULT_POLICY,
     solution: {
       text:
         "At 45°, v₀ₓ = v₀ᵧ = 15 cos 45° ≈ 10.6 m/s. " +
@@ -264,7 +263,7 @@ const TEMPLATES: Record<string, Template> = {
       prompt:
         "A ball rolls off a 20 m cliff horizontally at 12 m/s. How long is it in the air, and how far from the base of the cliff does it land?",
     },
-    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    policy: DEFAULT_POLICY,
     solution: {
       text:
         "The initial vertical velocity is zero, so 20 = ½gt² gives t = √(40/9.8) ≈ 2.02 s. " +
@@ -915,6 +914,8 @@ interface Db {
   revealEvents: RevealEvent[];
   /** Session keys whose saved chat has already been read from Supabase this process. */
   hydrated: Set<string>;
+  /** Templates for teacher-uploaded problems, loaded from Supabase (lib/server/assignments.ts). */
+  uploaded: Map<string, { template: Template; at: number }>;
 }
 
 // Kept on globalThis so `next dev` hot reloads don't wipe the demo state.
@@ -926,14 +927,25 @@ const db: Db = (g.__duckyDb ??= {
   guardEvents: [],
   revealEvents: [],
   hydrated: new Set(),
+  uploaded: new Map(),
 });
 db.hydrated ??= new Set();
+db.uploaded ??= new Map();
+
+/** Built-in demo template, or an uploaded problem's (cached by `cacheTemplate`). */
+const templateOf = (sessionId: string): Template | undefined => TEMPLATES[sessionId] ?? db.uploaded.get(sessionId)?.template;
+
+export const isDemoSession = (sessionId: string): boolean => sessionId in TEMPLATES;
+
+export function cacheTemplate(sessionId: string, template: Template): void {
+  db.uploaded.set(sessionId, { template, at: Date.now() });
+}
 
 const keyOf = (s: Pick<ServerSession, "id" | "userId">) => `${s.id}:${s.userId}`;
 
 /** Returns the caller's own copy of the session, creating it on first use. Null if no such session. */
 export function getSession(sessionId: string, user: { userId: string; name: string }): ServerSession | null {
-  const t = TEMPLATES[sessionId];
+  const t = templateOf(sessionId);
   if (!t) return null;
   const key = `${sessionId}:${user.userId}`;
   let s = db.sessions.get(key);
@@ -959,14 +971,16 @@ export function getSession(sessionId: string, user: { userId: string; name: stri
   return s;
 }
 
-export const getProblem = (s: ServerSession): Problem => TEMPLATES[s.id].problem;
-export const getPolicy = (s: ServerSession): ServerPolicy => TEMPLATES[s.id].policy;
+const tpl = (s: ServerSession): Template => templateOf(s.id)!;
+export const getProblem = (s: ServerSession): Problem => tpl(s).problem;
+export const getPolicy = (s: ServerSession): ServerPolicy => tpl(s).policy;
 /** Server-only. Never put this in a response, except through the gated reveal route. */
-export const getSolution = (s: ServerSession): Solution => TEMPLATES[s.id].solution;
-export const getMisconceptions = (s: ServerSession): ServerMisconception[] => TEMPLATES[s.id].misconceptions;
-export const getOpening = (s: ServerSession): string => TEMPLATES[s.id].opening;
-export const getHints = (s: ServerSession): string[] => TEMPLATES[s.id].hints;
-export const getSteps = (s: ServerSession): string[] => TEMPLATES[s.id].steps;
+export const getSolution = (s: ServerSession): Solution => tpl(s).solution;
+export const getMisconceptions = (s: ServerSession): ServerMisconception[] => tpl(s).misconceptions;
+export const getOpening = (s: ServerSession): string => tpl(s).opening;
+export const getHints = (s: ServerSession): string[] => tpl(s).hints;
+export const getSteps = (s: ServerSession): string[] => tpl(s).steps;
+export const getNextSessionId = (s: ServerSession): string | null => tpl(s).next ?? null;
 
 export function getRecentTurns(s: ServerSession, n = 6): StoredTurn[] {
   return (db.turns.get(keyOf(s)) ?? []).slice(-n);

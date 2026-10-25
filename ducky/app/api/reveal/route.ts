@@ -1,3 +1,4 @@
+import { recordAttempt } from "@/lib/server/attempts";
 import { errorStatus, loadOwnSession, readJson } from "@/lib/server/guard";
 import { getPolicy, getSolution, getSteps, markRevealed, saveRevealEvent, saveTurn } from "@/lib/server/store";
 
@@ -27,6 +28,7 @@ export async function POST(req: Request) {
       }
       markRevealed(s);
       saveRevealEvent(s, s.stepWhenHintsRanOut ?? s.currentStep);
+      recordAttempt(s);
       saveTurn(s, { role: "tutor", text: "(The student viewed the answer after using every hint. No credit for this problem.)" });
     }
 

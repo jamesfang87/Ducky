@@ -20,7 +20,9 @@ Fonts are self-hosted with `@fontsource`, so no network is needed at build time.
 | `/privacy` | Privacy policy |
 | `/classes` | Student home: enrolled classes, progress, join by 6-character code |
 | `/session/demo` | Student interview: voice/text/sketch, reasoning path, misconception tracker, live sim, reviewer loop |
-| `/teacher` | Teacher dashboard: agent policy, live misconception heatmap, SerpApi leak alert, transcripts with score override |
+| `/teacher` | Teacher home: your classes (Supabase), create a class and get its join code |
+| `/teacher/classes/[id]` | One class: join code, roster, upload problem sets (PDF / image / text → problems, solutions, hints, misconceptions), per-set settings, publish |
+| `/teacher/demo` | Demo dashboard: agent policy, live misconception heatmap, SerpApi leak alert, transcripts with score override |
 
 ## Deploy
 
@@ -31,10 +33,19 @@ The app is hosted on Vercel at **https://ducky-snowy.vercel.app/**.
 - The root `index.html` is only a redirect for GitHub Pages, which can serve static files but cannot run middleware, route handlers, or cookies.
 - Auth is real (Supabase Google sign-in + authenticator-app 2FA). Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel (the anon key is public by design). Never expose the `service_role` key. In Supabase, add the Vercel URL to Auth → URL Configuration → Redirect URLs (e.g. `https://ducky-snowy.vercel.app/**`).
 
+## Classes and problem sets
+
+Real classes live in Supabase (`classes`, `enrollments`, `assignments`, `problems`, `problem_solutions`). Setup:
+
+1. Run `ducky-backend/supabase/migrations/0004_teacher_view.sql` in the Supabase SQL editor (adds `course_number` and `teacher_name` to `classes`; safe to re-run).
+2. Set `SUPABASE_SERVICE_ROLE_KEY` (server only) locally and in Vercel. Students can never read `problem_solutions`, so the tutor reads it with the service role after checking the student's access under RLS.
+
+Per-set settings: hints per question, show the answer after hints run out, voice required, stay on assignment, tone, tools. The jailbreak shield is not a setting; the server always applies it. Uploads are treated as data (ASG-5): instruction-like lines are removed before parsing and shown to the teacher.
+
 ## 3-minute demo script
 
 1. Log in as **Student**. `/classes` lists PHYS 1401; **Continue** opens the interview. **Join a class** accepts the demo codes `CHM7Q3` and `CSC9X2`.
-2. Sign out, then log in as **Teacher** and open `/teacher` and `/session/demo` side by side. State syncs across tabs through localStorage. Teachers may preview a student session; a student account cannot open `/teacher`.
+2. Sign out, then log in as **Teacher** and open `/teacher/demo` and `/session/demo` side by side. State syncs across tabs through localStorage. Teachers may preview a student session; a student account cannot open `/teacher`.
 3. On the teacher page, show the policy: 2 hints, voice required.
    - The student header updates live.
 4. As the student, tap the mic (Chrome or Edge) and say: "The heavier one hits the ground first."

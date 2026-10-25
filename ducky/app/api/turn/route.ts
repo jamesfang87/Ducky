@@ -1,4 +1,5 @@
 import { HttpError } from "@/lib/auth";
+import { recordAttempt } from "@/lib/server/attempts";
 import { errorStatus, loadOwnSession, readJson } from "@/lib/server/guard";
 import { streamChat } from "@/lib/server/llm";
 import { EMPTY_META, parseMeta } from "@/lib/server/meta";
@@ -190,6 +191,7 @@ export async function POST(req: Request) {
         saveTurn(s, { role: "student", text: message, via });
         saveTurn(s, { role: "tutor", text: spoken.join(" ") });
         if (meta.misconception) saveMisconceptionEvent(s, meta.misconception.id);
+        recordAttempt(s, { misconception: meta.misconception?.id, evidence: message });
       } catch (e) {
         console.error("[/api/turn]", e);
         const detail = e instanceof Error ? e.message : "";

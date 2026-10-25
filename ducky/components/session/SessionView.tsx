@@ -375,8 +375,13 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
             <Can allow="policy:edit">
               <span className="chip">{info.hintLimit} hints max</span>
               {info.voiceRequired && <span className="chip">Voice required</span>}
-              <span className="chip">{policy.revealAnswers ? "Answers allowed" : "Answers hidden"}</span>
+              <span className="chip">{info.revealAfterHints ? "Answer after hints" : "Answers hidden"}</span>
             </Can>
+            {info.nextSessionId && (
+              <Link href={`/session/${info.nextSessionId}`} className="text-sm font-semibold text-accent no-underline transition hover:text-accent-dark">
+                Next problem →
+              </Link>
+            )}
             {session?.role === "student" && (
               <Link href="/classes" className="text-sm text-sub no-underline transition hover:text-ink">
                 My classes

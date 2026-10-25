@@ -5,13 +5,10 @@ import { useMemo } from "react";
 import { MISCONCEPTIONS, STUDENT_NAME } from "@/lib/mock";
 import { useStore } from "@/lib/store";
 import type { TranscriptRow } from "@/lib/types";
-import { AccountChip } from "@/components/ui/AccountChip";
-import { Logo } from "@/components/ui/icons";
 import Heatmap from "./Heatmap";
 import { LeakAlert, TranscriptTable } from "./LeakAndTranscripts";
 import PolicyPanel from "./PolicyPanel";
-
-const NAV = ["Class overview", "Tutor agents", "Assignments", "Transcripts", "Mastery reports", "Audit log"];
+import TeacherShell from "./TeacherShell";
 
 export default function TeacherDashboard() {
   const { events, resetDemo } = useStore();
@@ -39,11 +36,9 @@ export default function TeacherDashboard() {
   ];
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-[1360px] flex-wrap items-center gap-4 px-6 py-3.5">
-          <Logo badge="for Schools" />
-          <div className="flex-1" />
+    <TeacherShell
+      headerExtra={
+        <>
           <label htmlFor="search" className="sr-only">
             Search students and transcripts
           </label>
@@ -56,65 +51,48 @@ export default function TeacherDashboard() {
           <button onClick={resetDemo} className="btn h-10 text-sm" title="Clear live events and restore default policy">
             Reset demo
           </button>
-          <AccountChip />
+        </>
+      }
+    >
+      <div className="flex flex-wrap items-end gap-4">
+        <div className="flex-[1_1_300px]">
+          <p className="text-sm text-muted">PHYS 1401 · Period 3</p>
+          <h1 className="mt-0.5 font-display text-[30px] font-bold tracking-tight">Problem Set 3: Free fall</h1>
         </div>
-      </header>
-
-      <div className="mx-auto flex max-w-[1360px] flex-wrap items-start gap-6 p-6">
-        <nav aria-label="Teacher" className="flex max-w-[240px] flex-[1_1_200px] flex-col gap-1">
-          {NAV.map((n, i) => (
-            <a
-              key={n}
-              href="#"
-              aria-current={i === 0 ? "page" : undefined}
-              className={`rounded-[10px] px-3 py-2.5 no-underline ${i === 0 ? "border border-line bg-surface font-semibold text-ink" : "text-sub hover:bg-surface"}`}
-            >
-              {n}
-            </a>
-          ))}
-          <Link href="/session/demo" className="mt-2 rounded-[10px] px-3 py-2.5 text-accent no-underline hover:bg-surface">
-            Preview as student →
-          </Link>
-        </nav>
-
-        <main className="flex min-w-0 flex-[999_1_560px] flex-col gap-5">
-          <div className="flex flex-wrap items-end gap-4">
-            <div className="flex-[1_1_300px]">
-              <p className="text-sm text-muted">PHYS 1401 · Period 3</p>
-              <h1 className="mt-0.5 font-display text-[30px] font-bold tracking-tight">Problem Set 3: Free fall</h1>
-            </div>
-            <button className="btn">Upload problem set</button>
-            <button className="btn-primary">Assign to class</button>
-          </div>
-
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
-            {stats.map((s) => (
-              <div key={s.label} className="card p-4">
-                <p className="text-[13px] text-muted">{s.label}</p>
-                <p className="mt-1 font-display text-[28px] font-semibold">
-                  {s.value} {s.sub && <span className="text-base text-muted">{s.sub}</span>}
-                </p>
-              </div>
-            ))}
-            <div className="rounded-[14px] border border-warn-soft bg-warn-tint p-4">
-              <p className="text-[13px] text-warn-dark">Needs review</p>
-              <p className="mt-1 font-display text-[28px] font-semibold text-warn-dark">
-                {3 + (liveRow ? 1 : 0)} flags · 1 leak
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-start gap-5">
-            <Heatmap events={events} />
-            <PolicyPanel />
-          </div>
-
-          <div className="flex flex-wrap items-start gap-5">
-            <LeakAlert />
-            <TranscriptTable liveRow={liveRow} />
-          </div>
-        </main>
+        <Link href="/teacher" className="btn no-underline">
+          Upload problem set
+        </Link>
+        <Link href="/teacher" className="btn-primary no-underline">
+          Assign to class
+        </Link>
       </div>
-    </div>
+
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
+        {stats.map((s) => (
+          <div key={s.label} className="card p-4">
+            <p className="text-[13px] text-muted">{s.label}</p>
+            <p className="mt-1 font-display text-[28px] font-semibold">
+              {s.value} {s.sub && <span className="text-base text-muted">{s.sub}</span>}
+            </p>
+          </div>
+        ))}
+        <div className="rounded-[14px] border border-warn-soft bg-warn-tint p-4">
+          <p className="text-[13px] text-warn-dark">Needs review</p>
+          <p className="mt-1 font-display text-[28px] font-semibold text-warn-dark">
+            {3 + (liveRow ? 1 : 0)} flags
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-start gap-5">
+        <Heatmap events={events} />
+        <PolicyPanel />
+      </div>
+
+      <div className="flex flex-wrap items-start gap-5">
+        <LeakAlert />
+        <TranscriptTable liveRow={liveRow} />
+      </div>
+    </TeacherShell>
   );
 }

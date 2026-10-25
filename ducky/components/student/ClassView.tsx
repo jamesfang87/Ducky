@@ -11,9 +11,18 @@ import { ProblemSetCard } from "./ProblemSetCard";
 /** One class: every problem set the teacher posted, each opening its tutoring session. */
 export default function ClassView({ classId }: { classId: string }) {
   const session = useSession();
-  const record = CLASS_BY_ID[classId];
   const { classes, ready } = useEnrolledClasses();
+  // Real classes only exist in the enrolled list; demo ones are in the catalog too.
+  const record = classes.find((item) => item.id === classId) ?? CLASS_BY_ID[classId];
   const enrolled = classes.some((item) => item.id === classId);
+
+  if (!record && !ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center gap-2 text-muted" role="status">
+        <Spinner size={18} className="text-accent" /> Opening class…
+      </div>
+    );
+  }
 
   if (!record) {
     return (

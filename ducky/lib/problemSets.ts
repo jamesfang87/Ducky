@@ -147,7 +147,11 @@ export interface ClassProgress {
 
 /** Roll the class's problem sets up into the summary shown on the class card. */
 export function getClassProgress(classId: string): ClassProgress {
-  const sets = getProblemSets(classId);
+  return summarizeProgress(getProblemSets(classId));
+}
+
+/** Same roll-up for any list of sets, newest first. */
+export function summarizeProgress(sets: ProblemSetRecord[]): ClassProgress {
   const problems = sets.reduce((total, set) => total + set.problems, 0);
   const completed = sets.reduce((total, set) => total + set.completed, 0);
   const unfinished = sets.filter((set) => set.completed < set.problems);

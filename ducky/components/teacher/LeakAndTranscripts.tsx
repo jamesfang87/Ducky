@@ -1,66 +1,80 @@
 "use client";
 
 import { useState } from "react";
-import { LEAK_HITS, TRANSCRIPTS } from "@/lib/mock";
+import { sendJson } from "./dialog";
+import { PROBLEM, TRANSCRIPTS } from "@/lib/mock";
 import type { LeakHit, TranscriptRow } from "@/lib/types";
 import { Search, Spinner } from "@/components/ui/icons";
 
-/** TODO: POST /api/leak-check → SerpApi Google search on distinctive problem phrases, score overlap. */
-async function checkLeaks(): Promise<LeakHit[]> {
-  await new Promise((r) => setTimeout(r, 1400));
-  return LEAK_HITS;
-}
-
+/** Live SerpApi check of the demo problem (POST /api/teacher/leaks). */
 export function LeakAlert() {
-  const [hits, setHits] = useState<LeakHit[]>(LEAK_HITS);
+  const [result, setResult] = useState<{ status: "clean" | "leaked"; hits: LeakHit[]; checkedAt: string } | null>(null);
   const [checking, setChecking] = useState(false);
-  const [checkedAgo, setCheckedAgo] = useState("4 min ago");
+  const [error, setError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  const leaked = result?.status === "leaked" && !dismissed;
 
   const run = async () => {
     setChecking(true);
+    setError(null);
     setDismissed(false);
-    setHits(await checkLeaks());
-    setCheckedAgo("just now");
-    setChecking(false);
+    try {
+      setResult(await sendJson<{ status: "clean" | "leaked"; hits: LeakHit[]; checkedAt: string }>("/api/teacher/leaks", "POST", { prompt: PROBLEM.prompt }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "The leak check failed.");
+    } finally {
+      setChecking(false);
+    }
   };
 
   return (
-    <section aria-label="Answer leak alert" className={`card min-w-0 flex-[2_1_320px] p-5 ${dismissed ? "" : "border-warn-soft"}`}>
+    <section aria-label="Answer leak alert" className={`card min-w-0 flex-[2_1_320px] p-5 ${leaked ? "border-warn-soft" : ""}`}>
       <div className="mb-1 flex items-center gap-2.5">
-        <Search className="text-warn" />
-        <h2 className="font-display text-lg font-semibold">{dismissed ? "Answer leak check" : "Answer leak: Problem 2"}</h2>
+        <Search className={leaked ? "text-warn" : "text-muted"} />
+        <h2 className="font-display text-lg font-semibold">{leaked ? `Answer leak: Problem ${PROBLEM.index}` : "Answer leak check"}</h2>
       </div>
-      <p className="mb-3.5 text-[13px] text-muted">Found by SerpApi search · checked {checkedAgo}</p>
+      <p className="mb-3.5 text-[13px] text-muted">
+        SerpApi web search ·{" "}
+        {result ? `checked ${new Date(result.checkedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}` : "not checked yet"}
+      </p>
 
       {dismissed ? (
-        <p className="text-sm text-muted">Dismissed. We’ll keep checking daily.</p>
+        <p className="text-sm text-muted">Dismissed.</p>
+      ) : result && !leaked ? (
+        <p className="text-sm text-sub">No copies of this problem found online.</p>
       ) : (
         <ul className="flex flex-col gap-2.5">
-          {hits.map((h) => (
-            <li key={h.domain} className="flex items-center gap-3 rounded-[10px] bg-ground px-3 py-2.5">
-              <span className="min-w-0 flex-1">
+          {result?.hits.map((h) => (
+            <li key={h.url} className="flex items-center gap-3 rounded-[10px] bg-ground px-3 py-2.5">
+              <a href={h.url} target="_blank" rel="noreferrer" className="min-w-0 flex-1 no-underline">
                 <span className="block font-semibold">{h.domain}</span>
-                <span className="text-[13px] text-muted">{h.title}</span>
-              </span>
+                <span className="block truncate text-[13px] text-muted">{h.title}</span>
+              </a>
               <span className="font-mono text-[13px] font-medium text-warn">{h.match}% match</span>
             </li>
           ))}
         </ul>
       )}
 
+      {error && (
+        <p role="alert" className="mt-3 text-sm text-warn-dark">
+          {error}
+        </p>
+      )}
       <div className="mt-3.5 flex flex-wrap gap-2">
-        {!dismissed && <button className="btn-dark">Suggest a rewrite</button>}
+        {leaked && <button className="btn-dark">Suggest a rewrite</button>}
         <button className="btn h-10" onClick={run} disabled={checking}>
           {checking ? (
             <>
               <Spinner /> Searching…
             </>
-          ) : (
+          ) : result ? (
             "Re-check now"
+          ) : (
+            "Check for leaks"
           )}
         </button>
-        {!dismissed && (
+        {leaked && (
           <button className="btn h-10" onClick={() => setDismissed(true)}>
             Dismiss
           </button>

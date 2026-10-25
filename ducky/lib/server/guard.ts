@@ -1,7 +1,14 @@
 import "server-only";
 
 import { HttpError, requirePermission } from "@/lib/auth";
-import { getSession, type ServerSession } from "./store";
+import { createClient } from "@/lib/supabase/server";
+import { loadUploadedTemplate } from "./assignments";
+import { cacheTemplate, getSession, isDemoSession, type ServerSession } from "./store";
+
+/** How long a user's access to an uploaded problem (and its policy) is trusted before re-reading it under RLS. */
+const TEMPLATE_TTL_MS = 10_000;
+/** `${sessionId}:${userId}` → when that user's access was last confirmed. */
+const accessCheckedAt = new Map<string, number>();
 
 /**
  * Shared front door for the tutoring routes: signed in (Supabase + 2FA), allowed to
@@ -11,6 +18,20 @@ import { getSession, type ServerSession } from "./store";
 export async function loadOwnSession(sessionId: unknown): Promise<ServerSession> {
   const user = await requireTutorUser();
   if (typeof sessionId !== "string" || !sessionId) throw new HttpError(400, "sessionId is required.");
+  if (!isDemoSession(sessionId)) {
+    // Re-read under this user's RLS past the TTL, so access (and the teacher's latest settings) are rechecked.
+    const key = `${sessionId}:${user.userId}`;
+    const checked = accessCheckedAt.get(key);
+    if (checked === undefined || Date.now() - checked > TEMPLATE_TTL_MS) {
+      const template = await loadUploadedTemplate(await createClient(), sessionId);
+      if (!template) {
+        accessCheckedAt.delete(key);
+        throw new HttpError(404, "No such session.");
+      }
+      cacheTemplate(sessionId, template);
+      accessCheckedAt.set(key, Date.now());
+    }
+  }
   const session = getSession(sessionId, user);
   if (!session) throw new HttpError(404, "No such session.");
   return session;

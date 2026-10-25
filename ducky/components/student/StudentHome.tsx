@@ -25,8 +25,8 @@ export default function StudentHome() {
     };
   }, []);
 
-  const handleJoin = (code: string): JoinResult => {
-    const result = join(code);
+  const handleJoin = async (code: string): Promise<JoinResult> => {
+    const result = await join(code);
     if (result.ok) {
       if (noticeTimer.current) clearTimeout(noticeTimer.current);
       setNotice(`Joined ${result.record.course} · ${result.record.name}`);

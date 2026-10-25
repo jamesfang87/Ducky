@@ -10,8 +10,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { DEFAULT_POLICY } from "./mock";
 import type { MisconceptionEvent, Policy } from "./types";
 
-// Bump when DEFAULT_POLICY changes so saved demo state doesn't pin the old defaults (v2: voice no longer required).
-const KEY = "ducky-demo-v2";
+// Bump when DEFAULT_POLICY changes so saved demo state doesn't pin the old defaults (v4: hint penalty).
+const KEY = "ducky-demo-v4";
 
 interface State {
   policy: Policy;
@@ -31,7 +31,7 @@ function load(): State | null {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as State;
-    return { policy: { ...DEFAULT_POLICY, ...parsed.policy }, events: parsed.events ?? [] };
+    return { policy: { ...DEFAULT_POLICY, ...parsed.policy, guardrails: { ...DEFAULT_POLICY.guardrails, ...parsed.policy?.guardrails } }, events: parsed.events ?? [] };
   } catch {
     return null;
   }
