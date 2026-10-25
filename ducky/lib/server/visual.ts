@@ -13,8 +13,13 @@ import { getPolicy, getProblem, getSolution, getSteps, type ServerSession } from
  * animation as SVG frames + captions. Each attempt is sanitized, rendered, checked,
  * and reviewed by Muse vision before anything is returned; up to 3 attempts.
  *
- * The review loop is server-only (VIS-3): callers get the approved frames or a
- * friendly decline/failure message, never drafts, critiques, or pass counts.
+ * A request always produces frames: off-topic asks are redrawn as the closest part of
+ * the problem, broken frames are dropped rather than sinking the draft, the best
+ * checked draft is kept if review never passes, and if the model gives nothing usable
+ * a plain roadmap of the problem's steps is drawn on the server.
+ *
+ * The review loop is server-only (VIS-3): callers get the frames, never drafts,
+ * critiques, or pass counts.
  */
 
 export interface VisualFrame {
@@ -22,13 +27,19 @@ export interface VisualFrame {
   caption: string;
 }
 
-export type VisualResult =
-  | { status: "ok"; title: string; frames: VisualFrame[] }
-  | { status: "declined"; message: string }
-  | { status: "failed"; message: string };
+export interface VisualResult {
+  status: "ok";
+  title: string;
+  frames: VisualFrame[];
+  /** Server-only: how the frames were made, for the teacher's guard log. Never sent to the student. */
+  source: "approved" | "unreviewed" | "roadmap";
+  /** Server-only: the request was off-topic and the model drew the closest part of the problem instead. */
+  redirected: boolean;
+}
 
 const MAX_ATTEMPTS = 3;
-const TIME_BUDGET_MS = 45_000; // leave headroom under the route's 60 s limit
+const TIME_BUDGET_MS = 50_000; // leave headroom under the route's 60 s limit
+const MIN_REVIEW_MS = 8_000; // skip review (keep the checked draft) when less than this is left
 const MIN_FRAMES = 2;
 const MAX_FRAMES = 10;
 const REVIEW_FRAMES = 6;
@@ -40,14 +51,17 @@ const GENERATOR_RULES = `You are Ducky's visual explainer. You draw short step-t
 
 Return ONE JSON object and nothing else:
 {"in_scope": true|false,
- "decline_reason": "<one friendly sentence, only if in_scope is false>" | null,
+ "plan": ["<the exact state shown in frame 1>", "<frame 2>", ...],
  "title": "<short title>",
  "frames": [{"svg": "<svg ...>...</svg>", "caption": "<what changes in this frame, max 25 words>"}]}
 
-Scope: only visualize concepts needed for the PROBLEM below. If the request is about anything else, set in_scope to false and frames to [].
+Always return frames. Never refuse and never say you can't draw something.
+Scope: only visualize concepts needed for the PROBLEM below. If the request is about anything else, set in_scope to false and draw the part of the PROBLEM closest to what they asked for instead.
+
+Accuracy: before drawing, work out every state in "plan" (e.g. the exact array after each pass, the exact forces and values). Then draw each frame from its plan entry, nothing else.
 
 Frames:
-- 3 to 8 frames. Together they animate the idea step by step; each frame shows the next state.
+- 3 to 6 frames. Keep each svg compact: simple shapes, no decorative detail, so the whole JSON fits in one reply. Together they animate the idea step by step; each frame shows the next state.
 - Keep the layout identical across frames; only the parts that change should move or change color, so stepping looks like animation.
 - Every svg: xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360", starts with a white background <rect width="640" height="360" fill="#FFFFFF"/>.
 - Text: font-family="Noto Sans, Arial, sans-serif", font-size at least 14, dark ink #1F2328. Labels must not overlap anything and must stay inside the canvas. Use only plain keyboard characters in SVG text (write "->" not an arrow symbol, "<=" not "≤"); draw arrows with <line>/<path> and a marker instead.
@@ -70,6 +84,103 @@ function firstJson(raw: string): unknown {
   } catch {
     return null;
   }
+}
+
+const unescapeJson = (s: string) => {
+  try {
+    return JSON.parse(`"${s}"`) as string;
+  } catch {
+    return s.replace(/\\"/g, '"').replace(/\\n/g, "\n").replace(/\\\\/g, "\\");
+  }
+};
+
+/**
+ * Pulls whatever frames it can out of a reply that isn't valid JSON (unescaped quotes
+ * in the SVG, or a reply cut off at the token limit). Complete frames survive.
+ */
+function salvageFrames(raw: string): { title?: string; in_scope?: boolean; frames: { svg: string; caption: string }[] } | null {
+  const frames: { svg: string; caption: string }[] = [];
+  const re = /"svg"\s*:\s*"([\s\S]*?<\/svg>)\s*"\s*,?\s*(?:"caption"\s*:\s*"((?:[^"\\]|\\.)*)")?/g;
+  for (let m; (m = re.exec(raw)); ) frames.push({ svg: unescapeJson(m[1]), caption: m[2] ? unescapeJson(m[2]) : "" });
+  if (!frames.length) {
+    // Bare SVGs with no JSON around them.
+    for (const m of raw.matchAll(/<svg[\s\S]*?<\/svg>/gi)) frames.push({ svg: m[0], caption: "" });
+  }
+  if (!frames.length) return null;
+  const title = /"title"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(raw)?.[1];
+  return { title: title ? unescapeJson(title) : undefined, in_scope: !/"in_scope"\s*:\s*false/.test(raw), frames };
+}
+
+/** Resolves to `fallback` if `p` hasn't settled within `ms`, so one slow call can't blow the route's time limit. */
+function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise((resolve) => {
+    const t = setTimeout(() => resolve(fallback), Math.max(0, ms));
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        console.warn("[visual] model call failed:", e instanceof Error ? e.message.slice(0, 200) : e);
+        resolve(fallback);
+      },
+    );
+  });
+}
+
+const escapeXml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/** Greedy word wrap for SVG text, which has no wrapping of its own. */
+function wrapLines(text: string, maxChars: number, maxLines: number): string[] {
+  const lines: string[] = [];
+  let line = "";
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    if (line && (line + " " + word).length > maxChars) {
+      lines.push(line);
+      line = word;
+    } else line = line ? `${line} ${word}` : word;
+  }
+  if (line) lines.push(line);
+  if (lines.length > maxLines) {
+    lines.length = maxLines;
+    lines[maxLines - 1] = lines[maxLines - 1].replace(/.{0,3}$/, "...");
+  }
+  return lines;
+}
+
+/**
+ * Last resort when the model gives nothing usable: a roadmap of the problem's steps,
+ * one frame per step, built here so it is always correct and never shows the answer.
+ */
+function roadmapFrames(steps: string[], current: number): VisualFrame[] {
+  const shown = steps.slice(0, 6);
+  const rowH = Math.min(60, 300 / Math.max(1, shown.length));
+  return shown.map((_, active) => {
+    const rows = shown
+      .map((label, i) => {
+        const y = 40 + i * rowH;
+        const fill = i < active ? "#D1FAE5" : i === active ? "#FDE68A" : "#FFFFFF";
+        const stroke = i === active ? "#0B7A62" : "#C9CCC6";
+        const lines = wrapLines(label.replace(/[^\x20-\x7E]/g, " "), 62, rowH >= 48 ? 2 : 1);
+        const textY = y + rowH / 2 - (lines.length - 1) * 9 + 5;
+        return (
+          `<rect x="24" y="${y + 4}" width="592" height="${rowH - 8}" rx="8" fill="${fill}" stroke="${stroke}" stroke-width="${i === active ? 3 : 1.5}"/>` +
+          `<circle cx="54" cy="${y + rowH / 2}" r="14" fill="${i <= active ? "#0B7A62" : "#C9CCC6"}"/>` +
+          `<text x="54" y="${y + rowH / 2 + 5}" text-anchor="middle" font-family="Noto Sans, Arial, sans-serif" font-size="14" fill="#FFFFFF">${i + 1}</text>` +
+          `<text x="80" y="${textY}" font-family="Noto Sans, Arial, sans-serif" font-size="15" fill="#1F2328">` +
+          lines.map((l, k) => `<tspan x="80" dy="${k ? 18 : 0}">${escapeXml(l)}</tspan>`).join("") +
+          `</text>`
+        );
+      })
+      .join("");
+    const svg =
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360"><rect width="640" height="360" fill="#FFFFFF"/>` +
+      `<text x="24" y="26" font-family="Noto Sans, Arial, sans-serif" font-size="16" fill="#0B7A62">Step ${active + 1} of ${shown.length}${active === current ? " (you are here)" : ""}</text>` +
+      rows +
+      `</svg>`;
+    return { svg, caption: `Step ${active + 1}: ${shown[active]}` };
+  });
 }
 
 /** Strips anything that could run code or load something; the player also renders inside a script-less sandbox. */
@@ -110,7 +221,10 @@ interface Draft {
   pngs: Buffer[];
 }
 
-/** Deterministic checks: shape, sanitize, render, and no answer leak. Returns the draft or the problems found. */
+/**
+ * Deterministic checks: shape, sanitize, render, and no answer leak. Frames that fail are
+ * dropped (and reported as issues for the retry); the draft survives if any frame does.
+ */
 function checkDraft(j: unknown, leakPatterns: RegExp[] | null): { draft?: Draft; issues: string[] } {
   const issues: string[] = [];
   const o = (j ?? {}) as { title?: unknown; frames?: unknown };
@@ -123,7 +237,6 @@ function checkDraft(j: unknown, leakPatterns: RegExp[] | null): { draft?: Draft;
     const fr = (f ?? {}) as { svg?: unknown; caption?: unknown };
     const caption = typeof fr.caption === "string" ? fr.caption.trim().slice(0, 300) : "";
     const svg = typeof fr.svg === "string" ? sanitizeSvg(fr.svg) : null;
-    if (!caption) issues.push(`Frame ${i + 1} has no caption.`);
     if (!svg) {
       issues.push(`Frame ${i + 1} is not a single <svg>...</svg> element.`);
       return;
@@ -136,15 +249,18 @@ function checkDraft(j: unknown, leakPatterns: RegExp[] | null): { draft?: Draft;
     }
     if (leakPatterns?.some((p) => p.test(caption) || p.test(svgText(svg)))) {
       issues.push(`Frame ${i + 1} reveals the final answer. The student must work it out; show the process, not the result.`);
+      pngs.pop();
+      return;
     }
-    frames.push({ svg, caption });
+    if (!caption) issues.push(`Frame ${i + 1} has no caption.`);
+    frames.push({ svg, caption: caption || `Step ${frames.length + 1}` });
   });
 
   const title = typeof o.title === "string" && o.title.trim() ? o.title.trim().slice(0, 80) : "Visual explanation";
-  return issues.length ? { issues } : { draft: { title, frames, pngs }, issues };
+  return frames.length ? { draft: { title, frames, pngs }, issues } : { issues };
 }
 
-async function review(draft: Draft, intent: string, forbidden: string | null): Promise<{ pass: boolean; issues: string[] }> {
+async function review(draft: Draft, intent: string, forbidden: string | null, timeLeftMs: number): Promise<{ pass: boolean; issues: string[] }> {
   const parts: ChatCompletionContentPart[] = [
     {
       type: "text",
@@ -160,15 +276,19 @@ async function review(draft: Draft, intent: string, forbidden: string | null): P
       (png): ChatCompletionContentPart => ({ type: "image_url", image_url: { url: `data:image/png;base64,${png.toString("base64")}` } }),
     ),
   ];
-  const raw = await completeChat({
-    tier: "deep",
-    maxTokens: 600,
-    temperature: 0,
-    messages: [
-      { role: "system", content: REVIEWER_RULES },
-      { role: "user", content: parts },
-    ],
-  });
+  const raw = await withTimeout(
+    completeChat({
+      tier: "deep",
+      maxTokens: 600,
+      temperature: 0,
+      messages: [
+        { role: "system", content: REVIEWER_RULES },
+        { role: "user", content: parts },
+      ],
+    }),
+    timeLeftMs,
+    "",
+  );
   const j = firstJson(raw) as { pass?: unknown; issues?: unknown } | null;
   if (!j || typeof j.pass !== "boolean") {
     console.warn("[visual] reviewer reply unparseable; accepting draft", raw.slice(0, 200));
@@ -211,45 +331,76 @@ export async function generateVisual(s: ServerSession, topic: string): Promise<V
     },
   ];
 
+  const timeLeft = () => TIME_BUDGET_MS - (Date.now() - started);
   const log: string[] = [];
   let feedback: string[] = [];
+  let redirected = false;
+  // Best usable draft so far, used if review never passes: fewest problems wins.
+  let best: { draft: Draft; score: number } | null = null;
+  const keep = (draft: Draft, score: number) => {
+    if (!best || score < best.score) best = { draft, score };
+  };
+
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    if (attempt > 1 && Date.now() - started > TIME_BUDGET_MS) break;
+    if (attempt > 1 && timeLeft() < 15_000) break;
     const messages: ChatCompletionMessageParam[] = feedback.length
       ? [...base, { role: "user", content: `Your previous attempt had these problems. Fix all of them and return the full JSON again:\n- ${feedback.join("\n- ")}` }]
       : base;
 
-    const raw = await completeChat({ tier: "deep", messages, maxTokens: 8000, temperature: 0.3 });
-    const j = firstJson(raw) as { in_scope?: unknown; decline_reason?: unknown } | null;
+    const raw = await withTimeout(completeChat({ tier: "deep", messages, maxTokens: 12000, temperature: 0.2 }), timeLeft(), "");
+    const j = (firstJson(raw) as { in_scope?: unknown; frames?: unknown } | null) ?? salvageFrames(raw);
     if (!j) {
-      feedback = ["Your reply was not valid JSON. Return exactly one JSON object."];
-      log.push(`attempt ${attempt}: invalid JSON`);
+      feedback = ["Your reply was not valid JSON with frames. Return exactly one JSON object with 3 to 6 compact frames; escape every \" inside svg strings."];
+      log.push(`attempt ${attempt}: ${raw ? "invalid JSON" : "no reply"}`);
       continue;
     }
-    if (j.in_scope === false) {
-      log.push(`attempt ${attempt}: declined`);
-      console.info("[visual]", s.id, log.join(" | "));
-      const reason = typeof j.decline_reason === "string" && j.decline_reason.trim() ? j.decline_reason.trim().slice(0, 200) : "";
-      return { status: "declined", message: reason || "I can only draw things that help with this problem. What part of it would you like to see?" };
-    }
+    if (j.in_scope === false) redirected = true;
 
     const { draft, issues } = checkDraft(j, leakPatterns);
     if (!draft) {
-      feedback = issues;
+      feedback = issues.length ? issues : ["Return 3 to 6 frames, each a complete <svg>...</svg>."];
       log.push(`attempt ${attempt}: checks failed (${issues.length})`);
       continue;
     }
+    // A draft with too few frames or dropped frames is usable, just not preferred.
+    keep(draft, 100 + issues.length);
+    if (issues.length) {
+      feedback = issues;
+      log.push(`attempt ${attempt}: partial (${draft.frames.length} frames, ${issues.length} issues)`);
+      continue;
+    }
 
-    const verdict = await review(draft, topic, hideAnswer ? getSolution(s).text : null);
+    if (timeLeft() < MIN_REVIEW_MS) {
+      log.push(`attempt ${attempt}: checked, no time to review`);
+      keep(draft, 50);
+      break;
+    }
+    const verdict = await review(draft, topic, hideAnswer ? getSolution(s).text : null, timeLeft() - 2_000);
     if (verdict.pass) {
       log.push(`attempt ${attempt}: approved`);
       console.info("[visual]", s.id, log.join(" | "));
-      return { status: "ok", title: draft.title, frames: draft.frames };
+      return { status: "ok", title: draft.title, frames: draft.frames, source: "approved", redirected };
     }
+    keep(draft, verdict.issues.length || 1);
     feedback = verdict.issues.length ? verdict.issues : ["The reviewer rejected the frames. Make them clearer and more accurate."];
     log.push(`attempt ${attempt}: review failed (${feedback.length})`);
   }
 
-  console.info("[visual]", s.id, log.join(" | "), "| last issues:", feedback.join("; "));
-  return { status: "failed", message: "I couldn't draw that clearly this time. Let's talk it through instead: what part feels fuzzy?" };
+  const chosen = best as { draft: Draft; score: number } | null;
+  if (chosen) {
+    console.info("[visual]", s.id, log.join(" | "), "| using best unreviewed draft; last issues:", feedback.join("; "));
+    return { status: "ok", title: chosen.draft.title, frames: chosen.draft.frames, source: "unreviewed", redirected };
+  }
+
+  console.info("[visual]", s.id, log.join(" | "), "| drawing step roadmap; last issues:", feedback.join("; "));
+  const frames = roadmapFrames(steps.length ? steps : [problem.prompt], s.currentStep).filter(
+    (f) => !leakPatterns?.some((p) => p.test(f.caption)),
+  );
+  return {
+    status: "ok",
+    title: "Your plan for this problem",
+    frames: frames.length ? frames : roadmapFrames(["Read the problem and name what it asks for"], 0),
+    source: "roadmap",
+    redirected,
+  };
 }

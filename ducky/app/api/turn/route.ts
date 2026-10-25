@@ -13,6 +13,7 @@ import {
   getSolution,
   getSteps,
   incrementHints,
+  loadSavedTurns,
   saveGuardEvent,
   saveMisconceptionEvent,
   saveTurn,
@@ -24,6 +25,7 @@ export const dynamic = "force-dynamic";
 
 const MAX_MESSAGE = 2000;
 const SAFE_QUESTION = "Let's slow down: what do you get for each ball's acceleration if you write F = ma for both?";
+const DONE_REPLY = "You've already walked through the whole chain of reasoning for this one, so there's nothing left for me to ask. Nice work, and on to the next problem!";
 // A sentence ends at . ! ? or … (plus closing quotes/brackets) followed by whitespace.
 const SENTENCE_END = /[.!?…]+["')\]]*\s+/g;
 
@@ -50,6 +52,20 @@ export async function POST(req: Request) {
   }
 
   const s = session;
+  await loadSavedTurns(s);
+
+  // The student already showed their full reasoning: the tutor stops asking (no model call).
+  if (s.completed) {
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(sseFrame("say", { text: DONE_REPLY }));
+        controller.enqueue(sseFrame("meta", { ...EMPTY_META, reasoning_complete: true, hintsUsed: s.hintsUsed, hintLimit: getPolicy(s).hintLimit, canReveal: false }));
+        controller.enqueue(sseFrame("done", {}));
+        controller.close();
+      },
+    });
+    return new Response(stream, { headers: SSE_HEADERS });
+  }
   const policy = getPolicy(s);
   const solution = getSolution(s);
   const steps = getSteps(s);
@@ -126,6 +142,7 @@ export async function POST(req: Request) {
 
         const meta = inMeta ? parseMeta(metaRaw, known, steps.length) : { ...EMPTY_META };
         if (meta.current_step !== null) setCurrentStep(s, meta.current_step);
+        if (meta.reasoning_complete) s.completed = true;
         if (meta.hint_used) {
           if (s.hintsUsed < policy.hintLimit) incrementHints(s);
           else saveGuardEvent(s, { kind: "hint_limit", excerpt: spoken.join(" ").slice(0, 200) });

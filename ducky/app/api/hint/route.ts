@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     const s = await loadOwnSession((await readJson(req)).sessionId);
     const { hintLimit } = getPolicy(s);
 
-    if (s.hintsUsed >= hintLimit) {
+    if (s.hintsUsed >= hintLimit || s.completed) {
       return Response.json({ hint: null, hintsUsed: s.hintsUsed, hintLimit, canReveal: canReveal(s) });
     }
 

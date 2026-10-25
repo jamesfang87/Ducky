@@ -4,6 +4,7 @@
 1. Open https://supabase.com/dashboard/project/lpckuttkravpguzqipar/sql/new
 2. Paste all of `supabase/migrations/0001_foundation.sql` and click **Run**.
 3. Check: **Table Editor** shows 10 tables, each marked "RLS enabled".
+4. Run `0002_course_number.sql` and `0003_chat_history.sql` the same way. `0003` adds `chat_histories`, which keeps each student's tutor chat across reloads and sign-outs (until it exists, the app saves chats in the browser instead).
 
 ## 2. Google OAuth client (≈5 min)
 In https://console.cloud.google.com/auth/overview?project=dotted-memory-509806-u5

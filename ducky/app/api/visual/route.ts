@@ -12,9 +12,9 @@ const MAX_VISUALS_PER_SESSION = 12;
 /**
  * POST /api/visual  { sessionId, topic }
  * Muse draws a step-through animation of `topic` (only concepts from the current
- * problem). Returns only the approved result; the review loop never leaves the server.
+ * problem; off-topic asks get the closest part of the problem). Always returns frames;
+ * the review loop and how the frames were made never leave the server.
  *   200 { status: "ok", title, frames: [{ svg, caption }] }
- *   200 { status: "declined" | "failed", message }
  */
 export async function POST(req: Request) {
   let s;
@@ -28,15 +28,13 @@ export async function POST(req: Request) {
     if (s.visualsMade >= MAX_VISUALS_PER_SESSION) throw new HttpError(429, "That's the most visuals for this problem. Let's talk it through.");
 
     s.visualBusy = true;
-    const result = await generateVisual(s, topic);
-    if (result.status === "ok") s.visualsMade += 1;
-    else saveGuardEvent(s, { kind: result.status === "declined" ? "visual_declined" : "visual_failed", excerpt: topic.slice(0, 200) });
-    return Response.json(result);
+    const { title, frames, source, redirected } = await generateVisual(s, topic);
+    s.visualsMade += 1;
+    if (redirected) saveGuardEvent(s, { kind: "visual_declined", excerpt: topic.slice(0, 200) });
+    if (source === "roadmap") saveGuardEvent(s, { kind: "visual_failed", excerpt: topic.slice(0, 200) });
+    return Response.json({ status: "ok", title, frames });
   } catch (e) {
     const { status, message } = errorStatus(e);
-    if (status === 500 && /META_API_KEY is not set/.test(e instanceof Error ? e.message : "")) {
-      return Response.json({ error: "The visual model isn't configured on the server (META_API_KEY is not set)." }, { status: 503 });
-    }
     return Response.json({ error: message }, { status });
   } finally {
     if (s) s.visualBusy = false;

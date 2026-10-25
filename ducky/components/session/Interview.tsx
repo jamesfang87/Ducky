@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type { ChatMessage } from "@/lib/types";
 import { useSpeech } from "@/lib/useSpeech";
 import { Check, Mic, Pencil, Send, Shield, Stop, Warn } from "@/components/ui/icons";
+import { usePersistedState } from "@/lib/usePersistedState";
+import ResizeHandle from "./ResizeHandle";
 import SketchPad from "./SketchPad";
 
 interface Props {
@@ -12,15 +14,19 @@ interface Props {
   hintsUsed: number;
   hintLimit: number;
   voiceRequired: boolean;
+  /** The student explained their full reasoning; no more questions or input. */
+  finished: boolean;
   onSend: (text: string, via: "voice" | "text", seconds?: number) => void;
   onHint: () => void;
 }
 
-export default function Interview({ messages, thinking, hintsUsed, hintLimit, voiceRequired, onSend, onHint }: Props) {
+export default function Interview({ messages, thinking, hintsUsed, hintLimit, voiceRequired, finished, onSend, onHint }: Props) {
   const [draft, setDraft] = useState("");
   const [sketching, setSketching] = useState(false);
   const speech = useSpeech((text, secs) => onSend(text, "voice", secs));
   const scroller = useRef<HTMLDivElement>(null);
+  // Height of the message list in px; null keeps the default size.
+  const [chatHeight, setChatHeight] = usePersistedState<number | null>("ducky:chatHeight", null);
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
@@ -58,7 +64,12 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
         </span>
       </div>
 
-      <div ref={scroller} className="flex max-h-[560px] min-h-[360px] flex-1 flex-col gap-4 overflow-y-auto p-5" aria-live="polite">
+      <div
+        ref={scroller}
+        style={chatHeight ? { height: chatHeight } : undefined}
+        className={`flex flex-col gap-4 overflow-y-auto p-5 ${chatHeight ? "" : "max-h-[560px] min-h-[360px] flex-1"}`}
+        aria-live="polite"
+      >
         {messages.map((m) => (
           <Bubble key={m.id} m={m} />
         ))}
@@ -74,6 +85,23 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
         )}
       </div>
 
+      <ResizeHandle
+        orientation="horizontal"
+        label="Resize chat height"
+        className="-my-1.5 mx-auto"
+        measure={() => scroller.current?.getBoundingClientRect().height ?? 360}
+        min={200}
+        max={() => Math.max(200, window.innerHeight - 160)}
+        onResize={setChatHeight}
+        onReset={() => setChatHeight(null)}
+      />
+
+      {finished ? (
+        <div className="flex items-center gap-2 border-t border-line px-5 py-4 text-sm" role="status">
+          <Check /> <span className="font-semibold">You explained your full reasoning.</span>
+          <span className="text-muted">This problem is complete; Ducky has no more questions.</span>
+        </div>
+      ) : (
       <div className="flex flex-col gap-3 border-t border-line px-5 pb-5 pt-4">
         {sketching && (
           <SketchPad
@@ -160,6 +188,7 @@ export default function Interview({ messages, thinking, hintsUsed, hintLimit, vo
           </p>
         )}
       </div>
+      )}
     </section>
   );
 }

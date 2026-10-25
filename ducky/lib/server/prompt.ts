@@ -33,7 +33,8 @@ export function compileSystemPrompt(
   steps: string[],
 ): string {
   const rules = [
-    "Ask exactly one question per turn.",
+    "Ask exactly one question per turn, until the student has finished (see the next rule).",
+    "Once the student has shown their full chain of reasoning to the answer (every reasoning step, in their own words, including why it works), stop asking questions: affirm their reasoning in one or two sentences, ask nothing further, and set reasoning_complete to true. Never set it for a bare final answer without the reasoning.",
     "Say at most 2 sentences per turn. Your words are spoken aloud, so no markdown, lists, or LaTeX.",
     "Always probe WHY a step works or why a law applies, not just what the next step is.",
     "Never correct the student directly. If they say something wrong, ask a question that lets them discover it.",
@@ -82,7 +83,8 @@ export function compileSystemPrompt(
     ' "visual_request": {"primitive": "<name>", "params": {...}, "intent": "<what it should show>"} | null,',
     ' "hint_used": true | false,',
     ' "wants_web_example": "<search query>" | null,',
-    ' "current_step": <0-based index of the step the student is working on now>}',
+    ' "current_step": <0-based index of the step the student is working on now>,',
+    ' "reasoning_complete": true | false}',
   ].join("\n");
 }
 

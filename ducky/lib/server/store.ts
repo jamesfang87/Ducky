@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_POLICY, HINTS, INITIAL_STEPS, MISCONCEPTIONS, PROBLEM } from "@/lib/mock";
 import type { Policy, Problem } from "@/lib/types";
 
@@ -49,6 +50,8 @@ export interface ServerSession {
   /** The step the student was on when their last hint was used. */
   stepWhenHintsRanOut: number | null;
   revealed: boolean;
+  /** The student explained their full reasoning; the tutor asks no more questions. */
+  completed: boolean;
   creditEligible: boolean;
   /** Visual explanations generated so far, and whether one is being made now (rate limit). */
   visualsMade: number;
@@ -152,6 +155,8 @@ interface Db {
   misconceptionEvents: ServerMisconceptionEvent[];
   guardEvents: (GuardEvent & { sessionKey: string })[];
   revealEvents: RevealEvent[];
+  /** Session keys whose saved chat has already been read from Supabase this process. */
+  hydrated: Set<string>;
 }
 
 // Kept on globalThis so `next dev` hot reloads don't wipe the demo state.
@@ -162,7 +167,9 @@ const db: Db = (g.__duckyDb ??= {
   misconceptionEvents: [],
   guardEvents: [],
   revealEvents: [],
+  hydrated: new Set(),
 });
+db.hydrated ??= new Set();
 
 const keyOf = (s: Pick<ServerSession, "id" | "userId">) => `${s.id}:${s.userId}`;
 
@@ -182,6 +189,7 @@ export function getSession(sessionId: string, user: { userId: string; name: stri
       currentStep: t.startStep,
       stepWhenHintsRanOut: null,
       revealed: false,
+      completed: false,
       creditEligible: true,
       visualsMade: 0,
       visualBusy: false,
@@ -202,6 +210,36 @@ export const getSteps = (s: ServerSession): string[] => TEMPLATES[s.id].steps;
 
 export function getRecentTurns(s: ServerSession, n = 6): StoredTurn[] {
   return (db.turns.get(keyOf(s)) ?? []).slice(-n);
+}
+
+/**
+ * After a cold start the in-memory turns are empty even though the student's chat was
+ * saved (lib/chatHistory.ts). Reload it once so the tutor keeps the conversation's context.
+ */
+export async function loadSavedTurns(s: ServerSession): Promise<void> {
+  const key = keyOf(s);
+  if (db.hydrated.has(key)) return;
+  db.hydrated.add(key);
+  if (db.turns.get(key)?.length) return;
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("chat_histories")
+      .select("messages, updated_at")
+      .eq("user_id", s.userId)
+      .eq("session_id", s.id)
+      .maybeSingle();
+    const saved = Array.isArray(data?.messages) ? (data.messages as { role?: string; text?: unknown; via?: unknown }[]) : [];
+    const at = data?.updated_at ? Date.parse(data.updated_at) : Date.now();
+    const turns: StoredTurn[] = saved.flatMap((m) =>
+      (m.role === "student" || m.role === "tutor") && typeof m.text === "string"
+        ? [{ role: m.role, text: m.text, via: m.via === "voice" || m.via === "text" ? m.via : undefined, at }]
+        : [],
+    );
+    if (turns.length) db.turns.set(key, [...turns, ...(db.turns.get(key) ?? [])]);
+  } catch (e) {
+    console.error("[loadSavedTurns]", e); // no saved context; the session still works
+  }
 }
 
 export function saveTurn(s: ServerSession, turn: Omit<StoredTurn, "at">): void {
@@ -226,7 +264,7 @@ export function setCurrentStep(s: ServerSession, step: number): void {
 }
 
 export function canReveal(s: ServerSession): boolean {
-  return s.hintsUsed >= getPolicy(s).hintLimit && getPolicy(s).revealAfterHints && !s.revealed;
+  return s.hintsUsed >= getPolicy(s).hintLimit && getPolicy(s).revealAfterHints && !s.revealed && !s.completed;
 }
 
 export function markRevealed(s: ServerSession): void {

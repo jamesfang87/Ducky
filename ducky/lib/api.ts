@@ -16,6 +16,7 @@ export interface SessionInfo {
   visualsEnabled: boolean;
   canReveal: boolean;
   revealed: boolean;
+  completed: boolean;
   stepWhenHintsRanOut: number | null;
 }
 
@@ -26,6 +27,7 @@ export interface TurnMeta {
   hint_used: boolean;
   wants_web_example: string | null;
   current_step: number | null;
+  reasoning_complete: boolean;
   hintsUsed: number;
   hintLimit: number;
   canReveal: boolean;

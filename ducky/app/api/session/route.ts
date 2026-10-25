@@ -24,6 +24,7 @@ export async function GET(req: Request) {
       visualsEnabled: policy.tools.visualizations,
       canReveal: canReveal(s),
       revealed: s.revealed,
+      completed: s.completed,
       stepWhenHintsRanOut: s.stepWhenHintsRanOut,
     });
   } catch (e) {
