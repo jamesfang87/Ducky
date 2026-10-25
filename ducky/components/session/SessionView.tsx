@@ -23,6 +23,7 @@ import { Can } from "@/components/ui/Can";
 import { Logo, Spinner } from "@/components/ui/icons";
 import { useSession } from "@/lib/session";
 import Interview from "./Interview";
+import { DuckyRadioButton } from "./DuckyRadio";
 import VisualPlayer from "./VisualPlayer";
 import ResizeHandle from "./ResizeHandle";
 import { usePersistedState } from "@/lib/usePersistedState";
@@ -391,6 +392,11 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
                 Teacher view
               </Link>
             </Can>
+            <DuckyRadioButton
+              progress={info.steps.length ? completedSteps.size / info.steps.length : 0}
+              tension={Object.keys(openFlags).length > 0}
+              done={solved || finished}
+            />
             <AccountChip />
           </div>
         </div>
