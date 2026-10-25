@@ -40,7 +40,7 @@ export default function TeacherDashboard() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-line bg-white">
+      <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[1360px] flex-wrap items-center gap-4 px-6 py-3.5">
           <Logo badge="for Schools" />
           <div className="flex-1" />
@@ -51,7 +51,7 @@ export default function TeacherDashboard() {
             id="search"
             type="search"
             placeholder="Search students, transcripts…"
-            className="h-10 min-w-0 flex-[0_1_280px] rounded-[10px] border border-edge bg-white px-3.5 placeholder:text-muted"
+            className="h-10 min-w-0 flex-[0_1_280px] rounded-[10px] border border-edge bg-surface px-3.5 placeholder:text-muted"
           />
           <button onClick={resetDemo} className="btn h-10 text-sm" title="Clear live events and restore default policy">
             Reset demo
@@ -67,12 +67,12 @@ export default function TeacherDashboard() {
               key={n}
               href="#"
               aria-current={i === 0 ? "page" : undefined}
-              className={`rounded-[10px] px-3 py-2.5 no-underline ${i === 0 ? "border border-line bg-white font-semibold text-ink" : "text-sub hover:bg-white"}`}
+              className={`rounded-[10px] px-3 py-2.5 no-underline ${i === 0 ? "border border-line bg-surface font-semibold text-ink" : "text-sub hover:bg-surface"}`}
             >
               {n}
             </a>
           ))}
-          <Link href="/session/demo" className="mt-2 rounded-[10px] px-3 py-2.5 text-accent no-underline hover:bg-white">
+          <Link href="/session/demo" className="mt-2 rounded-[10px] px-3 py-2.5 text-accent no-underline hover:bg-surface">
             Preview as student →
           </Link>
         </nav>

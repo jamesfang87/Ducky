@@ -2,17 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
+
+/* Themes. Values are "R G B" so Tailwind can add opacity. Light is the default. */
+@layer base {
+  :root, :root[data-theme="light"] {
+    color-scheme: light;
+    --ink: 20 23 28; --sub: 58 65 74; --muted: 90 98 108;
+    --ground: 243 244 241; --surface: 255 255 255; --line: 226 228 223; --edge: 201 204 198;
+    --accent: 11 122 98; --accent-dark: 7 90 72; --accent-tint: 230 243 239; --accent-glow: 111 211 182; --on-accent: 255 255 255;
+    --duck-deep: 138 92 0;
+    --warn: 163 83 10; --warn-dark: 107 58 8; --warn-tint: 251 241 230; --warn-soft: 237 192 143;
+    --heat-0: 247 246 242; --heat-1: 246 228 207; --heat-2: 237 192 143; --heat-3: 213 138 62; --heat-4: 143 79 18;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ink: 236 239 243; --sub: 189 197 207; --muted: 142 151 163;
+    --ground: 15 18 22; --surface: 23 27 33; --line: 38 44 52; --edge: 56 64 74;
+    --accent: 63 191 159; --accent-dark: 94 214 183; --accent-tint: 18 52 45; --accent-glow: 111 211 182; --on-accent: 8 30 25;
+    --duck-deep: 232 178 40;
+    --warn: 240 160 80; --warn-dark: 255 190 120; --warn-tint: 50 34 20; --warn-soft: 140 90 40;
+    --heat-0: 30 34 40; --heat-1: 70 52 34; --heat-2: 120 80 36; --heat-3: 190 120 50; --heat-4: 238 160 70;
+  }
+  /* Lofi: dusk purple, cream type, pink accent. Pairs with Ducky Radio. */
+  :root[data-theme="lofi"] {
+    color-scheme: dark;
+    --ink: 243 233 220; --sub: 208 195 222; --muted: 160 143 181;
+    --ground: 31 26 46; --surface: 42 35 64; --line: 59 49 87; --edge: 79 66 112;
+    --accent: 244 143 177; --accent-dark: 255 179 204; --accent-tint: 58 38 70; --accent-glow: 255 179 204; --on-accent: 45 20 40;
+    --duck-deep: 255 214 100;
+    --warn: 255 183 111; --warn-dark: 255 210 160; --warn-tint: 60 42 40; --warn-soft: 150 100 70;
+    --heat-0: 40 33 60; --heat-1: 76 56 84; --heat-2: 128 82 104; --heat-3: 200 118 128; --heat-4: 244 160 140;
+  }
+  /* Paper: warm sepia for long reading sessions. */
+  :root[data-theme="paper"] {
+    color-scheme: light;
+    --ink: 59 47 36; --sub: 94 80 66; --muted: 124 108 92;
+    --ground: 244 236 220; --surface: 251 246 234; --line: 224 211 188; --edge: 201 186 160;
+    --accent: 156 80 40; --accent-dark: 120 60 28; --accent-tint: 245 224 205; --accent-glow: 214 140 90; --on-accent: 255 250 240;
+    --duck-deep: 138 92 0;
+    --warn: 163 83 10; --warn-dark: 107 58 8; --warn-tint: 251 238 220; --warn-soft: 226 180 130;
+    --heat-0: 248 241 226; --heat-1: 244 222 190; --heat-2: 232 190 140; --heat-3: 205 135 70; --heat-4: 140 76 28;
+  }
+  body { transition: background-color 0.25s ease, color 0.25s ease; }
+}
 @layer base {
   :root { --font-inter: "Inter"; --font-display: "Space Grotesk"; --font-mono: "JetBrains Mono"; }
   body { @apply bg-ground text-ink antialiased; }
-  :focus-visible { outline: 2px solid #0B7A62; outline-offset: 2px; }
+  :focus-visible { outline: 2px solid rgb(var(--accent)); outline-offset: 2px; }
 }
 @layer components {
-  .card { @apply rounded-[14px] border border-line bg-white; }
+  .card { @apply rounded-[14px] border border-line bg-surface; }
   .chip { @apply rounded-full border border-line bg-ground px-2.5 py-1 text-[13px] text-sub; }
-  .btn { @apply inline-flex h-11 items-center justify-center gap-2 rounded-[10px] border border-edge bg-white px-4 text-[15px] text-ink transition hover:bg-ground disabled:cursor-not-allowed disabled:opacity-50; }
-  .btn-primary { @apply inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-accent px-4 text-[15px] font-semibold text-white transition hover:bg-accent-dark disabled:opacity-50; }
-  .btn-dark { @apply inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-ink px-4 text-[15px] text-white transition hover:bg-sub; }
+  .btn { @apply inline-flex h-11 items-center justify-center gap-2 rounded-[10px] border border-edge bg-surface px-4 text-[15px] text-ink transition hover:bg-ground disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-accent px-4 text-[15px] font-semibold text-onaccent transition hover:bg-accent-dark disabled:opacity-50; }
+  .btn-dark { @apply inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-ink px-4 text-[15px] text-ground transition hover:bg-sub; }
   .eyebrow { @apply text-xs font-semibold uppercase tracking-[0.08em] text-muted; }
   .h2 { @apply font-display text-[17px] font-semibold; }
 }

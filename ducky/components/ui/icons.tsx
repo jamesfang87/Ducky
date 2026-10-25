@@ -7,7 +7,7 @@ export function Logo({ badge }: { badge?: string }) {
     <Link href="/" className="flex items-center gap-2.5 text-ink no-underline">
       <DuckMark />
       <span className="font-display text-[22px] font-bold tracking-tight">ducky</span>
-      {badge && <span className="rounded-md bg-ink px-2 py-0.5 text-xs font-semibold text-white">{badge}</span>}
+      {badge && <span className="rounded-md bg-ink px-2 py-0.5 text-xs font-semibold text-ground">{badge}</span>}
     </Link>
   );
 }

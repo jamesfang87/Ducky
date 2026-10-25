@@ -62,7 +62,7 @@ export default function ResizeHandle({ orientation, label, measure, min, max, on
     >
       <span
         aria-hidden="true"
-        className={`flex items-center justify-center gap-[3px] rounded-full border border-edge bg-white shadow-sm transition group-hover:border-accent group-hover:bg-accent-tint group-active:border-accent group-active:bg-accent-tint ${
+        className={`flex items-center justify-center gap-[3px] rounded-full border border-edge bg-surface shadow-sm transition group-hover:border-accent group-hover:bg-accent-tint group-active:border-accent group-active:bg-accent-tint ${
           vertical ? "h-16 w-3.5 flex-col" : "h-3.5 w-16"
         }`}
       >

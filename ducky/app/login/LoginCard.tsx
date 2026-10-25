@@ -19,7 +19,7 @@ interface Resume {
 
 const safePath = (p: string | null | undefined) => (p && p.startsWith("/") && !p.startsWith("//") ? p : "");
 
-const inputClass = "h-[46px] w-full rounded-xl border border-line bg-white px-4 text-[15px] outline-none focus:border-accent";
+const inputClass = "h-[46px] w-full rounded-xl border border-line bg-surface px-4 text-[15px] outline-none focus:border-accent";
 
 export default function LoginCard() {
   const params = useSearchParams();
@@ -220,7 +220,7 @@ export default function LoginCard() {
         <button
           onClick={() => run("resume", () => finish(resume.role ?? role))}
           disabled={!!pending}
-          className="mt-4 flex h-[50px] w-full items-center justify-center rounded-xl bg-ink font-semibold text-white transition hover:bg-sub disabled:opacity-60"
+          className="mt-4 flex h-[50px] w-full items-center justify-center rounded-xl bg-ink font-semibold text-ground transition hover:bg-sub disabled:opacity-60"
         >
           {pending === "resume" ? "Continuing…" : "Continue"}
         </button>
@@ -253,7 +253,7 @@ export default function LoginCard() {
             })
           }
           disabled={!!pending}
-          className="mt-5 flex h-[50px] w-full items-center justify-center rounded-xl bg-ink font-semibold text-white transition hover:bg-sub disabled:opacity-60"
+          className="mt-5 flex h-[50px] w-full items-center justify-center rounded-xl bg-ink font-semibold text-ground transition hover:bg-sub disabled:opacity-60"
         >
           {pending === "resume" ? "Checking…" : "I opened the link"}
         </button>
@@ -308,7 +308,7 @@ export default function LoginCard() {
       <button
         onClick={google}
         disabled={!!pending}
-        className="mt-3.5 flex h-[50px] w-full items-center justify-center gap-2.5 rounded-xl bg-ink font-semibold text-white transition hover:bg-sub disabled:opacity-60"
+        className="mt-3.5 flex h-[50px] w-full items-center justify-center gap-2.5 rounded-xl bg-ink font-semibold text-ground transition hover:bg-sub disabled:opacity-60"
       >
         <User /> {pending === "google" ? "Opening Google…" : isSignup ? "Sign up with Google" : "Log in with Google"}
       </button>

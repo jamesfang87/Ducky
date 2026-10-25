@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { StoreProvider } from "@/lib/store";
+import { THEME_SCRIPT, ThemeProvider } from "@/lib/theme";
 // Self-hosted fonts: no network needed at build time (handy on hackathon wifi).
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
@@ -18,9 +19,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="font-sans text-[15px] leading-normal">
-        <StoreProvider>{children}</StoreProvider>
+        <ThemeProvider>
+          <StoreProvider>{children}</StoreProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

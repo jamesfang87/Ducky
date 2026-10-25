@@ -57,7 +57,7 @@ export default function VisualPlayer({ title, frames, onClose }: { title: string
         )}
       </div>
 
-      <div className="relative aspect-video w-full border-y border-line bg-white">
+      <div className="relative aspect-video w-full border-y border-line bg-surface">
         <iframe
           key={i}
           title={`${title}, step ${i + 1} of ${frames.length}`}

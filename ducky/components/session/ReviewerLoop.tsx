@@ -3,7 +3,7 @@ import { Spinner } from "@/components/ui/icons";
 
 export default function ReviewerLoop({ events }: { events: PipelineEvent[] }) {
   return (
-    <div className="rounded-[14px] bg-ink px-5 py-[18px] text-[#E8EAE6]">
+    <div className="rounded-[14px] bg-night px-5 py-[18px] text-[#E8EAE6]">
       <div className="mb-3 flex items-center gap-2.5">
         <h2 className="font-display text-base font-semibold text-white">Reviewer loop</h2>
         <span className="text-xs text-[#A9B0B8]">generate → render → review</span>

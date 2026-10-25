@@ -13,7 +13,7 @@ export default function SketchPad({ onSend, onCancel }: { onSend: (png: string) 
   };
 
   return (
-    <div className="rounded-[10px] border border-edge bg-white p-2">
+    <div className="rounded-[10px] border border-edge bg-surface p-2">
       <canvas
         ref={ref}
         width={800}

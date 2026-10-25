@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { BASE_HEATMAP, MISCONCEPTIONS } from "@/lib/mock";
 import type { MisconceptionEvent, MisconceptionId } from "@/lib/types";
 
-const LEVELS = ["bg-heat-0 text-muted", "bg-heat-1", "bg-heat-2", "bg-heat-3", "bg-heat-4 text-white font-medium"];
+const LEVELS = ["bg-heat-0 text-muted", "bg-heat-1", "bg-heat-2", "bg-heat-3", "bg-heat-4 text-ground font-medium"];
 const level = (n: number) => (n === 0 ? 0 : n <= 2 ? 1 : n <= 5 ? 2 : n <= 9 ? 3 : 4);
 
 export default function Heatmap({ events }: { events: MisconceptionEvent[] }) {

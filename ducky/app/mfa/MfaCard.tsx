@@ -95,7 +95,7 @@ export default function MfaCard() {
             1Password, Authy), then enter the code it shows.
           </p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qr} alt="QR code for your authenticator app" className="mx-auto my-4 h-44 w-44 rounded-lg bg-white p-2" />
+          <img src={qr} alt="QR code for your authenticator app" className="mx-auto my-4 h-44 w-44 rounded-lg bg-surface p-2" />
           <p className="break-all text-center font-mono text-xs">Can’t scan? Enter this key: {secret}</p>
         </div>
       )}
@@ -117,12 +117,12 @@ export default function MfaCard() {
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
             placeholder="123456"
             aria-label="6-digit code"
-            className="h-[50px] w-full rounded-xl border border-line bg-white px-4 text-center font-mono text-xl tracking-[0.3em]"
+            className="h-[50px] w-full rounded-xl border border-line bg-surface px-4 text-center font-mono text-xl tracking-[0.3em]"
           />
           <button
             type="submit"
             disabled={busy || code.length !== 6}
-            className="mt-3.5 flex h-[50px] w-full items-center justify-center rounded-xl bg-ink font-semibold text-white transition hover:bg-sub disabled:opacity-60"
+            className="mt-3.5 flex h-[50px] w-full items-center justify-center rounded-xl bg-ink font-semibold text-ground transition hover:bg-sub disabled:opacity-60"
           >
             {busy ? "Checking…" : stage === "enroll" ? "Turn on and continue" : "Continue"}
           </button>

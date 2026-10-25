@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/ui/icons";
+import { ThemePicker } from "@/components/ui/ThemePicker";
 
 /**
  * Shared top bar. On the landing page ("hero") it starts dark over the hero and turns light once
@@ -32,9 +33,10 @@ export function SiteHeader({ tone = "plain" }: { tone?: "hero" | "plain" }) {
         <Link href="/#how" className={`hidden no-underline sm:inline ${link}`}>How it works</Link>
         <Link href="/#research" className={`hidden no-underline sm:inline ${link}`}>Research</Link>
         <Link href="/privacy" className={`no-underline ${link}`}>Privacy</Link>
+        <ThemePicker />
         <Link
           href="/login"
-          className={`rounded-full px-3.5 py-1 text-[13px] font-medium no-underline transition-colors ${dark ? "bg-white text-ink hover:bg-white/85" : "bg-ink text-white hover:bg-sub"}`}
+          className={`rounded-full px-3.5 py-1 text-[13px] font-medium no-underline transition-colors ${dark ? "bg-white text-night hover:bg-white/85" : "bg-ink text-ground hover:bg-sub"}`}
         >
           Log in
         </Link>

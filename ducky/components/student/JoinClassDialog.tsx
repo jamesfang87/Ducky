@@ -40,7 +40,7 @@ export function JoinClassDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="join-title"
-        className="w-full max-w-[420px] rounded-2xl border border-line bg-white p-6 shadow-xl animate-fadein"
+        className="w-full max-w-[420px] rounded-2xl border border-line bg-surface p-6 shadow-xl animate-fadein"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
@@ -82,7 +82,7 @@ export function JoinClassDialog({
             placeholder="ABC234"
             aria-invalid={Boolean(error)}
             aria-describedby={error ? "join-error" : undefined}
-            className="h-14 w-full rounded-xl border border-edge bg-white px-3 text-center font-mono text-2xl uppercase tracking-[0.3em] placeholder:tracking-[0.3em] placeholder:text-muted/50"
+            className="h-14 w-full rounded-xl border border-edge bg-surface px-3 text-center font-mono text-2xl uppercase tracking-[0.3em] placeholder:tracking-[0.3em] placeholder:text-muted/50"
           />
 
           {error && (

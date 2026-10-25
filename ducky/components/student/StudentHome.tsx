@@ -37,7 +37,7 @@ export default function StudentHome() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-line bg-white">
+      <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[1120px] items-center gap-4 px-6 py-3.5">
           <Logo />
           <div className="flex-1" />
@@ -79,9 +79,9 @@ export default function StudentHome() {
             <button
               type="button"
               onClick={openJoin}
-              className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-edge p-5 text-center transition hover:border-accent hover:bg-white"
+              className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-edge p-5 text-center transition hover:border-accent hover:bg-surface"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-accent shadow-sm">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-accent shadow-sm">
                 <Plus />
               </span>
               <span className="font-display text-[15px] font-semibold">Join a class</span>

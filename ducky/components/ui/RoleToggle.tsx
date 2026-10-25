@@ -17,7 +17,7 @@ export function RoleToggle({ role, onChange }: { role: Role; onChange: (role: Ro
             aria-pressed={role === r}
             onClick={() => onChange(r)}
             className={`flex h-11 items-center justify-center gap-2 rounded-[9px] capitalize transition ${
-              role === r ? "bg-white font-semibold shadow-sm" : "text-sub hover:text-ink"
+              role === r ? "bg-surface font-semibold shadow-sm" : "text-sub hover:text-ink"
             }`}
           >
             <Icon className={role === r ? "text-accent" : "text-muted"} />

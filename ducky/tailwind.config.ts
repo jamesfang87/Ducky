@@ -5,16 +5,37 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: "#14171C",
-        sub: "#3A414A",
-        muted: "#5A626C",
-        ground: "#F3F4F1",
-        line: "#E2E4DF",
-        edge: "#C9CCC6",
-        accent: { DEFAULT: "#0B7A62", dark: "#075A48", tint: "#E6F3EF", glow: "#6FD3B6" },
-        duck: { DEFAULT: "#F2B705", glow: "#FFD64D", deep: "#8A5C00" },
-        warn: { DEFAULT: "#A3530A", dark: "#6B3A08", tint: "#FBF1E6", soft: "#EDC08F" },
-        heat: { 0: "#F7F6F2", 1: "#F6E4CF", 2: "#EDC08F", 3: "#D58A3E", 4: "#8F4F12" },
+        // Theme tokens live in globals.css as space-separated RGB so opacity utilities (bg-ink/10) keep working.
+        ink: "rgb(var(--ink) / <alpha-value>)",
+        sub: "rgb(var(--sub) / <alpha-value>)",
+        muted: "rgb(var(--muted) / <alpha-value>)",
+        ground: "rgb(var(--ground) / <alpha-value>)",
+        surface: "rgb(var(--surface) / <alpha-value>)",
+        line: "rgb(var(--line) / <alpha-value>)",
+        edge: "rgb(var(--edge) / <alpha-value>)",
+        // Fixed near-black for the landing page's always-dark sections, whatever the theme.
+        night: "#14171C",
+        accent: {
+          DEFAULT: "rgb(var(--accent) / <alpha-value>)",
+          dark: "rgb(var(--accent-dark) / <alpha-value>)",
+          tint: "rgb(var(--accent-tint) / <alpha-value>)",
+          glow: "rgb(var(--accent-glow) / <alpha-value>)",
+        },
+        onaccent: "rgb(var(--on-accent) / <alpha-value>)",
+        duck: { DEFAULT: "#F2B705", glow: "#FFD64D", deep: "rgb(var(--duck-deep) / <alpha-value>)" },
+        warn: {
+          DEFAULT: "rgb(var(--warn) / <alpha-value>)",
+          dark: "rgb(var(--warn-dark) / <alpha-value>)",
+          tint: "rgb(var(--warn-tint) / <alpha-value>)",
+          soft: "rgb(var(--warn-soft) / <alpha-value>)",
+        },
+        heat: {
+          0: "rgb(var(--heat-0) / <alpha-value>)",
+          1: "rgb(var(--heat-1) / <alpha-value>)",
+          2: "rgb(var(--heat-2) / <alpha-value>)",
+          3: "rgb(var(--heat-3) / <alpha-value>)",
+          4: "rgb(var(--heat-4) / <alpha-value>)",
+        },
       },
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],

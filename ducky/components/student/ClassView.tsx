@@ -59,7 +59,7 @@ export default function ClassView({ classId }: { classId: string }) {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-line bg-white">
+      <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[1120px] items-center gap-4 px-6 py-3.5">
           <Logo />
           <div className="flex-1" />

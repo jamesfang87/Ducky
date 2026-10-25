@@ -174,7 +174,7 @@ const MENU_H = 30;
 /** macOS menu bar, 30px tall at the 1280px screen size, so the notch sits exactly inside it. */
 function MacMenuBar() {
   return (
-    <div className="absolute inset-x-0 top-0 z-10 flex items-center gap-5 bg-[#efe9da] px-5 text-[13px] text-ink" style={{ height: MENU_H }}>
+    <div className="absolute inset-x-0 top-0 z-10 flex items-center gap-5 bg-[#efe9da] px-5 text-[13px] text-[#14171C]" style={{ height: MENU_H }}>
       <span className="font-display font-bold">ducky</span>
       <span>File</span>
       <span>Edit</span>
@@ -480,7 +480,7 @@ function Hero() {
             Explain your work out loud, in writing, or with a sketch. Ducky helps you find where it broke.
           </p>
           <div {...rise(460, "mt-9 flex flex-wrap items-center gap-5")}>
-            <Link href="/login" className="rounded-full bg-white px-7 py-3.5 text-[16px] font-semibold text-ink no-underline transition-colors hover:bg-white/85">
+            <Link href="/login" className="rounded-full bg-white px-7 py-3.5 text-[16px] font-semibold text-night no-underline transition-colors hover:bg-white/85">
               Try a session
             </Link>
             <a href="#how" className="text-[16px] font-medium text-duck-glow no-underline hover:underline">
@@ -535,7 +535,7 @@ const CHAT: Msg[] = [
 function PathMarker({ state }: { state: "done" | "active" | "flag" | "todo" }) {
   if (state === "done") {
     return (
-      <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent text-white transition-colors duration-500">
+      <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent text-onaccent transition-colors duration-500">
         <Check size={12} />
       </span>
     );
@@ -559,7 +559,7 @@ function DemoScreen({ beat }: { beat: number }) {
 
   return (
     <div className="flex h-full flex-col bg-ground text-[14px] text-ink">
-      <header className="flex h-14 flex-none items-center gap-4 border-b border-line bg-white px-6">
+      <header className="flex h-14 flex-none items-center gap-4 border-b border-line bg-surface px-6">
         <DuckMark size={28} />
         <span className="font-display text-[22px] font-bold tracking-tight">ducky</span>
         <nav className="ml-2 flex items-center gap-2 text-[14px] text-muted">
@@ -580,7 +580,7 @@ function DemoScreen({ beat }: { beat: number }) {
       <div className="grid min-h-0 flex-1 grid-cols-[304px_minmax(0,1fr)_296px] gap-4 p-4">
         {/* left: problem, reasoning path, where to learn, misconceptions */}
         <div className="flex min-h-0 flex-col gap-4">
-          <section className="rounded-2xl border border-line bg-white p-4">
+          <section className="rounded-2xl border border-line bg-surface p-4">
             <div className="flex gap-2" aria-hidden>
               {segs.map((s, i) => (
                 <span key={i} className="h-1 flex-1 overflow-hidden rounded-full bg-line">
@@ -595,7 +595,7 @@ function DemoScreen({ beat }: { beat: number }) {
             </p>
           </section>
 
-          <section className="rounded-2xl border border-line bg-white p-4">
+          <section className="rounded-2xl border border-line bg-surface p-4">
             <h3 className="font-display text-[16px] font-semibold">Your reasoning path</h3>
             <ol className="mt-3 flex flex-col gap-2">
               {PATH_STEPS.map((s, i) => {
@@ -612,7 +612,7 @@ function DemoScreen({ beat }: { beat: number }) {
             </ol>
           </section>
 
-          <section className="rounded-2xl border border-line bg-white p-4">
+          <section className="rounded-2xl border border-line bg-surface p-4">
             <h3 className="font-display text-[16px] font-semibold">Where to learn this</h3>
             <div className="relative mt-2 h-9">
               <p className={`absolute inset-0 text-[12.5px] leading-snug text-muted transition-opacity duration-500 ${beat >= 2 ? "opacity-0" : "opacity-100"}`}>
@@ -629,7 +629,7 @@ function DemoScreen({ beat }: { beat: number }) {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-line bg-white p-4">
+          <section className="rounded-2xl border border-line bg-surface p-4">
             <div className="flex items-baseline justify-between">
               <h3 className="font-display text-[16px] font-semibold">Misconception tracker</h3>
               <span className="text-[12.5px] text-muted">this unit</span>
@@ -652,7 +652,7 @@ function DemoScreen({ beat }: { beat: number }) {
         </div>
 
         {/* center: the conversation */}
-        <section className="flex min-h-0 flex-col rounded-2xl border border-line bg-white">
+        <section className="flex min-h-0 flex-col rounded-2xl border border-line bg-surface">
           <div className="flex flex-none items-center gap-3 border-b border-line px-5 py-3.5">
             <span className="h-2.5 w-2.5 rounded-full bg-accent" />
             <span className="font-display text-[17px] font-semibold">Talk it through</span>
@@ -671,7 +671,7 @@ function DemoScreen({ beat }: { beat: number }) {
                 )}
                 <p
                   className={`max-w-[88%] rounded-xl px-3.5 py-2.5 text-[14px] leading-snug ${
-                    m.from === "you" ? "bg-accent text-white" : "bg-ground text-ink"
+                    m.from === "you" ? "bg-accent text-onaccent" : "bg-ground text-ink"
                   }`}
                 >
                   {m.text}
@@ -682,7 +682,7 @@ function DemoScreen({ beat }: { beat: number }) {
 
           <div className="flex-none border-t border-line p-4">
             <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-accent text-white ring-4 ring-accent-tint">
+              <span className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-accent text-onaccent ring-4 ring-accent-tint">
                 <Mic size={20} />
               </span>
               <span className="text-[14px] font-semibold">Tap to talk, or type below</span>
@@ -694,7 +694,7 @@ function DemoScreen({ beat }: { beat: number }) {
             </div>
             <div className="mt-3 flex items-center gap-2">
               <span className="flex h-10 flex-1 items-center rounded-xl border border-edge px-3 text-[14px] text-muted">Type your reasoning...</span>
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/50 text-white">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/50 text-onaccent">
                 <Send size={15} />
               </span>
               <span className="flex h-10 items-center gap-1.5 rounded-xl border border-edge px-3 text-[14px]">
@@ -711,7 +711,7 @@ function DemoScreen({ beat }: { beat: number }) {
             <span className="eyebrow">Visualization</span>
             <span className="text-[13px] text-sub">Minimize</span>
           </div>
-          <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-line bg-white">
+          <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-line bg-surface">
             <div
               className={`absolute inset-0 flex flex-col items-center justify-center gap-3 p-5 text-center transition-opacity duration-500 ${showViz ? "opacity-0" : "opacity-100"}`}
             >
@@ -720,7 +720,7 @@ function DemoScreen({ beat }: { beat: number }) {
               </span>
               <p className="font-display text-[17px] font-semibold">Want to see it?</p>
               <p className="text-[13px] leading-snug text-sub">Ask in the chat (“can you show me?”) or describe what you want to see from this problem.</p>
-              <span className="mt-1 rounded-xl bg-accent px-4 py-2.5 text-[14px] font-semibold text-white">Show me visually</span>
+              <span className="mt-1 rounded-xl bg-accent px-4 py-2.5 text-[14px] font-semibold text-onaccent">Show me visually</span>
             </div>
 
             <div className={`absolute inset-0 flex flex-col gap-3 p-4 transition-opacity duration-700 ${showViz ? "opacity-100" : "opacity-0"}`}>
@@ -865,7 +865,7 @@ export default function Landing() {
 
         <Story />
 
-        <section id="research" className="scroll-mt-12 bg-ink text-white">
+        <section id="research" className="scroll-mt-12 bg-night text-white">
           <div className="mx-auto max-w-[1080px] px-6 py-28 md:py-40">
             <Reveal>
               <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-duck-glow">Why it works</p>
@@ -912,7 +912,7 @@ export default function Landing() {
           <div className="mt-14 grid gap-5 md:grid-cols-3">
             {PRINCIPLES.map((p, i) => (
               <Reveal key={p.title} delay={i * 120} className="flex">
-                <div className="flex flex-1 flex-col rounded-[28px] bg-white p-8 shadow-[0_1px_2px_rgba(20,23,28,0.04)] ring-1 ring-line">
+                <div className="flex flex-1 flex-col rounded-[28px] bg-surface p-8 shadow-[0_1px_2px_rgba(20,23,28,0.04)] ring-1 ring-line">
                   <p className="font-mono text-[13px] text-muted">0{i + 1}</p>
                   <h3 className="mt-4 font-display text-[24px] font-semibold leading-tight tracking-[-0.02em]">{p.title}</h3>
                   <p className="mt-3 flex-1 text-[16px] leading-relaxed text-sub">{p.body}</p>
@@ -923,7 +923,7 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="border-t border-line bg-white">
+        <section className="border-t border-line bg-surface">
           <Reveal className="mx-auto max-w-[980px] px-6 py-28 text-center md:py-36">
             <div className="inline-block">
               <DuckMark size={64} />
@@ -932,7 +932,7 @@ export default function Landing() {
               Every student, heard.
             </h2>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <Link href="/login" className="rounded-full bg-duck px-6 py-3 text-[16px] font-semibold text-ink no-underline hover:bg-duck-glow">
+              <Link href="/login" className="rounded-full bg-duck px-6 py-3 text-[16px] font-semibold text-night no-underline hover:bg-duck-glow">
                 Try a session
               </Link>
               <Link href="/privacy" className="text-[16px] font-medium text-duck-deep no-underline hover:underline">

@@ -12,7 +12,7 @@ function Toggle({ id, label, checked, onChange }: { id: string; label: string; c
       <span className="relative inline-flex">
         <input id={id} type="checkbox" role="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
         <span className="h-6 w-11 rounded-full bg-edge transition peer-checked:bg-accent peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent" />
-        <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-5" />
+        <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-surface shadow transition peer-checked:translate-x-5" />
       </span>
     </label>
   );
@@ -54,7 +54,7 @@ export default function PolicyPanel() {
                 key={t}
                 aria-pressed={policy.tone === t}
                 onClick={() => setPolicy({ tone: t })}
-                className={`h-9 rounded-full px-3 text-sm transition ${policy.tone === t ? "bg-ink text-white" : "border border-edge bg-white hover:bg-ground"}`}
+                className={`h-9 rounded-full px-3 text-sm transition ${policy.tone === t ? "bg-ink text-ground" : "border border-edge bg-surface hover:bg-ground"}`}
               >
                 {t}
               </button>

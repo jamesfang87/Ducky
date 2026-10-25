@@ -62,12 +62,12 @@ export function ReasoningPath({ steps }: { steps: ReasoningStep[] }) {
         {steps.map((s, i) => (
           <li key={i} className="flex items-start gap-3 pb-3 last:pb-0">
             {s.status === "done" && (
-              <span className="flex h-[22px] w-[22px] flex-none items-center justify-center rounded-full bg-accent text-white">
+              <span className="flex h-[22px] w-[22px] flex-none items-center justify-center rounded-full bg-accent text-onaccent">
                 <Check />
               </span>
             )}
             {s.status === "broke" && (
-              <span className="flex h-[22px] w-[22px] flex-none items-center justify-center rounded-full bg-warn text-[13px] font-bold text-white">
+              <span className="flex h-[22px] w-[22px] flex-none items-center justify-center rounded-full bg-warn text-[13px] font-bold text-ground">
                 !
               </span>
             )}

@@ -2,6 +2,7 @@
 
 import { useSession } from "@/lib/session";
 import { SignOutButton } from "./SignOutButton";
+import { ThemePicker } from "./ThemePicker";
 
 /** Initials + sign out, shared by the student and teacher headers. */
 export function AccountChip() {
@@ -17,6 +18,7 @@ export function AccountChip() {
 
   return (
     <div className="flex items-center gap-2.5">
+      <ThemePicker />
       <span
         className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-tint text-sm font-semibold text-accent"
         aria-label={`Signed in as ${session.name} (${session.role})`}

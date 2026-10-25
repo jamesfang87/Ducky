@@ -215,8 +215,8 @@ export default function Interview({ messages, thinking, responding, hintsUsed, h
             disabled={!speech.supported || thinking || speech.transcribing}
             aria-label={speech.listening ? "Send my answer" : voice.speaking ? "Interrupt Ducky and talk" : "Tap to talk"}
             title={speech.listening ? "Pause to send" : voice.speaking ? "Interrupt Ducky" : "Tap to talk"}
-            className={`flex h-16 w-16 flex-none items-center justify-center rounded-full text-white transition disabled:opacity-40 ${
-              speech.listening ? "bg-warn shadow-[0_0_0_8px_#FBF1E6]" : "bg-accent shadow-[0_0_0_8px_#E6F3EF] hover:bg-accent-dark"
+            className={`flex h-16 w-16 flex-none items-center justify-center rounded-full text-onaccent transition disabled:opacity-40 ${
+              speech.listening ? "bg-warn text-ground shadow-[0_0_0_8px_rgb(var(--warn-tint))]" : "bg-accent shadow-[0_0_0_8px_rgb(var(--accent-tint))] hover:bg-accent-dark"
             }`}
           >
             {speech.listening ? <Stop /> : <Mic />}
@@ -275,7 +275,7 @@ export default function Interview({ messages, thinking, responding, hintsUsed, h
             disabled={typingLocked}
             placeholder={typingLocked ? "Voice required by your teacher" : "Type your reasoning…"}
             aria-describedby={typingLocked ? undefined : "typed-help"}
-            className="min-h-11 min-w-0 flex-[1_1_220px] resize-none rounded-[10px] border border-edge bg-white px-3.5 py-2.5 leading-snug text-ink placeholder:text-muted disabled:bg-ground"
+            className="min-h-11 min-w-0 flex-[1_1_220px] resize-none rounded-[10px] border border-edge bg-surface px-3.5 py-2.5 leading-snug text-ink placeholder:text-muted disabled:bg-ground"
           />
           {!typingLocked && (
             <button type="submit" className="btn-primary" disabled={!draft.trim() || thinking} aria-label="Send">
@@ -324,7 +324,7 @@ function Bubble({ m }: { m: ChatMessage }) {
       <div
         className={
           student
-            ? "whitespace-pre-wrap rounded-[14px_4px_14px_14px] bg-ink px-3.5 py-3 text-white"
+            ? "whitespace-pre-wrap rounded-[14px_4px_14px_14px] bg-ink px-3.5 py-3 text-ground"
             : "whitespace-pre-wrap rounded-[4px_14px_14px_14px] bg-ground px-3.5 py-3"
         }
       >

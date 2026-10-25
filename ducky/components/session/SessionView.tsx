@@ -344,7 +344,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-line bg-white">
+      <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[1360px] flex-wrap items-center gap-4 px-6 py-3.5">
           <Logo />
           <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm text-muted">
