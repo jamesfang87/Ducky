@@ -105,28 +105,35 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   // Whatever the sidebar and visual leave over is the chat's; keep it at least this wide.
   const CHAT_MIN = 340 + 2 * 20;
 
+  const exitFull = useCallback(() => {
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    setVizFull(false);
+  }, []);
+
   const toggleFull = () => {
-    if (vizFull) {
-      if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
-      setVizFull(false);
-      return;
-    }
+    if (vizFull) return exitFull();
     setVizFull(true);
     // The fixed overlay alone covers the window where the Fullscreen API isn't available (iOS).
     vizBoxRef.current?.requestFullscreen?.().catch(() => {});
   };
 
+  // Esc leaves full screen. In browser full screen the browser eats the key and fires
+  // fullscreenchange instead; in the overlay fallback the keydown arrives (captured first).
   useEffect(() => {
     if (!vizFull) return;
     const onChange = () => !document.fullscreenElement && setVizFull(false);
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setVizFull(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      exitFull();
+    };
     document.addEventListener("fullscreenchange", onChange);
-    window.addEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
     return () => {
       document.removeEventListener("fullscreenchange", onChange);
-      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keydown", onKey, true);
     };
-  }, [vizFull]);
+  }, [vizFull, exitFull]);
 
   const userId = session?.userId;
   // Saving starts only once the saved chat (if any) has been loaded, so the opening line never overwrites it.
@@ -636,14 +643,20 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
                 <div className="flex flex-none items-center gap-3 border-b border-line px-5 py-2.5">
                   <p className="eyebrow">Visualization</p>
                   <div className="flex-1" />
-                  <button type="button" className="text-sm text-sub transition hover:text-ink" onClick={toggleFull}>
-                    {vizFull ? "Exit full screen" : "Full screen"}
-                  </button>
                   {!vizFull && (
                     <button type="button" className="text-sm text-sub transition hover:text-ink" onClick={() => setVizMinimized(true)}>
                       Minimize
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={toggleFull}
+                    aria-label={vizFull ? "Exit full screen" : "Full screen"}
+                    title={vizFull ? "Exit full screen (Esc)" : "Full screen"}
+                    className="-mr-2 flex h-8 w-8 items-center justify-center rounded-md text-sub transition hover:bg-ground hover:text-ink"
+                  >
+                    <FullScreenIcon exit={vizFull} />
+                  </button>
                 </div>
                 {viz.status === "loading" ? (
                   <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center" role="status">
@@ -705,6 +718,19 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
         </section>
       </main>
     </div>
+  );
+}
+
+/** The standard ⛶ corner-brackets glyph; the brackets point inward to exit. */
+function FullScreenIcon({ exit }: { exit: boolean }) {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {exit ? (
+        <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+      ) : (
+        <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+      )}
+    </svg>
   );
 }
 

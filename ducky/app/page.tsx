@@ -481,7 +481,7 @@ function Hero() {
           </p>
           <div {...rise(460, "mt-9 flex flex-wrap items-center gap-5")}>
             <Link href="/login" className="rounded-full bg-white px-7 py-3.5 text-[16px] font-semibold text-night no-underline transition-colors hover:bg-white/85">
-              Try a session
+              Try Ducky
             </Link>
             <a href="#how" className="text-[16px] font-medium text-duck-glow no-underline hover:underline">
               See how it works ›
@@ -933,7 +933,7 @@ export default function Landing() {
             </h2>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <Link href="/login" className="rounded-full bg-duck px-6 py-3 text-[16px] font-semibold text-night no-underline hover:bg-duck-glow">
-                Try a session
+                Try Ducky
               </Link>
               <Link href="/privacy" className="text-[16px] font-medium text-duck-deep no-underline hover:underline">
                 How we handle student data ›
