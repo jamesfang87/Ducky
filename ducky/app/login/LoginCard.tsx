@@ -98,6 +98,7 @@ export default function LoginCard() {
     if (!user) throw new Error("Signed in, but no session was saved. Check that cookies are allowed.");
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
     let r = profile?.role as Role | null | undefined;
+    const isNew = !r;
     if (!r) {
       // An account with no role yet (first Google sign-in, say): ask once, here, instead of guessing.
       if (!fallbackRole) {
@@ -112,7 +113,8 @@ export default function LoginCard() {
     }
     if (r !== "student" && r !== "teacher") throw new Error("This account has no student or teacher access.");
     clearDraft();
-    window.location.assign(next || homePath(r));
+    // A brand-new account starts on its own home, not a leftover `next` (a new teacher would land on the student side).
+    window.location.assign((!isNew && next) || homePath(r));
   };
 
   const run = async (kind: NonNullable<typeof pending>, fn: () => Promise<void>) => {

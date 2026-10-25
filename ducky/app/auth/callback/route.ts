@@ -31,6 +31,7 @@ export async function GET(request: Request) {
   // First sign-in only: lock in the role picked on the login page. Existing users keep theirs.
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
   let role = profile?.role as "student" | "teacher" | null | undefined;
+  const isNew = !role;
   if (!role) {
     // A brand-new account that arrived without a role (first Google sign-in from "Log in"): the login page asks once.
     if (wanted !== "student" && wanted !== "teacher") return NextResponse.redirect(`${origin}/login`);
@@ -41,6 +42,8 @@ export async function GET(request: Request) {
   if (role !== "student" && role !== "teacher") return fail("This account has no student or teacher access.");
 
   // The middleware sends them through the 2-step code check (/mfa) before any protected page.
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "";
+  // A brand-new account always starts on its own home: a leftover ?next (say /classes, from before
+  // signing up) would otherwise drop a new teacher on the student side.
+  const safeNext = !isNew && next.startsWith("/") && !next.startsWith("//") ? next : "";
   return NextResponse.redirect(`${origin}${safeNext || homePath(role)}`);
 }
