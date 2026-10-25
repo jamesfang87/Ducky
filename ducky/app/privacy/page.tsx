@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Logo } from "@/components/ui/icons";
+import { SiteHeader } from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
   title: "Privacy policy · Ducky",
@@ -11,53 +10,63 @@ const SECTIONS: { h: string; items: React.ReactNode[] }[] = [
   {
     h: "What we collect",
     items: [
-      "Your name and email from Google sign-in, and whether you are a student or a teacher.",
-      "The classes you belong to and the assignments you work on.",
-      "Text transcripts of what you say or type during a session, and any sketches you draw.",
-      "What Ducky notices about your reasoning: misconceptions it detects (with the quote it based them on) and rubric scores, including any score your teacher changes.",
+      "Your name and email, from Google or from the email you sign up with, and whether you are a student or a teacher.",
+      "Your classes and the problem sets you work on.",
+      "What you say or type in a session, plus any sketches you draw. We keep the transcript so you can reopen a past problem set and read it back.",
+      "What Ducky notices in your reasoning: the misconceptions it spots (with the quote it used) and rubric scores, including any score a teacher changes.",
       "Problem sets that teachers upload.",
     ],
   },
   {
-    h: "What we don’t keep or do",
+    h: "What we never do",
     items: [
-      "We don’t store your voice. Audio is turned into text and then thrown away.",
+      "We don’t store your voice. Audio becomes text, and the audio is discarded.",
       "Your work is never used to train AI models.",
       "We don’t sell your data or show ads.",
     ],
   },
   {
+    h: "Signing in and staying signed in",
+    items: [
+      "You can sign in with Google, or with an email and password or a one-time email link. Passwords are handled by Supabase Auth. We never see them.",
+      "Every account uses a second step: a code from an authenticator app.",
+      "If you choose “Stay signed in,” your sign-in lasts up to 30 days on that device. Without it, you’re signed out when the browser closes.",
+      "Even while you stay signed in, Ducky asks for a fresh authenticator code about every 3 hours.",
+    ],
+  },
+  {
     h: "Who can see it",
     items: [
-      "You can see your own sessions.",
-      "Teachers can see sessions only for their own classes.",
-      "Students can never see answer keys or solutions.",
+      "Only you can see your saved chat history.",
+      "Teachers see sessions from their own classes, and nothing else.",
+      "Students never see answer keys or solutions.",
       "Study-buddy matching is opt-in and shows first names only.",
-      "Teacher actions, like changing a score, are written to an audit log.",
+      "Teacher actions, like changing a score, go into an audit log.",
     ],
   },
   {
     h: "Services we use",
     items: [
-      "Supabase stores accounts and session data. Google handles sign-in.",
-      "An AI model provider generates Ducky’s replies, under terms that don’t allow training on your data.",
-      "SerpApi searches the web for study resources and for leaked copies of problems. It is sent the problem’s topic and step, or the words a student types into the resource search, never the chat itself.",
-      "In Chrome and Edge, voice input uses the browser’s built-in speech recognition, which may send audio to the browser maker to be transcribed.",
+      "Supabase stores accounts and session data. Google handles Google sign-in.",
+      "An AI model provider writes Ducky’s replies, under terms that forbid training on your data.",
+      "SerpApi searches the web for study resources and for leaked copies of problems. It gets the problem’s topic and step, or the words a student types into resource search. It never gets the chat itself.",
+      "In Chrome and Edge, voice input uses the browser’s built-in speech recognition, which may send audio to the browser maker for transcription.",
     ],
   },
   {
-    h: "This demo",
+    h: "What stays in your browser",
     items: [
-      "The current version runs on sample data. Anything you do is saved only in your own browser (localStorage) and is never sent to our servers.",
+      "A half-finished sign-in form (never the password) is kept for a day, so you don’t lose it if you switch to your email.",
+      "Class lists, problem sets, and the teacher dashboard still run on sample data stored in this browser. They never reach our servers.",
       <>
-        Clear it any time with <strong>Reset demo</strong> on the teacher page, or by clearing your browser’s site data.
+        Clear them any time with <strong>Reset demo</strong> on the teacher page, or by clearing this site’s data in your browser.
       </>,
     ],
   },
   {
     h: "Schools and younger students",
     items: [
-      "Ducky has not yet been reviewed under FERPA or COPPA, so it isn’t ready for K-12 classrooms or for students under 13.",
+      "Ducky hasn’t been reviewed under FERPA or COPPA, so it isn’t ready for K-12 classrooms or for students under 13.",
     ],
   },
   {
@@ -72,18 +81,13 @@ const SECTIONS: { h: string; items: React.ReactNode[] }[] = [
 export default function Privacy() {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="mx-auto flex w-full max-w-[720px] items-center justify-between px-6 py-5">
-        <Logo />
-        <Link href="/" className="text-sub no-underline hover:text-ink">
-          Back to home
-        </Link>
-      </header>
-      <main className="mx-auto w-full max-w-[720px] flex-1 px-6 pb-16 pt-4">
+      <SiteHeader />
+      <main className="mx-auto w-full max-w-[720px] flex-1 px-6 pb-16 pt-10">
         <h1 className="font-display text-[36px] font-bold leading-tight tracking-[-0.02em]">Privacy policy</h1>
         <p className="mt-2 text-sm text-muted">Last updated October 24, 2026</p>
         <p className="mt-5 text-[17px] text-sub">
-          Ducky helps you learn by talking through your work. Here is what we collect to do that, who can see it, and
-          what we never do with it.
+          Ducky helps you learn by talking through your work. Here is what we collect to make that possible, who can see it,
+          and what we never do with it.
         </p>
 
         {SECTIONS.map(({ h, items }) => (
