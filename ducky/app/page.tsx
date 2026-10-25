@@ -463,7 +463,7 @@ function Hero() {
         />
       )}
       <div className="relative mx-auto grid min-h-[calc(100svh-3rem)] max-w-[1440px] items-center gap-8 px-6 pb-28 pt-14 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.45fr)] lg:pt-8">
-        <div className="relative z-20" style={{ opacity: 1 - hs * 1.3, transform: `translateY(${-hs * 70}px)` }}>
+        <div className="relative z-20 lg:justify-self-center" style={{ opacity: 1 - hs * 1.3, transform: `translateY(${-hs * 70}px)` }}>
           <p {...rise(0, "text-[13px] font-semibold uppercase tracking-[0.14em] text-duck-glow")}>Built at HackTX 2026</p>
           <div {...rise(120, "mt-4 flex items-center gap-4")}>
             <h1 className="font-display text-[72px] font-bold leading-[0.98] tracking-[-0.045em] md:text-[104px]">
