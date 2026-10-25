@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Send } from "@/components/ui/icons";
-import type { ProblemSetRecord } from "@/lib/problemSets";
+import { entrySessionId, type ProblemSetRecord } from "@/lib/problemSets";
 
 export function ProblemSetCard({ set }: { set: ProblemSetRecord }) {
   const pct = set.problems > 0 ? Math.round((set.completed / set.problems) * 100) : 0;
@@ -10,7 +10,7 @@ export function ProblemSetCard({ set }: { set: ProblemSetRecord }) {
 
   return (
     <Link
-      href={`/session/${set.sessionId}`}
+      href={`/session/${entrySessionId(set)}`}
       className="card group flex flex-wrap items-center gap-4 p-4 text-ink no-underline transition hover:border-accent hover:shadow-sm sm:flex-nowrap"
     >
       <span

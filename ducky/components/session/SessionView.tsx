@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MISCONCEPTIONS, STUDENT_HISTORY } from "@/lib/mock";
+import { findProblemSetBySession } from "@/lib/problemSets";
 import { useStore } from "@/lib/store";
 import { loadChat, saveChat } from "@/lib/chatHistory";
 import type { ChatMessage, MisconceptionId, ReasoningStep } from "@/lib/types";
@@ -43,6 +44,14 @@ type Viz =
 export default function SessionView({ sessionId }: { sessionId: string }) {
   const session = useSession();
   const { policy, addEvent } = useStore();
+  // The mock set catalog tells the breadcrumb where the course and set live.
+  const problemSet = findProblemSetBySession(sessionId);
+  const setIndex = problemSet ? problemSet.sessionIds.indexOf(sessionId) : -1;
+  const nextSessionId =
+    problemSet && setIndex >= 0 && setIndex < problemSet.sessionIds.length - 1
+      ? problemSet.sessionIds[setIndex + 1]
+      : null;
+  const problemSetHref = problemSet ? `/classes/${problemSet.classId}#${problemSet.id}` : undefined;
   const [info, setInfo] = useState<SessionInfo | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -322,11 +331,23 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
         <div className="mx-auto flex max-w-[1360px] flex-wrap items-center gap-4 px-6 py-3.5">
           <Logo />
           <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm text-muted">
-            <span>{problem.course}</span>
+            {problemSet ? (
+              <Link href={`/classes/${problemSet.classId}`} className="text-muted no-underline transition hover:text-ink">
+                {problem.course}
+              </Link>
+            ) : (
+              <span>{problem.course}</span>
+            )}
             <span aria-hidden="true">/</span>
-            <span>{problem.set}</span>
+            {problemSetHref ? (
+              <Link href={problemSetHref} className="text-muted no-underline transition hover:text-ink">
+                {problem.set}
+              </Link>
+            ) : (
+              <span>{problem.set}</span>
+            )}
             <span aria-hidden="true">/</span>
-            <span className="font-semibold text-ink">
+            <span className="font-semibold text-ink" aria-current="page">
               Problem {problem.index} of {problem.total}
             </span>
           </nav>
@@ -355,7 +376,11 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
 
       <main className="mx-auto flex max-w-[1360px] flex-wrap items-start gap-5 p-6 xl:flex-nowrap">
         <section aria-label="Problem and progress" className="flex min-w-0 flex-[1_1_280px] flex-col gap-4">
-          <ProblemCard problem={problem} />
+          <ProblemCard
+            problem={problem}
+            nextHref={nextSessionId ? `/session/${nextSessionId}` : undefined}
+            backHref={problemSetHref}
+          />
           <ReasoningPath steps={steps} />
           {info.resourcesEnabled && <ResourcesCard state={resources} onSearch={(t) => void searchResources(t)} />}
           {canReveal && (

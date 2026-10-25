@@ -97,6 +97,76 @@ interface Template {
 }
 
 const TEMPLATES: Record<string, Template> = {
+  "demo-phys-3-p1": {
+    problem: {
+      index: 1,
+      total: 3,
+      course: "PHYS 1401",
+      set: "Problem Set 3 · Free fall",
+      prompt:
+        "A ball is dropped from rest at h = 45 m. Ignoring air resistance, how long does it take to reach the ground, and how fast is it moving just before impact?",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "With v₀ = 0, h = ½gt² gives t = √(2h/g) = √(90/9.8) ≈ 3.03 s. " +
+        "The impact speed is v = gt ≈ 9.8 × 3.03 ≈ 29.7 m/s downward.",
+      finalAnswerPatterns: [/3\.0\d?\s*s/i, /29(\.\d+)?\s*m\/s/i],
+    },
+    misconceptions: [
+      { id: "ff-forgets-v0-zero", label: "Uses a non-zero initial velocity for a dropped ball" },
+      { id: "ff-g-as-speed", label: "Treats 9.8 as a speed instead of an acceleration" },
+      { id: "ff-sign-error", label: "Mixes up signs and gets a negative fall time" },
+      { id: "ff-linear-fall", label: "Thinks fall time is proportional to height instead of √height" },
+    ],
+    hints: [
+      "With v₀ = 0, how does height depend on time? Start from h = ½gt².",
+      "Once you have the fall time, how do you get speed from acceleration?",
+    ],
+    steps: [
+      "Pick the free-fall equation that relates height and time",
+      "Solve for the time to fall 45 m",
+      "Use v = gt to get the impact speed",
+      "Check units and direction",
+    ],
+    startStep: 0,
+    opening: "The ball is dropped, not thrown. What is its velocity at the moment it leaves your hand?",
+  },
+  "demo-phys-3-p2": {
+    problem: {
+      index: 2,
+      total: 3,
+      course: "PHYS 1401",
+      set: "Problem Set 3 · Free fall",
+      prompt:
+        "Two identical balls are dropped from rest, one from 20 m and one from 80 m. How many times longer does the higher ball take to land? Explain why the answer does not depend on mass.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "t = √(2h/g), so the ratio is √(80/20) = √4 = 2: the higher ball takes twice as long. " +
+        "Mass cancels because a = F/m = mg/m = g, so both balls accelerate at the same rate.",
+      finalAnswerPatterns: [/(twice|two times|2 times)/i, /√\s*\(?\s*80\s*\/\s*20/i],
+    },
+    misconceptions: [
+      { id: "ff-mass-changes-time", label: "Thinks the heavier ball lands first" },
+      { id: "ff-linear-scaling", label: "Says four times longer because the height is four times bigger" },
+      { id: "ff-ratio-inverted", label: "Computes the time ratio upside down" },
+      { id: "ff-bigger-force-bigger-accel", label: "Confuses a bigger force with a bigger acceleration" },
+    ],
+    hints: [
+      "Write the fall time as a function of height. What happens when you divide the two times?",
+      "Where does mass appear in a = F/m for gravity, and what happens to it?",
+    ],
+    steps: [
+      "Write the fall time as a function of height",
+      "Take the ratio of the two times",
+      "Show that g cancels",
+      "Explain why mass drops out of a = F/m",
+    ],
+    startStep: 0,
+    opening: "Before calculating: does the heavier ball take longer to fall? Why or why not?",
+  },
   demo: {
     problem: PROBLEM,
     policy: { ...DEFAULT_POLICY, revealAfterHints: true },
@@ -113,7 +183,7 @@ const TEMPLATES: Record<string, Template> = {
   "demo-phys-2": {
     problem: {
       index: 1,
-      total: 5,
+      total: 3,
       course: "PHYS 1401",
       set: "Problem Set 2 · Projectile motion",
       prompt:
@@ -149,10 +219,81 @@ const TEMPLATES: Record<string, Template> = {
     startStep: 0,
     opening: "Before any equations: at the highest point of the flight, what is happening to the ball's velocity?",
   },
+  "demo-phys-2-p2": {
+    problem: {
+      index: 2,
+      total: 3,
+      course: "PHYS 1401",
+      set: "Problem Set 2 · Projectile motion",
+      prompt:
+        "A ball is kicked from level ground at 15 m/s at 45°. Ignoring air resistance, find the maximum height and the horizontal range.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "At 45°, v₀ₓ = v₀ᵧ = 15 cos 45° ≈ 10.6 m/s. " +
+        "The time to the top is 10.6/9.8 ≈ 1.08 s, so h = v₀ᵧ²/(2g) ≈ 5.7 m. " +
+        "The flight lasts about 2.16 s, so the range is 10.6 × 2.16 ≈ 22.9 m.",
+      finalAnswerPatterns: [/22\.9\s*m/i, /5\.7\s*m/i, /10\.6\s*m\/s/i],
+    },
+    misconceptions: [
+      { id: "pm2-uses-15-as-vy", label: "Uses 15 m/s as the vertical component" },
+      { id: "pm2-forgets-double", label: "Uses only the upward half of the flight for the range" },
+      { id: "pm2-adds-components", label: "Adds the components instead of using them separately" },
+      { id: "pm2-swaps-sin-cos", label: "Swaps sine and cosine for the components" },
+    ],
+    hints: [
+      "At 45°, how do the horizontal and vertical components compare?",
+      "Once you find the time to the top, how long is the whole flight?",
+    ],
+    steps: [
+      "Split 15 m/s at 45° into components",
+      "Find the time to reach the top",
+      "Get the maximum height",
+      "Use the full flight time for the range",
+    ],
+    startStep: 0,
+    opening: "At 45°, what is special about the horizontal and vertical components of the kick?",
+  },
+  "demo-phys-2-p3": {
+    problem: {
+      index: 3,
+      total: 3,
+      course: "PHYS 1401",
+      set: "Problem Set 2 · Projectile motion",
+      prompt:
+        "A ball rolls off a 20 m cliff horizontally at 12 m/s. How long is it in the air, and how far from the base of the cliff does it land?",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "The initial vertical velocity is zero, so 20 = ½gt² gives t = √(40/9.8) ≈ 2.02 s. " +
+        "Horizontal velocity stays 12 m/s, so the ball lands 12 × 2.02 ≈ 24.2 m from the base.",
+      finalAnswerPatterns: [/2\.0\d?\s*s/i, /24(\.\d+)?\s*m/i],
+    },
+    misconceptions: [
+      { id: "pm3-horizontal-delays-fall", label: "Thinks the horizontal speed keeps the ball in the air longer" },
+      { id: "pm3-uses-12-vertically", label: "Uses 12 m/s as the vertical velocity" },
+      { id: "pm3-forgets-zero-v0", label: "Forgets that the initial vertical velocity is zero" },
+      { id: "pm3-adds-speeds", label: "Adds horizontal and vertical speeds to get the fall time" },
+    ],
+    hints: [
+      "The ball starts with no vertical speed. How long does it take to fall 20 m?",
+      "Nothing pushes horizontally once it leaves the cliff, so what is vₓ during the fall?",
+    ],
+    steps: [
+      "Set the initial vertical velocity to zero",
+      "Solve the vertical fall for the time",
+      "Use the constant horizontal velocity for the distance",
+      "Explain why horizontal speed does not change the fall time",
+    ],
+    startStep: 0,
+    opening: "The ball leaves the cliff horizontally. What is its vertical velocity at that instant?",
+  },
   "demo-cs": {
     problem: {
       index: 1,
-      total: 4,
+      total: 3,
       course: "CS 314",
       set: "Problem Set 1 · Insertion sort",
       prompt:
@@ -189,6 +330,82 @@ const TEMPLATES: Record<string, Template> = {
     ],
     startStep: 0,
     opening: "Before we trace anything: when insertion sort looks at a new element, what's true about everything to its left?",
+  },
+  "demo-cs-p2": {
+    problem: {
+      index: 2,
+      total: 3,
+      course: "CS 314",
+      set: "Problem Set 1 · Insertion sort",
+      prompt:
+        "Trace insertion sort on [3, 1, 4, 2]. Show the array after each pass of the outer loop, and count the comparisons.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "Pass 1 inserts 1: [1, 3, 4, 2], 1 comparison. " +
+        "Pass 2 inserts 4: [1, 3, 4, 2], 1 comparison. " +
+        "Pass 3 inserts 2: [1, 2, 3, 4], 3 comparisons (2 vs 4, 2 vs 3, 2 vs 1). " +
+        "Total: 5 comparisons.",
+      finalAnswerPatterns: [/\[\s*1\s*,\s*2\s*,\s*3\s*,\s*4\s*\]/i, /5\s*comparisons?/i],
+    },
+    misconceptions: [
+      { id: "is2-counts-swaps", label: "Counts swaps instead of comparisons" },
+      { id: "is2-misses-last-compare", label: "Stops the count before the failed comparison" },
+      { id: "is2-wrong-prefix", label: "Shows an unsorted prefix after a pass" },
+      { id: "is2-extra-pass", label: "Runs a fourth pass after the array is sorted" },
+    ],
+    hints: [
+      "After each pass, everything to the left of the current element is sorted. What is the sorted prefix on pass 2?",
+      "For 2, how many elements does it compare against before it stops?",
+    ],
+    steps: [
+      "Start with [3] as the sorted prefix",
+      "Insert 1 and show the array",
+      "Insert 4 and show the array",
+      "Insert 2 and count every comparison",
+    ],
+    startStep: 0,
+    opening: "On the first pass, what exactly happens to the second element?",
+  },
+  "demo-cs-p3": {
+    problem: {
+      index: 3,
+      total: 3,
+      course: "CS 314",
+      set: "Problem Set 1 · Insertion sort",
+      prompt:
+        "Explain why insertion sort runs in O(n) time on an already-sorted array but O(n²) on a reverse-sorted array. Include the comparison counts for an array of length n.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "Sorted: each new element compares once with its left neighbor and moves nowhere, so there are n−1 comparisons = O(n). " +
+        "Reverse-sorted: the element at position i moves past all i elements before it, so the total is 1 + 2 + … + (n−1) = n(n−1)/2 = O(n²).",
+      finalAnswerPatterns: [
+        /n\s*(?:-|−)\s*1\s*comparisons?/i,
+        /n\s*\(\s*n\s*(?:-|−)\s*1\s*\)\s*\/\s*2/i,
+        /O\s*\(\s*n\s*(?:\^?2|²)\s*\)/i,
+      ],
+    },
+    misconceptions: [
+      { id: "is3-confuses-best-worst", label: "Swaps the best and worst cases" },
+      { id: "is3-forgets-shifts", label: "Counts comparisons but not shifts in the reverse case" },
+      { id: "is3-series-error", label: "Sums 1 + 2 + … + n incorrectly" },
+      { id: "is3-bigo-from-n", label: "Says both cases are O(n) because there are n elements" },
+    ],
+    hints: [
+      "In the sorted case, how many comparisons does the inner loop make before it stops?",
+      "In the reverse case, how far does the element at index i have to move?",
+    ],
+    steps: [
+      "Count comparisons for one element in the sorted case",
+      "Sum them for n elements",
+      "Count comparisons for one element in the reverse case",
+      "Sum the series and state the Big-O",
+    ],
+    startStep: 0,
+    opening: "Start with the best case: what does the inner loop do when the array is already sorted?",
   },
   "demo-cs-2": {
     problem: {
@@ -231,6 +448,119 @@ const TEMPLATES: Record<string, Template> = {
     ],
     startStep: 0,
     opening: "Start with the hash function: which bucket does 12 land in, and why?",
+  },
+  "demo-cs-2-p2": {
+    problem: {
+      index: 2,
+      total: 4,
+      course: "CS 314",
+      set: "Problem Set 2 · Hash maps",
+      prompt:
+        "An 8-bucket table uses h(k) = k mod 8 with separate chaining. Insert 9, 17, 25, 33, and 1 in that order, show the table, and say how many comparisons it takes to find 33.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "All five keys have remainder 1 when divided by 8, so they all land in bucket 1. " +
+        "The chain in insertion order is [9, 17, 25, 33, 1]. " +
+        "Finding 33 compares 9, 17, 25, then 33: 4 comparisons.",
+      finalAnswerPatterns: [
+        /bucket\s*1/i,
+        /\[\s*9\s*,\s*17\s*,\s*25\s*,\s*33\s*,\s*1\s*\]/i,
+        /4\s*comparisons?/i,
+      ],
+    },
+    misconceptions: [
+      { id: "hm2-splits-buckets", label: "Spreads the keys across different buckets" },
+      { id: "hm2-counts-one", label: "Counts 1 comparison because it looks up the bucket directly" },
+      { id: "hm2-drops-key", label: "Drops a key from the chain" },
+      { id: "hm2-wrong-order", label: "Sorts the chain instead of keeping insertion order" },
+    ],
+    hints: [
+      "Compute each key mod 8. What do all five remainders have in common?",
+      "The chain keeps insertion order. How many nodes come before 33?",
+    ],
+    steps: [
+      "Hash each key mod 8",
+      "Build the chain in insertion order",
+      "Count comparisons up to 33",
+      "Explain why this is the worst case",
+    ],
+    startStep: 0,
+    opening: "Hash the first two keys. Where do they land?",
+  },
+  "demo-cs-2-p3": {
+    problem: {
+      index: 3,
+      total: 4,
+      course: "CS 314",
+      set: "Problem Set 2 · Hash maps",
+      prompt:
+        "A table has 10 buckets and h(k) = k mod 10. Insert 15, 25, 35, and 5. Show the table, then compute the load factor and explain what it predicts about lookup cost.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "Every key ends in 5, so all four hash to bucket 5: [15, 25, 35, 5]. " +
+        "The load factor is α = n/m = 4/10 = 0.4. " +
+        "With separate chaining the expected chain length is α, so lookups are O(1 + α), " +
+        "but this particular hash clusters all four keys, so a lookup takes up to 4 comparisons.",
+      finalAnswerPatterns: [/0\.4/i, /bucket\s*5/i, /\[\s*15\s*,\s*25\s*,\s*35\s*,\s*5\s*\]/i],
+    },
+    misconceptions: [
+      { id: "hm3-load-factor-count", label: "Says the load factor is 4 instead of 4/10" },
+      { id: "hm3-assumes-even", label: "Assumes the load factor guarantees an even spread" },
+      { id: "hm3-wrong-bucket", label: "Uses a different bucket for the keys" },
+      { id: "hm3-ignores-clustering", label: "Claims the lookup is 1 comparison because α < 1" },
+    ],
+    hints: [
+      "All four keys end in 5. What does mod 10 do to them?",
+      "Load factor is the number of keys divided by the number of buckets.",
+    ],
+    steps: [
+      "Hash each key mod 10",
+      "Show the chain in bucket 5",
+      "Compute the load factor n/m",
+      "Compare the expected chain length with this actual chain",
+    ],
+    startStep: 0,
+    opening: "Hash 15 and 25 mod 10. What do they have in common?",
+  },
+  "demo-cs-2-p4": {
+    problem: {
+      index: 4,
+      total: 4,
+      course: "CS 314",
+      set: "Problem Set 2 · Hash maps",
+      prompt:
+        "Explain why separate chaining gives O(1) average lookup but O(n) worst-case lookup. Describe a set of keys and a hash function that produces the worst case.",
+    },
+    policy: { ...DEFAULT_POLICY, revealAfterHints: true },
+    solution: {
+      text:
+        "The average case assumes uniform hashing and a bounded load factor α = n/m, so the expected chain length is α and a lookup is O(1 + α) = O(1). " +
+        "In the worst case all n keys collide in one bucket. For example, h(k) = 0 for every key, or keys that all share the same remainder mod m. " +
+        "The chain then holds n nodes and a lookup is O(n).",
+      finalAnswerPatterns: [/h\s*\(\s*k\s*\)\s*=\s*0/i, /O\s*\(\s*n\s*\)/i, /all\s+n\s+keys/i],
+    },
+    misconceptions: [
+      { id: "hm4-worst-constant", label: "Says the worst case is also O(1)" },
+      { id: "hm4-average-always", label: "Thinks uniform hashing is guaranteed rather than assumed" },
+      { id: "hm4-resizing-fixes-adversary", label: "Believes resizing alone prevents adversarial collisions" },
+      { id: "hm4-low-load-fixes-worst", label: "Says a low load factor makes the worst case O(1)" },
+    ],
+    hints: [
+      "What assumption about the hash function keeps chains short?",
+      "Can you choose a hash function where every key gets the same bucket?",
+    ],
+    steps: [
+      "State the assumption behind the average case",
+      "Relate expected chain length to the load factor",
+      "Construct an all-collide example",
+      "State the worst-case complexity",
+    ],
+    startStep: 0,
+    opening: "What has to be true about the hash function for the average case to hold?",
   },
 };
 

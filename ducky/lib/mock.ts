@@ -28,8 +28,8 @@ export const MISCONCEPTIONS: Misconception[] = [
 ];
 
 export const PROBLEM: Problem = {
-  index: 2,
-  total: 6,
+  index: 3,
+  total: 3,
   course: "PHYS 1401",
   set: "Problem Set 3 · Free fall",
   prompt:

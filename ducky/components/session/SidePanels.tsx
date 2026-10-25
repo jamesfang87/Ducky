@@ -1,13 +1,24 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import type { Resource } from "@/lib/api";
 import type { ChatMessage, MisconceptionId, Problem, ReasoningStep } from "@/lib/types";
 import { MISCONCEPTIONS } from "@/lib/mock";
 import { RUBRIC_MAX, type RubricRow } from "@/lib/rubric";
-import { Check } from "@/components/ui/icons";
+import { Check, Send } from "@/components/ui/icons";
 
-export function ProblemCard({ problem }: { problem: Problem }) {
+export function ProblemCard({
+  problem,
+  nextHref,
+  backHref,
+}: {
+  problem: Problem;
+  /** The next problem in this set, if there is one. */
+  nextHref?: string;
+  /** Where to go after the last problem. */
+  backHref?: string;
+}) {
   return (
     <div className="card p-5">
       <div className="mb-3.5 flex gap-1.5" aria-label={`Problem ${problem.index} of ${problem.total}`}>
@@ -20,6 +31,21 @@ export function ProblemCard({ problem }: { problem: Problem }) {
       </div>
       <p className="eyebrow mb-1.5">Problem {problem.index}</p>
       <p className="text-base leading-relaxed">{problem.prompt}</p>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
+        <span className="text-[13px] text-muted">
+          Problem {problem.index} of {problem.total}
+        </span>
+        {nextHref ? (
+          <Link href={nextHref} className="btn-primary h-9 px-3 text-sm no-underline">
+            Next problem <Send size={13} />
+          </Link>
+        ) : backHref ? (
+          <Link href={backHref} className="btn h-9 px-3 text-sm no-underline">
+            Back to problem sets
+          </Link>
+        ) : null}
+      </div>
     </div>
   );
 }

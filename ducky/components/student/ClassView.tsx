@@ -128,7 +128,9 @@ export default function ClassView({ classId }: { classId: string }) {
           {sets.length > 0 ? (
             <div className="mt-4 grid gap-3">
               {sets.map((set) => (
-                <ProblemSetCard key={set.id} set={set} />
+                <div key={set.id} id={set.id} className="scroll-mt-6">
+                  <ProblemSetCard set={set} />
+                </div>
               ))}
             </div>
           ) : (
