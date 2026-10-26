@@ -2,8 +2,7 @@
 
 **A learning management system that helps students build understanding and helps teachers measure it.**
 
-**Live demo:** https://ducky-snowy.vercel.app/  
-**Source code:** https://github.com/jamesfang87/HackTX-2026
+**Live demo:** https://ducky-snowy.vercel.app/
 
 ## Overview
 
