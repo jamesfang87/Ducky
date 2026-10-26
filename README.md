@@ -84,10 +84,3 @@ This workflow demonstrates the student learning experience and the teacher's vie
 - **Deployment:** Vercel.
 
 The main application includes API routes for tutoring, hints, answer reveals, visual generation, and transcription. The server checks session access and applies assignment rules. The session API does not send the solution to the student.
-
-## Project Links
-
-- **Live demo:** https://ducky-snowy.vercel.app/
-- **GitHub repository:** https://github.com/jamesfang87/HackTX-2026
-- **Main application and demo script:** https://github.com/jamesfang87/HackTX-2026/blob/main/ducky/README.md
-- **Product requirements:** https://github.com/jamesfang87/HackTX-2026/blob/main/PRD.md
